@@ -1,0 +1,7 @@
+{% load i18n %}
+
+
+<ul class="list-unstyled mt-4">
+    {% if prev_url %}<li><a href="{{ prev_url }}" class="btn btn-primary btn-sm">{% trans "Previous" %}</a></li>{% endif %}
+    {% if next_url %}<li><a href="{{ next_url }}" class="btn btn-primary btn-sm">{% trans "Next" %}</a></li>{% endif %}
+</ul>

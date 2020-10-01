@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static user_utils permission_tags %}
+{% block title %}
+User Roles
+{% endblock title %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<h1>User Roles</h1>
+
+<div class="separator mb-5"></div>
+<div class="row">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="mb-4">Assign/Change User Roles</h5>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} rounded" role="alert">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <table class="data-table responsive nowrap">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Roles</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in object_list %}
+            <tr>
+              <td>
+                <p class="list-item-heading">{{ user.get_full_name }}</p>
+              </td>
+              <td>
+                <p class="list-item-heading">{{user.email}}</p>
+              </td>
+              <td>
+                <p class="list-item-heading">{{user.username}}</p>
+              </td>
+              <td>
+                <p>
+                  {% for role in user.roles %}
+                    {{ role.get_name | formattedRoleName }}{% if forloop.last %}{% else %}, {%endif %}
+                  {% endfor %}
+                </p>
+              </td>
+              <td>
+                <a href="{% url 'accounts:update_roles' user.id %}" class="btn btn-outline-info icon-button ">
+                  <i class="simple-icon-pencil"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

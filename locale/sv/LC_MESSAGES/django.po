@@ -1,0 +1,363 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-10-01 10:44+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: bat/core/apps.py:10
+msgid "Core"
+msgstr ""
+
+#: bat/core/templatetags/core_utils.py:95
+msgid "Good Morning"
+msgstr "God morgon"
+
+#: bat/core/templatetags/core_utils.py:97
+msgid "Good Afternoon"
+msgstr "God eftermiddag"
+
+#: bat/core/templatetags/core_utils.py:99
+msgid "Good Evening"
+msgstr "God kväll"
+
+#: bat/globalprop/processors/processors.py:16 bat/templates/base.html:212
+msgid "Vendors"
+msgstr "Försäljare"
+
+#: bat/globalprop/processors/processors.py:25 bat/templates/base.html:271
+msgid "Sales Channel"
+msgstr "Försäljningskanal"
+
+#: bat/setting/apps.py:10 bat/templates/base.html:166
+msgid "Setting"
+msgstr "Inställningar"
+
+#: bat/setting/models.py:21
+msgid "Category Name"
+msgstr ""
+
+#: bat/setting/models.py:23
+msgid "Category Rule"
+msgstr ""
+
+#: bat/setting/models.py:47
+msgid "Categories"
+msgstr ""
+
+#: bat/setting/models.py:76
+msgid "Status Name"
+msgstr ""
+
+#: bat/setting/models.py:99
+msgid "Statuses"
+msgstr ""
+
+#: bat/setting/models.py:133
+#, fuzzy
+#| msgid "Payment terms already exists"
+msgid "PaymentTerms Title"
+msgstr "Betalningsvillkor finns redan"
+
+#: bat/setting/models.py:136
+msgid "Deposit (in %)"
+msgstr ""
+
+#: bat/setting/models.py:141
+msgid "Payment on delivery (in %)"
+msgstr ""
+
+#: bat/setting/models.py:144
+msgid "Receiving (in %)"
+msgstr ""
+
+#: bat/setting/models.py:147
+msgid "Remaining (in %)"
+msgstr ""
+
+#: bat/setting/models.py:150
+msgid "Payment Days (in days)"
+msgstr ""
+
+#: bat/setting/models.py:161
+msgid "PaymentTerms"
+msgstr ""
+
+#: bat/setting/templates/setting/paymentterms/paymentterms_list.html:77
+#, python-format
+msgid "%(remaining)s%% in %(payment_days)s days"
+msgstr "%(remaining)s%% i %(payment_days)s dager"
+
+#: bat/templates/base.html:10
+msgid "Welcome"
+msgstr "Välkommen"
+
+#: bat/templates/base.html:91
+#, fuzzy
+#| msgid "Profile Picture"
+msgid "Profile"
+msgstr "Profilbild"
+
+#: bat/templates/base.html:92
+msgid "Change Password"
+msgstr "Ändra lösenord"
+
+#: bat/templates/base.html:93
+msgid "Sign out"
+msgstr "Logga ut"
+
+#: bat/templates/base.html:107 bat/templates/base.html:180
+#: bat/templates/base.html:261 bat/templates/base.html:290
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: bat/templates/base.html:116
+msgid "Product Management"
+msgstr "Produktledning"
+
+#: bat/templates/base.html:126
+msgid "Supply Chain"
+msgstr "Försörjningskedjan"
+
+#: bat/templates/base.html:136
+msgid "Sales"
+msgstr "Försäljning"
+
+#: bat/templates/base.html:146
+msgid "Finance"
+msgstr "Finansiera"
+
+#: bat/templates/base.html:156
+msgid "Departments"
+msgstr "Avdelning"
+
+#: bat/templates/base.html:185
+msgid "Product Catalog"
+msgstr "Produktkatalog"
+
+#: bat/templates/base.html:190
+msgid "Global"
+msgstr ""
+
+#: bat/templates/base.html:193
+msgid "Amazon"
+msgstr ""
+
+#: bat/templates/base.html:196
+msgid "Retail"
+msgstr "Detaljhandeln"
+
+#: bat/templates/base.html:203
+msgid "RRP"
+msgstr ""
+
+#: bat/templates/base.html:227
+msgid "Orders"
+msgstr ""
+
+#: bat/templates/base.html:233
+msgid "Shipments"
+msgstr "Sändningar"
+
+#: bat/templates/base.html:239
+msgid "Inventory"
+msgstr "Lager"
+
+#: bat/templates/base.html:244
+msgid "Inventory Overview"
+msgstr "Lageröversikt"
+
+#: bat/templates/base.html:247
+msgid "Warehouse Locations"
+msgstr "Lagerplatser"
+
+#: bat/templates/base.html:250
+msgid "Inventory Valuation"
+msgstr "Lagervärdering"
+
+#: bat/templates/base.html:266
+msgid "Cost Control"
+msgstr "Kostnadskontroll"
+
+#: bat/templates/base.html:285
+msgid "Optimization"
+msgstr ""
+
+#: bat/templates/base.html:293
+msgid "Keyword Research"
+msgstr ""
+
+#: bat/templates/base.html:303
+msgid "Cash flow"
+msgstr ""
+
+#: bat/templates/base.html:311
+msgid "Roles & Responsibility"
+msgstr ""
+
+#: bat/templates/base.html:319
+msgid "Basic"
+msgstr ""
+
+#: bat/templates/base.html:324
+msgid "Payment Terms"
+msgstr ""
+
+#: bat/templates/reversion-compare/action_list_partial.html:9
+#: bat/templates/reversion-compare/action_list_partial.html:11
+msgid "Compare"
+msgstr ""
+
+#: bat/templates/reversion-compare/action_list_partial.html:15
+msgid "Date/time"
+msgstr ""
+
+#: bat/templates/reversion-compare/action_list_partial.html:16
+msgid "User"
+msgstr ""
+
+#: bat/templates/reversion-compare/action_list_partial.html:17
+msgid "Comment"
+msgstr ""
+
+#: bat/templates/reversion-compare/action_list_partial.html:40
+#: bat/templates/reversion-compare/action_list_partial.html:42
+msgid "DATETIME_FORMAT"
+msgstr ""
+
+#: bat/templates/reversion-compare/compare_links_partial.html:5
+msgid "Previous"
+msgstr ""
+
+#: bat/templates/reversion-compare/compare_links_partial.html:6
+msgid "Next"
+msgstr ""
+
+#: bat/templates/reversion-compare/compare_partial.html:25
+msgid "There are no differences."
+msgstr ""
+
+#: bat/templates/reversion-compare/compare_partial.html:29
+msgid "Edit comment"
+msgstr ""
+
+#: bat/templates/reversion-compare/compare_partial.html:30
+msgid "(no comment exists)"
+msgstr ""
+
+#: bat/templates/reversion-compare/compare_partial.html:33
+msgid "Note:"
+msgstr ""
+
+#: bat/templates/reversion-compare/compare_partial.html:35
+msgid ""
+"\n"
+"            Fields/entries marked with <sup class=\"follow\">*</sup> are not "
+"under reversion control.\n"
+"            It may be that not all marked information are correct.\n"
+"            "
+msgstr ""
+
+#: bat/users/apps.py:10
+msgid "Users"
+msgstr ""
+
+#: bat/users/forms.py:17
+msgid "Email / Username"
+msgstr "E-post / Användarnamn"
+
+#: bat/users/forms.py:44
+msgid "Email address"
+msgstr "E-postadress"
+
+#: bat/users/forms.py:59
+msgid "Account with same email already exists."
+msgstr "Konto med samma e-postadress finns redan."
+
+#: bat/users/forms.py:83
+msgid "Username is unique for each account.             you can't change it."
+msgstr "Användarnamnet är unikt för varje konto. du kan inte ändra det."
+
+#: bat/users/forms.py:87
+msgid "Email is unique for each account.             you can't change it"
+msgstr "E-post är unikt för varje konto. du kan inte ändra det"
+
+#: bat/users/models.py:34
+msgid "Profile Picture"
+msgstr "Profilbild"
+
+#: bat/users/models.py:41
+msgid "Phone Number"
+msgstr "Telefonnummer"
+
+#: bat/users/models.py:45
+msgid "Language"
+msgstr "Språk"
+
+#: bat/users/models.py:51
+msgid "Time Zone"
+msgstr "Tidszon"
+
+#: bat/users/templates/user/login.html:20
+#: bat/users/templates/user/signup.html:20
+msgid "BAT System"
+msgstr "BAT Systemet"
+
+#: bat/users/templates/user/login.html:22
+msgid "Please use your credentials to login."
+msgstr "Använd dina referenser för att logga in"
+
+#: bat/users/templates/user/login.html:24
+msgid "If you are not a member, please"
+msgstr "Om du inte är medlem"
+
+#: bat/users/templates/user/login.html:24
+#: bat/users/templates/user/signup.html:28
+msgid "Register"
+msgstr "Registrera"
+
+#: bat/users/templates/user/login.html:27
+#: bat/users/templates/user/login.html:33
+msgid "LOGIN"
+msgstr "LOGGA IN"
+
+#: bat/users/templates/user/login.html:32
+msgid "Forgot password?"
+msgstr "Glömt ditt lösenord?"
+
+#: bat/users/templates/user/signup.html:23
+msgid "Select plan and enter all the detail for Register."
+msgstr "Välj plan och ange alla detaljer för Registrera"
+
+#: bat/users/templates/user/signup.html:25
+msgid "If you are already a member, please"
+msgstr "Om du redan är medlem"
+
+#: bat/users/templates/user/signup.html:25
+msgid "Login"
+msgstr "Logga in"
+
+#: bat/users/templates/user/signup.html:33
+msgid "REGISTER"
+msgstr "REGISTRERA"
+
+#: config/settings/base.py:43
+msgid "English"
+msgstr "Engelsk"
+
+#: config/settings/base.py:43
+msgid "Swedish"
+msgstr "Svenska"

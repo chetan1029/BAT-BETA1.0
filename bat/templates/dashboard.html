@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load tz %}
+{% load core_utils %}
+{% block title %}
+Dashboard
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+{% get_current_timezone as TIME_ZONE %}
+<div class="row">
+    <div class="col-6">
+        <h1>Dashboard</h1>
+    </div>
+    <div class="col-6">
+        <p class="mb-0 mt-3 text-right">{% time_of_day %} {{user.username}} | {{language}}</p>
+    </div>
+</div>
+<div class="separator mb-5"></div>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

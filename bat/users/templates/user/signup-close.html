@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}
+Logout
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block body %}
+
+<body class="background show-spinner">
+  <div class="fixed-background"></div>
+  <main>
+    <div class="container">
+      <div class="row h-100">
+        <div class="col-12 col-md-10 mx-auto my-auto">
+          <div class="card auth-card">
+            <div class="position-relative image-side ">
+
+              <p class=" text-white h2">BAT System</p>
+            </div>
+            <div class="form-side text-center">
+              <h1 class="mb-5">Registration is closed for now!</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

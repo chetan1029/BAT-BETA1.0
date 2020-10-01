@@ -1,0 +1,3 @@
+"""Changes makes on plugin because of upgraded version."""
+
+1. NullBooleanField is deprecated in Django version 3.1.1 and it will be remove from Djangpo 4.0 and dbmail plugin (django-db-mailer=2.4.0) is using NullBooleanField inside our virtual environment batenv/lib/python3.7/site-packages/dbmail/models.py and we replace NullBooleanField to BooleanField(null=True).

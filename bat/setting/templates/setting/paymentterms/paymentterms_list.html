@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load static permission_tags %}
+{% block title %}
+{% translate 'Payment Terms' %}
+{% endblock title %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="mb-3">
+      <h1>{% translate 'Payment Terms Template' %}</h1>
+      {% if user|can:'add_payment_terms' %}
+      <div class="float-sm-right text-zero">
+        <a href="{% url 'setting:create_paymentterms' %}" class="btn btn-primary btn-lg mr-1">{% translate 'Add New Template' %}</a>
+      </div>
+      {% endif %}
+      <nav class="breadcrumb-container d-none d-sm-block d-lg-inline-block" aria-label="breadcrumb">
+        <ol class="breadcrumb pt-0">
+          <li class="breadcrumb-item">
+            <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">{% translate 'Payment Terms Template' %}</li>
+        </ol>
+      </nav>
+
+    </div>
+    <div class="separator mb-5"></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 list">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} rounded" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    <div class="card h-100">
+      <div class="card-body">
+        {% if not paymentterms_list %}
+        <div class="alert alert-warning">
+          {% translate 'No payment terms found' %}
+        </div>
+        {% else %}
+        <table class="data-table responsive nowrap" data-order="[[ 1, &quot;asc&quot; ]]">
+          <thead>
+            <tr>
+              <th>{% translate 'Title' %}</th>
+              <th>{% translate 'Deposit' %}</th>
+              <th>{% translate 'On Delivery' %}</th>
+              <th>{% translate 'Receiving' %}</th>
+              <th>{% translate 'Remaining' %}</th>
+              <th>{% translate 'Action' %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for paymentterms in paymentterms_list %}
+            <tr>
+              <td>
+                <p class="list-item-heading">{{ paymentterms.title }}</p>
+              </td>
+              <td>
+                <p class="list-item-heading">{{ paymentterms.deposit }}%</p>
+              </td>
+              <td>
+                <p class="list-item-heading">{{ paymentterms.on_delivery }}%</p>
+              </td>
+              <td>
+                <p class="list-item-heading">{{ paymentterms.receiving }}%</p>
+              </td>
+              <td>
+                <p class="list-item-heading">{% blocktranslate with remaining=paymentterms.remaining payment_days=paymentterms.payment_days %}{{ remaining }}% in {{ payment_days }} days{% endblocktranslate %}</p>
+              </td>
+              <td>
+                {% if user|can:'delete_payment_terms' %}
+                <a href="{% url 'setting:delete_paymentterms' pk=paymentterms.pk %}" class="btn btn-outline-danger icon-button ">
+                  <i class="simple-icon-trash"></i>
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block form_script %}{% endblock %}

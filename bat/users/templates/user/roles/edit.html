@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static crispy_forms_tags permission_tags %}
+{% block title %}
+User Roles
+{% endblock title %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<h1>User Roles</h1>
+
+<div class="separator mb-5"></div>
+<div class="row">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="mb-4">Assign/Change User Roles</h5>
+
+        {% if success %}
+        <div class="alert alert-success rounded" role="alert">
+          {{ success }}
+        </div>
+        {% endif %}
+
+
+        <form method="POST" enctype="multipart/form-data" class="needs-validation" id="perm-assign-form" novalidate>
+
+          <label for="" class="col-form-label requiredField">Roles & Permissions</label>
+          {% crispy form form.helper %}
+
+          {% for e in form.roles.errors %}
+          <p class="invalid-feedback d-block"><strong>{{e}}</strong></p>
+          {% endfor %}
+
+
+          <div class="row mt-2">
+            <div class="col">
+              <div class="accordion" id="rolesAssignment">
+                {% for role, meta in available_roles.items %}
+                <div class="card shadow-none border mb-2">
+                  <div class="card-header pb-0" id="heading{{role}}">
+                    <div class="custom-control custom-checkbox my-3">
+                      <input type="checkbox" class="custom-control-input role-selector" id="customCheck-{{role}}"
+                        {% if role_user|has_role:role %}checked{% endif %} data-role="{{role}}" />
+                      <label class="custom-control-label h6" for="customCheck-{{role}}">
+                        {{meta.display_name}}
+                      </label>
+
+                      <button class="btn btn-link p-0 float-right" type="button" data-toggle="collapse"
+                        data-target="#collapse{{role}}" aria-expanded="true" aria-controls="collapse{{role}}}}">
+                        <h5 class="mb-0"><i class="iconsmind-Arrow-Down font-weight-bold"></i></h5>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="collapse{{role}}" class="collapse show" aria-labelledby="heading{{role}}"
+                    data-parent="#rolesAssignment">
+                    <div class="card-body pt-1">
+                      <div class="row pl-3">
+                        {% for perm, perm_name in meta.permissions.items %}
+                        <div class="col-lg-3">
+                          <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input perm-selector"
+                              {% if role_user|can:perm %}checked{% endif %} id="perm-{{perm}}" data-role="{{role}}"
+                              data-perm="{{perm}}" />
+                            <label class="custom-control-label" for="perm-{{perm}}">{{perm_name}}</label>
+                          </div>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+
+          <button type="submit" class="btn btn-primary mb-0">Submit</button>
+          <a href="{% url 'accounts:list_roles' %}" class="btn btn-danger mb-0">Cancel</a>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+
+<script type="text/javascript">
+  $(".role-selector").on('change', function () {
+    var role = $(this).data('role');
+    var selected = $(this)[0].checked;
+    $("[data-role='" + role + "']").prop('checked', selected);
+  });
+
+  $("#perm-assign-form").on('submit', function (e) {
+    var selectedRoles = [];
+    var selectedPerms = [];
+    $(".role-selector:checked").each(function (idx, el) {
+      selectedRoles.push($(this).data('role'));
+    });
+
+    $(".perm-selector:checked").each(function (idx, el) {
+      if (selectedRoles.indexOf($(this).data('role')) === -1)
+        selectedRoles.push($(this).data('role'));
+      selectedPerms.push($(this).data('perm'));
+    });
+    $("#id_roles").val(selectedRoles.join(","));
+    $("#id_permissions").val(selectedPerms.join(","));
+    return true;
+  });
+</script>
+{% endblock %}

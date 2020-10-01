@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load crispy_forms_tags %}
+{% block title %}
+Signup
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block body %}
+<body class="background show-spinner">
+    <div class="fixed-background"></div>
+    <main>
+        <div class="container">
+            <div class="row h-100">
+                <div class="col-12 col-md-10 mx-auto my-auto">
+                    <div class="card auth-card">
+                        <div class="position-relative image-side ">
+
+                            <p class=" text-white h2">{% translate "BAT System" %}</p>
+
+                            <p class="white mb-0">
+                                {% blocktranslate %}Select plan and enter all the detail for Register.{% endblocktranslate %}
+                            </p>
+                            <p class="white mb-0">{% blocktranslate %}If you are already a member, please{% endblocktranslate %} <a href="{% url 'accounts:login' %}" class="white">{% translate "Login" %}</a>.</p>
+                        </div>
+                        <div class="form-side">
+                            <h6 class="mb-4">{% translate "Register" %}</h6>
+                            <form method="POST">
+                              {% csrf_token %}
+                              {{ form|crispy }}
+                                <div class="d-flex justify-content-end align-items-center">
+                                    <button class="btn btn-primary btn-lg btn-shadow" type="submit">{% translate "REGISTER" %}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

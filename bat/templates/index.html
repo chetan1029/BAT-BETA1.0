@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block body %}
+<body class="background show-spinner">
+    <div class="fixed-background"></div>
+    <main>
+        <div class="container">
+            <div class="row h-100">
+                <div class="col-12 col-md-10 mx-auto my-auto">
+                    <div class="card auth-card">
+                      <div class="position-relative image-side ">
+
+                          <p class=" text-white h2">BAT System</p>
+
+                          <p class="white mb-0">
+                              Please use your credentials to login.
+                              <br>If you are not a member, please
+                              <a href="{% url 'accounts:signup' %}" class="white">register</a>.
+                          </p>
+                      </div>
+                        <div class="form-side text-center">
+                            <h1 class="mb-5">Welcome to BAT System!</h1>
+                            <div class="row">
+                              <div class="col">
+                                <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg btn-shadow btn-block">Login</a>
+                              </div>
+                              <div class="col">
+                                <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-lg btn-shadow btn-block">Register</a>
+                              </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+{% endblock %}
