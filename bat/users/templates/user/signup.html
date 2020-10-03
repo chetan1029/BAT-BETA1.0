@@ -26,7 +26,7 @@ Signup
                         </div>
                         <div class="form-side">
                             <h6 class="mb-4">{% translate "Register" %}</h6>
-                            <form method="POST">
+                            <form method="POST" novalidate>
                               {% csrf_token %}
                               {{ form|crispy }}
                                 <div class="d-flex justify-content-end align-items-center">

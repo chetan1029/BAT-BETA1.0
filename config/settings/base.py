@@ -3,6 +3,7 @@ Base settings to build other settings files upon.
 """
 
 import environ
+from django.conf import settings
 from django.contrib.messages import constants as messages
 from django.utils.translation import ugettext_lazy as _
 
@@ -93,12 +94,16 @@ THIRD_PARTY_APPS = [
     "countable_field",
     # Currency and currency conversion
     "djmoney",
+    # Django plans
+    "plans",
+    "ordered_model",
 ]
 
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
     "bat.core.apps.CoreConfig",
     "bat.setting.apps.SettingConfig",
+    "bat.company.apps.CompanyConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -176,6 +181,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # timezone middleware
     "bat.setting.middleware.TimezoneMiddleware",
+    "bat.users.middleware.AccountSetupMiddleware",
 ]
 
 # STATIC
@@ -229,6 +235,7 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
+                "plans.context_processors.account_status",
             ],
         },
     }
@@ -315,7 +322,6 @@ MESSAGE_TAGS = {
 
 # roles
 ROLEPERMISSIONS_MODULE = "config.roles"
-
 # Filehandle
 FILE_UPLOAD_HANDLERS = (
     "django_excel.ExcelMemoryFileUploadHandler",
@@ -349,3 +355,17 @@ KEYWORD_RANK_PAGE_LIMIT = env("KEYWORD_RANK_PAGE_LIMIT")
 
 # enable REDIS_HOST if we are using same machine as Django
 REDIS_URL = env("REDIS_URL")
+
+# Django Plan Attributes
+PLANS_CURRENCY = "USD"
+DEFAULT_FROM_EMAIL = "chetan@volutz.com"
+PLANS_INVOICE_ISSUER = {
+    "issuer_name": "Bonum Mane AB",
+    "issuer_street": "Libro ringväg 51",
+    "issuer_zipcode": "752 28",
+    "issuer_city": "Uppsala",
+    "issuer_country": "SE",  # Must be a country code with 2 characters
+    "issuer_tax_number": "SE559009135001",
+}
+PLANS_TAXATION_POLICY = "plans.taxation.eu.EUTaxationPolicy"
+PLANS_TAX_COUNTRY = "SE"

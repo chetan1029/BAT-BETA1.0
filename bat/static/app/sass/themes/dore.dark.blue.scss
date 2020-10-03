@@ -31,8 +31,8 @@ $shadowOffsetsBottom : 1 3 6 10 15;
 $shadowBlursBottom: 3 6 6 5 6;
 $shadowOpacitiesBottom: 0.1 0.3 0.6 0.7 0.8;
 
-$logoPath: "../img/logo-white.svg";
-$logoPathMobile: "../img/logo-mobile.svg";
+$logoPath: "../images/logo-black.png";
+$logoPathMobile: "../images/logo-black.png";
 
 $lpBackgroundHome: "../img/landing-page/home-background-blue-dark.png";
 $lpBackgroundSub: "../img/landing-page/sub-background-blue-dark.png";
@@ -40,8 +40,7 @@ $lpBackgroundFooter: "../img/landing-page/footer-background-blue-dark.png";
 $lpBackgroundEllipsisBottom: "../img/landing-page/dark-background-bottom.png";
 $lpBackgroundEllipsisTop: "../img/landing-page/dark-background-top.png";
 
-$lpLogoPath: "../img/logo-white.svg";
-$lpLogoPathPinned: "../img/logo-white.svg";
-
+$lpLogoPath: "../images/logo-black.png";
+$lpLogoPathPinned: "../images/logo-black.png";
 @import "../_mixins.scss";
 @import "../_dore.style.scss";

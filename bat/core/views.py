@@ -34,7 +34,9 @@ class DashboardPage(LoginRequiredMixin, TemplateView):
         """Define extra context data that need to pass on template."""
         context = super().get_context_data(**kwargs)
         context["today"] = timezone.now()
-        context["language"] = self.request.session[LANGUAGE_SESSION_KEY]
+        context["language"] = self.request.session.get(
+            LANGUAGE_SESSION_KEY, "en"
+        )
         context["active_menu"] = {
             "dashboard": "global",
             "menu1": "dashboard",

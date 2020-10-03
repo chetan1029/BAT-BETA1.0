@@ -167,3 +167,7 @@ celery=5.0.0
 
 # Model Translation to store database translations.
 django-modeltranslation=0.15.2 #https://django-modeltranslation.readthedocs.io/en/latest/installation.html
+
+# Django Plan and subscriptions
+# install by pip install -e git://github.com/cypreess/django-plans.git#egg=django-plans
+django-plans

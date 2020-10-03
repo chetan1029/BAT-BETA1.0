@@ -369,8 +369,16 @@
 <script src="{% static 'app/js/countable-field/script.js'%}"></script>
 <script src="{% static 'app/js/vendor/bootstrap-notify.min.js'%}"></script>
 {% endblock %}
-{% block base_script %}
+{% block landing_script %}
+<script src="{% static 'app/js/vendor/landing-page/headroom.min.js'%}"></script>
+<script src="{% static 'app/js/vendor/landing-page/jQuery.headroom.js'%}"></script>
+<script src="{% static 'app/js/vendor/landing-page/jquery.scrollTo.min.js'%}"></script>
+<script src="{% static 'app/js/vendor/landing-page/jquery.autoellipsis.js'%}"></script>
+{% endblock %}
+{% block main_script %}
 <script src="{% static 'app/js/dore.script.js'%}"></script>
+{% endblock %}
+{% block base_script %}
 <script src="{% static 'app/js/scripts.js'%}"></script>
 <script type="text/javascript">
 /* disable scrolling on input type number. */

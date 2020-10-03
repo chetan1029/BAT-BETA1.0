@@ -8,6 +8,7 @@ from django.views import defaults as default_views
 from django.views.decorators.csrf import csrf_exempt
 from django_ses.views import handle_bounce
 
+admin.autodiscover()
 urlpatterns = [
     # Django Admin, use {% url 'admin:index' %}
     path(settings.ADMIN_URL, admin.site.urls),
@@ -18,9 +19,11 @@ urlpatterns = [
 
 urlpatterns += i18n_patterns(
     # App Url Patterns
+    path("plan/", include("plans.urls")),
     path("accounts/", include("bat.users.urls", namespace="accounts")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("setting/", include("bat.setting.urls", namespace="setting")),
+    path("company/", include("bat.company.urls", namespace="company")),
     path("", include("bat.core.urls", namespace="core")),
     # https://docs.djangoproject.com/en/dev/topics/i18n/translation/#language-prefix-in-url-patterns
     prefix_default_language=False,

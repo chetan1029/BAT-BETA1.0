@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 from bat.users.forms import UserCreateForm, UserRolesForm, UserUpdateForm
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.contrib.messages.views import SuccessMessageMixin
@@ -28,8 +28,25 @@ class SignUp(CreateView):
     """View Class for User Signup."""
 
     form_class = UserCreateForm
-    success_url = reverse_lazy("login")
+    success_url = reverse_lazy("company:account_setup")
     template_name = "user/signup.html"
+
+    def form_valid(self, form):
+        """Set Langauge of the submited form and set it as current."""
+        self.object = form.save(commit=False)
+        extra_data = {}
+        extra_data["step"] = "1"
+        extra_data["step_detail"] = "user signup"
+        self.object.extra_data = extra_data
+        self.object.save()
+        to_return = super().form_valid(form)
+        # Login the user
+        user = authenticate(
+            username=form.cleaned_data["username"],
+            password=form.cleaned_data["password1"],
+        )
+        login(self.request, user)
+        return to_return
 
     def get(self, request, *args, **kwargs):
         """

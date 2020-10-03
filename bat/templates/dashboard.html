@@ -13,13 +13,14 @@ Dashboard
 {% get_current_timezone as TIME_ZONE %}
 <div class="row">
     <div class="col-6">
-        <h1>Dashboard</h1>
+        <h1>Dashboard - {% if ACCOUNT_NOT_ACTIVE %}Inactive{% endif %}</h1>
     </div>
     <div class="col-6">
         <p class="mb-0 mt-3 text-right">{% time_of_day %} {{user.username}} | {{language}}</p>
     </div>
 </div>
 <div class="separator mb-5"></div>
+
 {% endblock %}
 {% block chart_script %}{% endblock %}
 {% block table_script %}{% endblock %}

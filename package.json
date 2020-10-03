@@ -1,5 +1,5 @@
 {
-  "name": "bat",
+  "name": "bat-beta",
   "version": "1.0.0",
   "description": "Business Automation Tool for Bonum Mane AB",
   "main": "gulpfile.js",
@@ -38,5 +38,13 @@
   "scripts": {
     "dev": "gulp",
     "build": "gulp generate-assets"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chetan1029/BAT-BETA1.0.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chetan1029/BAT-BETA1.0/issues"
+  },
+  "homepage": "https://github.com/chetan1029/BAT-BETA1.0#readme"
 }
