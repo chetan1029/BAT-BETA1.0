@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load crispy_forms_tags permission_tags core_utils %}
+{% block title %}
+Company Login
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block body %}
+<body class="background show-spinner">
+    <div class="fixed-background"></div>
+    <main>
+        <div class="container">
+            <div class="row h-100">
+                <div class="col-12 col-md-6 mx-auto my-auto">
+                    <div class="card">
+                      <form action="" method="post" id="company_login">
+                        {% csrf_token %}
+                        <input type="hidden" name="member_id" value="">
+                        <div class="card-body">
+                          <h2 class="mb-4">{% translate "Select Company to login with" %}</h2>
+                          {% for member in member_list %}
+                          <div class="mb-4">
+                            <a href="javascript:void(0)" onclick="submit_form({{member.pk}})">
+                              <p class="list-item-heading mb-1 color-theme-1">{{member.company.name}}</p>
+                              <p class="mb-3 text-muted text-small">{% for role in member.get_member_roles %}{% snake_to_title role.get_name %}{% endfor %}</p>
+                            </a>
+                            {% if not forloop.last %}
+                            <div class="separator"></div>
+                            {% endif %}
+                          </div>
+                          {% endfor %}
+                        </div>
+                      </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}
+{% block script %}
+<script type="text/javascript">
+function submit_form(member_id){
+  $("input[name=member_id]").val(member_id);
+  $( "#company_login" ).submit();
+}
+</script>
+{% endblock %}

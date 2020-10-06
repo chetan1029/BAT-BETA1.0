@@ -1,29 +1,27 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% block title %}
-Update Profile
+Update Company
 {% endblock title %}
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
 {% block content %}
 <main>
   <div class="container-fluid">
-    {% include "user/sidebar.html" %}
+    {% include "sidebar.html" %}
     <div class="row">
       <div class="col-md-6">
-        <h1>Update Profile</h1>
+        <h1>Update Company</h1>
       </div>
       <div class="col-md-6">
-        <p class="mb-0 mt-3 text-right"><strong>Register on:</strong> {{user.date_joined}} ({{TIME_ZONE}}), <strong>Last login:</strong> {{user.last_login}}</p>
+        <p class="mb-0 mt-3 text-right"><strong>Register on:</strong> {{form.instance.create_date}}</p>
       </div>
     </div>
-
     <div class="separator mb-5"></div>
     <div class="row">
       <div class="col-12">
         <div class="card mb-4">
           <div class="card-body">
-            <h5 class="mb-4">Update Profile</h5>
 
             {% if messages %}
             {% for message in messages %}
@@ -32,12 +30,7 @@ Update Profile
             </div>
             {% endfor %}
             {% endif %}
-            <form method="POST" enctype="multipart/form-data" novalidate>
-              {% csrf_token %}
-              {{ form|crispy }}
-              <button type="submit" class="btn btn-primary mb-0">Submit</button>
-            </form>
-
+            {% crispy form %}
           </div>
         </div>
       </div>

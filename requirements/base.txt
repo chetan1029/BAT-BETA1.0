@@ -157,16 +157,16 @@ py-moneyed==0.8.0
 django-money[exchange]==1.1
 
 # Django Measurement
-django-measurement=3.2.3 #https://github.com/coddingtonbear/django-measurement
-measurement=3.2.0
-mpmath=1.1.0
-sympy=1.6.2
+django-measurement==3.2.3 #https://github.com/coddingtonbear/django-measurement
+measurement==3.2.0
+mpmath==1.1.0
+sympy==1.6.2
 
 # Celery for scheduled task or periodic task
-celery=5.0.0
+celery==5.0.0
 
 # Model Translation to store database translations.
-django-modeltranslation=0.15.2 #https://django-modeltranslation.readthedocs.io/en/latest/installation.html
+django-modeltranslation==0.15.2 #https://django-modeltranslation.readthedocs.io/en/latest/installation.html
 
 # Django Plan and subscriptions
 # install by pip install -e git://github.com/cypreess/django-plans.git#egg=django-plans

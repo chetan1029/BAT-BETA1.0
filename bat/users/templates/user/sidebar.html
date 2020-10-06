@@ -1,0 +1,48 @@
+{% load i18n %}
+{% load l10n %}
+{% load static permission_tags %}
+<div class="sidebar">
+  <div class="main-menu">
+    <div class="scroll">
+      <ul class="list-unstyled">
+        <!-- My Profile -->
+        <li {% if active_menu.menu1 == 'my-profile' %}class="active"{% endif %}>
+          <a href="#my-profile">
+            <i class="simple-icon-user"></i>
+            <span>{% translate "My Profile" %}</span>
+          </a>
+        </li>
+        <!-- Dashboard -->
+        <li>
+          <a href="{% url 'accounts:logout' %}">
+            <i class="simple-icon-logout"></i>
+            <span>{% translate "Sign out" %}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sub-menu">
+    <div class="scroll">
+      <!-- Product Management -->
+      <ul class="list-unstyled" data-link="my-profile">
+        <li {% if active_menu.menu2 == 'my-companies' %}class="active"{% endif %}>
+          <a href="{% url 'accounts:my_companies' %}">
+            <i class="simple-icon-organization"></i> {% translate "My Companies" %}
+          </a>
+        </li>
+        <li {% if active_menu.menu2 == 'update-profile' %}class="active"{% endif %}>
+          <a href="{% url 'accounts:update_profile' %}">
+            <i class="simple-icon-user-follow"></i> {% translate "Update Profile" %}
+          </a>
+        </li>
+        <li {% if active_menu.menu2 == 'password-change' %}class="active"{% endif %}>
+          <a href="{% url 'accounts:password_change' %}">
+            <i class="simple-icon-options"></i> {% translate "Change Password" %}
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

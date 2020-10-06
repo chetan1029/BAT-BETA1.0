@@ -182,6 +182,7 @@ MIDDLEWARE = [
     # timezone middleware
     "bat.setting.middleware.TimezoneMiddleware",
     "bat.users.middleware.AccountSetupMiddleware",
+    "bat.users.middleware.MemberProfileMiddleware",
 ]
 
 # STATIC
@@ -226,6 +227,7 @@ TEMPLATES = [
                 # Context processors use to make data available for global use
                 "bat.globalprop.processors.processors.vendor_categories",
                 "bat.globalprop.processors.processors.saleschannels",
+                "bat.globalprop.processors.processors.member",
                 # Inbuild context from Django
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",

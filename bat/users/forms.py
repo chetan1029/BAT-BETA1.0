@@ -1,7 +1,7 @@
 """Froms related to user app."""
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field, Layout
+from crispy_forms.layout import Column, Field, Layout, Row, Submit
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import (AuthenticationForm, UserChangeForm,
@@ -45,6 +45,21 @@ class UserCreateForm(UserCreationForm):
         self.fields["email"].required = True
         self.fields["first_name"].required = True
         self.fields["last_name"].required = True
+
+        self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ""}
+        self.helper.layout = Layout(
+            Row(
+                Column("first_name", css_class="col-md-6"),
+                Column("last_name", css_class="col-md-6"),
+                css_class="form-row",
+            ),
+            "username",
+            "email",
+            "password1",
+            "password2",
+            Submit("submit", _("REGISTER")),
+        )
 
     def clean_email(self, *args, **kwargs):
         """

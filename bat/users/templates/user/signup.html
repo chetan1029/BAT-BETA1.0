@@ -26,13 +26,8 @@ Signup
                         </div>
                         <div class="form-side">
                             <h6 class="mb-4">{% translate "Register" %}</h6>
-                            <form method="POST" novalidate>
-                              {% csrf_token %}
-                              {{ form|crispy }}
-                                <div class="d-flex justify-content-end align-items-center">
-                                    <button class="btn btn-primary btn-lg btn-shadow" type="submit">{% translate "REGISTER" %}</button>
-                                </div>
-                            </form>
+                            {% crispy form %}
+                            
                         </div>
                     </div>
                 </div>

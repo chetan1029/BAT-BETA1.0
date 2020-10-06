@@ -3,14 +3,16 @@
 import logging
 from collections import OrderedDict
 
+from bat.company.models import Member
 from bat.users.forms import UserCreateForm, UserRolesForm, UserUpdateForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.contrib.messages.views import SuccessMessageMixin
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.translation import LANGUAGE_SESSION_KEY, activate
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
@@ -21,6 +23,17 @@ from rolepermissions.roles import RolesManager, assign_role, clear_roles
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+# Create Mixins
+class UserMenuMixin:
+    """Mixing For Payment Terms Menu."""
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"] = {"dashboard": "global", "menu1": "my-profile"}
+        return context
 
 
 # Create your views here.
@@ -64,7 +77,7 @@ class SignUp(CreateView):
 class SignUpClose(TemplateView):
     """View Class for User Signup Close."""
 
-    template_name = "user/signup-close.html"
+    template_name = "user/signup_close.html"
 
     def get(self, request, *args, **kwargs):
         """
@@ -100,11 +113,22 @@ class CustomLoginView(LoginView):
         self.request.session[LANGUAGE_SESSION_KEY] = user_language
         # Set user timezone
         self.request.session["user_timezone"] = user.timezone
+        # Set Member profile session if user have just one active
+        # member profile
+        try:
+            member = Member.objects.get(user=user, is_active=True)
+            self.request.session["member_id"] = member.pk
+        except (ObjectDoesNotExist, MultipleObjectsReturned):
+            pass
         return reverse_lazy("core:dashboard")
 
 
 class UpdateProfile(
-    LoginRequiredMixin, RevisionMixin, SuccessMessageMixin, UpdateView
+    LoginRequiredMixin,
+    RevisionMixin,
+    SuccessMessageMixin,
+    UserMenuMixin,
+    UpdateView,
 ):
     """View Class for User Profile Update."""
 
@@ -137,12 +161,27 @@ class UpdateProfile(
     def get_context_data(self, **kwargs):
         """Define extra context data that need to pass on template."""
         context = super().get_context_data(**kwargs)
-        context["active_menu"] = {
-            "dashboard": "global",
-            "menu1": "dashboard",
-            "menu2": "basic",
-        }
+        context["active_menu"].update({"menu2": "update-profile"})
         return context
+
+
+class CustomPasswordChangeView(UserMenuMixin, PasswordChangeView):
+    """View Class for Password Reset."""
+
+    template_name = "user/password_change_form.html"
+    success_url = "done"
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "password-change"})
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Get data when posted and setup custom context."""
+        context = self.get_context_data(**kwargs)
+        context["success"] = True
+        return self.render_to_response(context)
 
 
 class RolesView(HasPermissionsMixin, LoginRequiredMixin, ListView):
@@ -157,9 +196,6 @@ class RolesView(HasPermissionsMixin, LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["active_menu"] = {"dashboard": "global", "menu1": "roles"}
         return context
-
-    def get_queryset(self):
-        return User.objects.filter(is_superuser=False)
 
 
 class RoleEditView(HasPermissionsMixin, LoginRequiredMixin, TemplateView):
@@ -231,3 +267,59 @@ class RoleEditView(HasPermissionsMixin, LoginRequiredMixin, TemplateView):
             messages.success(request, self.success_message)
             return HttpResponseRedirect(self.success_url)
         return self.render_to_response(context)
+
+
+class MyCompaniesView(LoginRequiredMixin, UserMenuMixin, TemplateView):
+    """User roles view."""
+
+    template_name = "user/my_companies.html"
+    success_url = reverse_lazy("core:dashboard")
+
+    def post(self, request, *args, **kwargs):
+        """Post member id to this view."""
+        context = self.get_context_data(**kwargs)
+        member_id = request.POST.get("member_id", False)
+        if member_id:
+            request.session["member_id"] = member_id
+            return HttpResponseRedirect(self.success_url)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "my-companies"})
+        context["active_members"] = Member.objects.filter(
+            user=self.request.user, is_active=True
+        )
+        context["inactive_members"] = Member.objects.filter(
+            user=self.request.user, is_active=False, invitation_accepted=True
+        )
+        context["pending_invitations"] = Member.objects.filter(
+            user=self.request.user, is_active=False, invitation_accepted=False
+        )
+        return context
+
+
+class CompanyLoginView(LoginRequiredMixin, UserMenuMixin, TemplateView):
+    """Company Login view."""
+
+    template_name = "user/company_login.html"
+    success_url = reverse_lazy("core:dashboard")
+
+    def post(self, request, *args, **kwargs):
+        """Post member id to this view."""
+        context = self.get_context_data(**kwargs)
+        member_id = request.POST.get("member_id", False)
+        if member_id:
+            request.session["member_id"] = member_id
+            return HttpResponseRedirect(self.success_url)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "my-companies"})
+        context["member_list"] = Member.objects.filter(
+            user=self.request.user, is_active=True
+        )
+        return context

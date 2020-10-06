@@ -12,6 +12,7 @@ from django.db.models.deletion import ProtectedError
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from reversion.views import RevisionMixin
 from rolepermissions.mixins import HasPermissionsMixin
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,11 @@ class DeleteMixin:
 
 # Create your views here.
 class PaymentTermsListView(
-    HasPermissionsMixin, LoginRequiredMixin, PaymentTermsMenuMixin, ListView
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    PaymentTermsMenuMixin,
+    RevisionMixin,
+    ListView,
 ):
     """List all the payment terms."""
 
@@ -114,6 +119,7 @@ class PaymentTermsUpdateView(
     LoginRequiredMixin,
     PaymentTermsMenuMixin,
     SuccessMessageMixin,
+    RevisionMixin,
     UpdateView,
 ):
     """Update Payment terms."""

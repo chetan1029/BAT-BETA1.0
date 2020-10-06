@@ -43,38 +43,26 @@ urlpatterns = [
     ),
     path(
         "password-change/",
-        auth_views.PasswordChangeView.as_view(
-            template_name="user/password_change_form.html",
-            extra_context={
-                "active_menu": {
-                    "dashboard": "global",
-                    "menu1": "dashboard",
-                    "menu2": "passwordchange",
-                }
-            },
-            success_url="done",
-        ),
+        views.CustomPasswordChangeView.as_view(),
         name="password_change",
     ),
     path(
         "password-change/done/",
-        auth_views.PasswordChangeView.as_view(
-            template_name="user/password_change_form.html",
-            extra_context={
-                "active_menu": {
-                    "dashboard": "global",
-                    "menu1": "dashboard",
-                    "menu2": "basic",
-                },
-                "success": True,
-            },
-        ),
+        views.CustomPasswordChangeView.as_view(),
         name="password_change_done",
     ),
     path("signup/", views.SignUp.as_view(), name="signup"),
     # path("signup/", views.SignUpClose.as_view(), name="signup"),
     path(
+        "company-login/",
+        views.CompanyLoginView.as_view(),
+        name="company_login",
+    ),
+    path(
         "update-profile/", views.UpdateProfile.as_view(), name="update_profile"
+    ),
+    path(
+        "my-companies/", views.MyCompaniesView.as_view(), name="my_companies"
     ),
     path(
         "roles/<int:pk>/edit/",

@@ -1,4 +1,5 @@
 """Model classes for company."""
+import logging
 import os
 
 import pytz
@@ -6,6 +7,7 @@ import pytz
 from bat.globalprop.validator import validator
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
 from django.urls import reverse
@@ -14,9 +16,10 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
 from djmoney.settings import CURRENCY_CHOICES
+from rolepermissions.roles import get_user_roles
 
 User = get_user_model()
-
+logger = logging.getLogger(__name__)
 # Variables
 IMPERIAL = "Imperial"
 METRIC = "Metric"
@@ -174,7 +177,45 @@ class Company(Address):
         return self.name
 
 
-class Member(models.Model):
+class MemberPermissionsMixin(models.Model):
+    """
+    Add the fields and methods necessary to support the Group and Permission
+    models using the ModelBackend.
+    """
+
+    is_superuser = models.BooleanField(
+        _("supermember status"),
+        default=False,
+        help_text=_(
+            "Designates that this user has all permissions without "
+            "explicitly assigning them."
+        ),
+    )
+    groups = models.ManyToManyField(
+        Group,
+        verbose_name=_("groups"),
+        blank=True,
+        help_text=_(
+            "The groups this user belongs to. A user will get all permissions "
+            "granted to each of their groups."
+        ),
+        related_name="member_set",
+        related_query_name="member",
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        verbose_name=_("user permissions"),
+        blank=True,
+        help_text=_("Specific permissions for this user."),
+        related_name="member_set",
+        related_query_name="member",
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Member(MemberPermissionsMixin):
     """
     Member Model.
 
@@ -193,6 +234,7 @@ class Member(models.Model):
     )
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    invitation_accepted = models.BooleanField(default=False)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -205,6 +247,10 @@ class Member(models.Model):
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
+
+    def get_member_roles(self):
+        """Get Member for the company from roles and permisions."""
+        return get_user_roles(self)
 
     def __str__(self):
         """Return Value."""

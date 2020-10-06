@@ -11,4 +11,6 @@ class CompanyConfig(AppConfig):
 
     def ready(self):
         """Can be used as signalling and importing models for that."""
+        import bat.company.signals
+
         pass

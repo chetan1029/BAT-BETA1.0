@@ -97,3 +97,9 @@ def time_of_day():
         return _("Good Afternoon")
     else:
         return _("Good Evening")
+
+
+@register.simple_tag
+def snake_to_title(s):
+    """Change a Snake format text to title."""
+    return " ".join(x.capitalize() for x in s.split("_"))
