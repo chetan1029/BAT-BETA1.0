@@ -3,7 +3,7 @@
 {% load l10n %}
 {% load crispy_forms_tags %}
 {% block title %}
-Signup
+{% translate 'Signup' %}
 {% endblock title %}
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
@@ -25,9 +25,10 @@ Signup
                             <p class="white mb-0">{% blocktranslate %}If you are already a member, please{% endblocktranslate %} <a href="{% url 'accounts:login' %}" class="white">{% translate "Login" %}</a>.</p>
                         </div>
                         <div class="form-side">
+                            {% include "global/messages.html" %}
                             <h6 class="mb-4">{% translate "Register" %}</h6>
                             {% crispy form %}
-                            
+
                         </div>
                     </div>
                 </div>

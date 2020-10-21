@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block title %}
+{% translate 'Add HS Code' %}
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    {% include "sidebar.html" %}
+    <div class="row">
+      <div class="col-12">
+        {% if not form.instance.pk %}
+        <h1>{% translate 'Add HS Code' %}</h1>
+        {% else %}
+        <h1>{% translate 'Edit HS Code' %}</h1>
+        {% endif %}
+        <nav class="breadcrumb-container d-none d-sm-block d-lg-inline-block" aria-label="breadcrumb">
+          <ol class="breadcrumb pt-0">
+            <li class="breadcrumb-item">
+              <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+              {% if not form.instance.pk %}
+              {% translate 'Add HS Code' %}
+              {% else %}
+              {% translate 'Edit HS Code' %}
+              {% endif %}
+            </li>
+          </ol>
+        </nav>
+        <div class="separator mb-5"></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="mb-4">
+              {% if not form.instance.pk %}
+              {% translate 'Add HS Code' %}
+              {% else %}
+              {% translate 'Edit HS Code' %}
+              {% endif %}
+            </h5>
+            {% crispy form %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

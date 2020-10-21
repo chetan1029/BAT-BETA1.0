@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load static %}
+{% block title %}
+{% translate 'Delete Tax' %}
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    {% include "sidebar.html" %}
+    <div class="row">
+      <div class="col-12">
+        <h1>{% translate 'Delete Tax' %}</h1>
+        <nav class="breadcrumb-container d-none d-sm-block d-lg-inline-block" aria-label="breadcrumb">
+          <ol class="breadcrumb pt-0">
+            <li class="breadcrumb-item">
+              <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="{% url 'company:settingstax_list' %}">{% translate 'Taxes' %}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{% translate 'Delete Tax' %}</li>
+          </ol>
+        </nav>
+        <div class="separator mb-5"></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="mb-4">{% translate 'Delete Tax' %}</h5>
+            <form action="" method="post">{% csrf_token %}
+            <p>{% blocktranslate %}Are you sure you want to delete "{{ object }}"?{% endblocktranslate %}</p>
+            <input class='btn btn-danger' type="submit" value="{% translate 'Confirm' %}" />
+            <a href="{% url 'company:settingstax_list' %}" class="btn btn-info mb-0">{% translate 'Cancel' %}</a>
+          </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

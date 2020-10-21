@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
 {% load crispy_forms_tags %}
 {% block title %}
-Update Company
+{% translate 'Update Company' %}
 {% endblock title %}
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
@@ -11,10 +13,10 @@ Update Company
     {% include "sidebar.html" %}
     <div class="row">
       <div class="col-md-6">
-        <h1>Update Company</h1>
+        <h1>{% translate 'Update Company' %}</h1>
       </div>
       <div class="col-md-6">
-        <p class="mb-0 mt-3 text-right"><strong>Register on:</strong> {{form.instance.create_date}}</p>
+        <p class="mb-0 mt-3 text-right"><strong>{% translate 'Register on' %}:</strong> {{form.instance.create_date}}</p>
       </div>
     </div>
     <div class="separator mb-5"></div>
@@ -22,14 +24,7 @@ Update Company
       <div class="col-12">
         <div class="card mb-4">
           <div class="card-body">
-
-            {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} rounded" role="alert">
-              {{ message }}
-            </div>
-            {% endfor %}
-            {% endif %}
+            {% include "global/messages.html" %}
             {% crispy form %}
           </div>
         </div>

@@ -4,8 +4,11 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Column, Field, Layout, Row, Submit
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import (AuthenticationForm, UserChangeForm,
-                                       UserCreationForm)
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    UserChangeForm,
+    UserCreationForm,
+)
 from django.utils.translation import ugettext_lazy as _
 
 User = get_user_model()
@@ -64,12 +67,12 @@ class UserCreateForm(UserCreationForm):
     def clean_email(self, *args, **kwargs):
         """
         Perform validation on Email.
-
         Fetch email field and perform validation like unique email in database
         or some other custom validation. you can raise error for perticular
         field from here that will be display as error on the formself.
         """
         email = self.cleaned_data["email"]
+        email = email.lower()
         if User.objects.filter(email=email).exists():
             msg = _("Account with same email already exists.")
             raise forms.ValidationError(msg)

@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load l10n %}
 {% load static permission_tags %}
+{% load notifications_tags %}
 <html lang="en">
 
 <head>
@@ -66,9 +67,21 @@
       </a>
 
     </div>
-    <h2 class="mb-0">{{member.company.name}}</h2>
+    <h2 class="mb-0">{{loggedin_member.company.name}}</h2>
     <div class="navbar-right">
       <div class="header-icons d-inline-block align-middle">
+        <div class="position-relative d-inline-block">
+                    <button class="header-icon btn btn-empty" type="button" id="notificationButton" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        <i class="simple-icon-bell"></i>
+                        <span class="count live_notify_badge">{% live_notify_badge badge_class="badge" %}</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right mt-3 scroll position-absolute" id="notificationDropdown">
+                      <div class="live_notify_list">
+                        {% live_notify_list list_class="dropdown-menu" %}
+                      </div>
+                    </div>
+                </div>
         <button class="header-icon btn btn-empty d-none d-sm-inline-block" type="button" id="fullScreenButton">
           <i class="simple-icon-size-fullscreen"></i>
           <i class="simple-icon-size-actual"></i>
@@ -137,6 +150,28 @@
 {% endblock %}
 {% block base_script %}
 <script src="{% static 'app/js/scripts.js'%}"></script>
+<script src="{% static 'notifications/notify.js' %}" type="text/javascript"></script>
+<script type="text/javascript">
+function my_special_notification_callback(data) {
+  var menus = document.getElementsByClassName(notify_menu_class);
+  var badge = document.getElementsByClassName(notify_badge_class);
+  var messages = "";
+  for (var i=0; i < data.unread_list.length; i++) {
+      msg = data.unread_list[i];
+      messages += '<div class="d-flex flex-row mb-3 pb-3 border-bottom"><div class="pl-3 pr-2"><a href="{% url 'notifications:all' %}"><p class="font-weight-medium mb-1">'+msg.actor+' '+msg.verb+'!</p><p class="text-muted mb-0 text-small">'+msg.timestamp+'</p></a></div></div>';
+  }
+  if(messages == ""){
+    messages = "No new notifcation!";
+  }
+  if (menus) {
+    for (var i = 0; i < menus.length; i++){
+          menus[i].innerHTML = messages;
+      }
+  }
+}
+</script>
+{% register_notify_callbacks callbacks='fill_notification_badge,my_special_notification_callback' %}
+
 <script type="text/javascript">
 /* disable scrolling on input type number. */
 $('form').on('focus', 'input[type=number]', function (e) {

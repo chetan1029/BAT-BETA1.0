@@ -97,6 +97,18 @@ THIRD_PARTY_APPS = [
     # Django plans
     "plans",
     "ordered_model",
+    # Django Defender
+    "defender",
+    # Django Invitation
+    "invitations",
+    # Django Notifications
+    "notifications",
+    # MultiSelectField
+    "multiselectfield",
+    # Tags
+    "taggit",
+    # Django selectable
+    "selectable",
 ]
 
 LOCAL_APPS = [
@@ -104,6 +116,7 @@ LOCAL_APPS = [
     "bat.core.apps.CoreConfig",
     "bat.setting.apps.SettingConfig",
     "bat.company.apps.CompanyConfig",
+    "bat.product.apps.ProductConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -181,8 +194,12 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # timezone middleware
     "bat.setting.middleware.TimezoneMiddleware",
+    # Account setup middleware to forward user to complete company profile.
     "bat.users.middleware.AccountSetupMiddleware",
+    # forward user on member list to select member profile
     "bat.users.middleware.MemberProfileMiddleware",
+    # Django defender middleware for failed login.
+    "defender.middleware.FailedLoginMiddleware",
 ]
 
 # STATIC
@@ -227,7 +244,7 @@ TEMPLATES = [
                 # Context processors use to make data available for global use
                 "bat.globalprop.processors.processors.vendor_categories",
                 "bat.globalprop.processors.processors.saleschannels",
-                "bat.globalprop.processors.processors.member",
+                "bat.globalprop.processors.processors.loggedin_member",
                 # Inbuild context from Django
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
@@ -371,3 +388,22 @@ PLANS_INVOICE_ISSUER = {
 }
 PLANS_TAXATION_POLICY = "plans.taxation.eu.EUTaxationPolicy"
 PLANS_TAX_COUNTRY = "SE"
+
+# django-defender
+DEFENDER_LOGIN_FAILURE_LIMIT = 3
+DEFENDER_DISABLE_IP_LOCKOUT = True
+DEFENDER_LOCKOUT_TEMPLATE = "user/lockout.html"
+
+# Dajngo Invitation
+INVITATIONS_SIGNUP_REDIRECT = "accounts:signup"
+INVITATIONS_GONE_ON_ACCEPT_ERROR = False
+INVITATIONS_INVITATION_MODEL = "users.InvitationDetail"
+
+# Django Notifications
+DJANGO_NOTIFICATIONS_CONFIG = {"USE_JSONFIELD": True}
+
+# Django Taggit
+TAGGIT_CASE_INSENSITIVE = True
+
+# Some Global Variable for app
+STATUS_PRODUCT = env.bool("STATUS_PRODUCT", "Product")

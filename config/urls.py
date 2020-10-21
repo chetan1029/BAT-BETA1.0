@@ -1,4 +1,5 @@
 """URL Patterns for the project."""
+import notifications.urls
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
@@ -15,6 +16,17 @@ urlpatterns = [
     path("admin/django-ses/", include("django_ses.urls")),
     # email
     path("ses/bounce/", csrf_exempt(handle_bounce)),
+    # Dajngo Defender admin
+    path("admin/defender/", include("defender.urls")),
+    # Django Invitation
+    path("invitations/", include("invitations.urls", namespace="invitations")),
+    # Django notifications
+    path(
+        "inbox/notifications/",
+        include(notifications.urls, namespace="notifications"),
+    ),
+    path("selectable/", include("selectable.urls")),
+    path("taggit_autosuggest/", include("taggit_autosuggest.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += i18n_patterns(
@@ -24,6 +36,7 @@ urlpatterns += i18n_patterns(
     path("accounts/", include("django.contrib.auth.urls")),
     path("setting/", include("bat.setting.urls", namespace="setting")),
     path("company/", include("bat.company.urls", namespace="company")),
+    path("product/", include("bat.product.urls", namespace="product")),
     path("", include("bat.core.urls", namespace="core")),
     # https://docs.djangoproject.com/en/dev/topics/i18n/translation/#language-prefix-in-url-patterns
     prefix_default_language=False,

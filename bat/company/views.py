@@ -1,25 +1,39 @@
 """View class and functions for Company app."""
 
 import logging
+from collections import OrderedDict
 from decimal import Decimal
 
-from bat.company.forms import (AccountSetupForm, CompanyForm,
-                               CompanyUpdateForm, MemberForm)
-from bat.company.models import Company, Member
+from bat.company.forms import (AccountSetupForm, BankForm, CompanyForm,
+                               CompanyPaymentTermsForm, CompanyUpdateForm,
+                               HsCodeForm, LocationForm, MemberForm,
+                               MemberUpdateForm, PackingBoxForm, TaxForm,
+                               VendorInviteForm)
+from bat.company.models import (Bank, Company, CompanyPaymentTerms, HsCode,
+                                Location, Member, PackingBox, Tax)
+from bat.company.utils import get_cbm
+from bat.core.mixins import HasPermissionsMixin
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models.deletion import ProtectedError
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, UpdateView
+from django.utils.translation import ugettext_lazy as _
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+                                  TemplateView, UpdateView)
+from invitations.utils import get_invitation_model
+from notifications.signals import notify
 from reversion.views import RevisionMixin
+from rolepermissions.checkers import has_permission
+from rolepermissions.permissions import revoke_permission
+from rolepermissions.roles import RolesManager, assign_role, clear_roles
 
 logger = logging.getLogger(__name__)
-
-# Global Variable
-CAT_PRODUCT = "Products"
-
+Invitation = get_invitation_model()
+User = get_user_model()
 
 # Create Mixins
 class CompanySettingMenuMixin:
@@ -38,10 +52,20 @@ class CompanyMenuMixin:
     def get_context_data(self, **kwargs):
         """Define extra context data that need to pass on template."""
         context = super().get_context_data(**kwargs)
+        context["active_menu"] = {"dashboard": "global", "menu1": "company"}
+        return context
+
+
+class VendorMenuMixin:
+    """Mixing For Order Dashboard Menu."""
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
         context["active_menu"] = {
             "dashboard": "global",
-            "menu1": "company",
-            "menu2": "paymentterms",
+            "menu1": "supply-chain",
+            "menu2": "vendors",
         }
         return context
 
@@ -60,7 +84,17 @@ class DeleteMixin:
         get_success_url = self.get_success_url()
         get_error_url = self.get_error_url()
         try:
-            obj.delete()
+            try:
+                if self.request.is_archived:
+                    obj.is_active = False
+                    obj.save()
+                elif self.request.is_restored:
+                    obj.is_active = True
+                    obj.save()
+                else:
+                    obj.delete()
+            except AttributeError:
+                obj.delete()
             messages.success(self.request, self.success_message % obj.__dict__)
             return HttpResponseRedirect(get_success_url)
         except ProtectedError:
@@ -118,7 +152,7 @@ class CompanyProfileView(
 
     form_class = CompanyUpdateForm
     model = Company
-    success_url = reverse_lazy("company:general")
+    success_url = reverse_lazy("company:company_profile")
     success_message = "Company Detail was updated successfully"
     template_name = "company/company/company_form.html"
 
@@ -146,13 +180,25 @@ class CompanyProfileView(
 
 
 # Member
-class CompanyMemberListView(
-    LoginRequiredMixin, CompanySettingMenuMixin, ListView
+class SettingsMemberListView(
+    LoginRequiredMixin, CompanySettingMenuMixin, TemplateView
 ):
     """Company members view."""
 
     model = Member
     template_name = "company/member/member_list.html"
+
+    def post(self, request, *args, **kwargs):
+        """Post member id to this view."""
+        context = self.get_context_data(**kwargs)
+        type = request.POST.get("type", False)
+        invitation_id = request.POST.get("invitation_id", False)
+        if type == "invitation_resend":
+            invitation = Invitation.objects.get(pk=invitation_id)
+            invitation.send_invitation(self.request)
+        elif type == "invitation_delete":
+            Invitation.objects.filter(pk=invitation_id).delete()
+        return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
         """Define extra context data that need to pass on template."""
@@ -161,13 +207,1142 @@ class CompanyMemberListView(
 
         member_id = self.request.session.get("member_id")
         company = Member.objects.get(pk=member_id).company
+        context["companyadmin_members"] = Member.objects.filter(
+            company=company, is_active=True, is_admin=True
+        )
         context["active_members"] = Member.objects.filter(
-            company=company, is_active=True
+            company=company, is_active=True, is_admin=False
         )
         context["inactive_members"] = Member.objects.filter(
             company=company, is_active=False, invitation_accepted=True
         )
-        context["pending_invitations"] = Member.objects.filter(
-            company=company, is_active=False, invitation_accepted=False
+        context["pending_invitations"] = Invitation.objects.filter(
+            accepted=False, company_detail__company_id=company.pk
         )
+        return context
+
+
+class SettingsMemberDetailView(
+    LoginRequiredMixin, CompanySettingMenuMixin, UpdateView
+):
+    """Company Member detail page."""
+
+    form_class = MemberUpdateForm
+    model = Member
+    success_url = reverse_lazy("company:settingsmember_list")
+    success_message = "Profile was updated successfully."
+    template_name = "company/member/member_detail.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.save()
+        # User Roles
+        roles = form.cleaned_data.get("roles", "")
+        roles = roles.split(",")
+
+        perms = form.cleaned_data.get("permissions", "")
+        perms = perms.split(",")
+
+        if roles and perms:
+            # Clear all old roles
+            clear_roles(self.object)
+            for role in roles:
+                assign_role(self.object, role)
+                role_obj = RolesManager.retrieve_role(role)
+                # remove unneccesary permissions
+                for perm in role_obj.permission_names_list():
+                    if perm not in perms:
+                        revoke_permission(self.object, perm)
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "members"})
+        all_roles = OrderedDict()
+        for role in RolesManager.get_roles():
+            role_name = role.get_name()
+            all_roles[role_name] = {
+                "display_name": "".join(
+                    x.capitalize() + " " or "_" for x in role_name.split("_")
+                ),
+                "permissions": {
+                    perm: "".join(
+                        x.capitalize() + " " or "_" for x in perm.split("_")
+                    )
+                    for perm in role.permission_names_list()
+                },
+            }
+
+        context["available_roles"] = all_roles
+        return context
+
+
+class SettingsMemberCreateView(
+    LoginRequiredMixin,
+    SuccessMessageMixin,
+    RevisionMixin,
+    CompanySettingMenuMixin,
+    CreateView,
+):
+    """Invite staff member."""
+
+    form_class = MemberForm
+    model = Member
+    success_message = _("Invitation was successfully sent.")
+    template_name = "company/member/member_form.html"
+
+    def get_initial(self):
+        """Set initial value for the form field."""
+        initial = super().get_initial()
+        member_id = self.request.session.get("member_id")
+        member = Member.objects.get(pk=member_id)
+        initial["company_id"] = member.company_id
+        return initial
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        email = form.cleaned_data["email"].lower()
+        # User Detail
+        first_name = form.cleaned_data["first_name"]
+        last_name = form.cleaned_data["last_name"]
+        job_title = form.cleaned_data["job_title"]
+        user_detail = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "job_title": job_title,
+        }
+        # Company Detail
+        member_id = self.request.session.get("member_id")
+        member = Member.objects.get(pk=member_id)
+        company_detail = {
+            "company_id": member.company_id,
+            "company_name": member.company.name,
+        }
+        # User Roles
+        roles = form.cleaned_data.get("roles", "")
+        roles = roles.split(",")
+
+        perms = form.cleaned_data.get("permissions", "")
+        perms = perms.split(",")
+
+        user_roles = {"roles": roles, "perms": perms}
+        extra_data = {}
+        extra_data["type"] = "Member Invitation"
+
+        invite = Invitation.create(
+            email,
+            inviter=self.request.user,
+            user_detail=user_detail,
+            company_detail=company_detail,
+            user_roles=user_roles,
+            extra_data=extra_data,
+        )
+        invite.send_invitation(self.request)
+
+        if User.objects.filter(email=email).exists():
+            user = User.objects.filter(email=email).first()
+            actions = [
+                {
+                    "href": reverse_lazy("accounts:my_companies"),
+                    "title": _("View invitation"),
+                }
+            ]
+            notify.send(
+                self.request.user,
+                recipient=user,
+                verb=_("sent you an staff member invitation"),
+                action_object=invite,
+                target=member.company,
+                description=_(
+                    "{} has invited you to access {} as a staff \
+                    member."
+                ).format(self.request.user.username, member.company.name),
+                actions=actions,
+            )
+            messages.success(self.request, self.success_message)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        """Forward to url after deleting Product successfully."""
+        return reverse_lazy("company:settingsmember_list")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "members"})
+
+        all_roles = OrderedDict()
+        for role in RolesManager.get_roles():
+            role_name = role.get_name()
+            all_roles[role_name] = {
+                "display_name": "".join(
+                    x.capitalize() + " " or "_" for x in role_name.split("_")
+                ),
+                "permissions": {
+                    perm: "".join(
+                        x.capitalize() + " " or "_" for x in perm.split("_")
+                    )
+                    for perm in role.permission_names_list()
+                },
+            }
+
+        context["available_roles"] = all_roles
+        return context
+
+
+# Vendor
+class VendorDashboardView(LoginRequiredMixin, VendorMenuMixin, TemplateView):
+    """View Class to show Supply Chain dashboard after login."""
+
+    template_name = "company/vendor/vendor_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        return context
+
+
+class VendorInviteView(
+    LoginRequiredMixin,
+    SuccessMessageMixin,
+    RevisionMixin,
+    VendorMenuMixin,
+    CreateView,
+):
+    """Invite Vendor."""
+
+    form_class = VendorInviteForm
+    model = Company
+    success_message = _("Invitation was successfully sent.")
+    template_name = "company/vendor/vendor_form.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        email = form.cleaned_data["email"].lower()
+        # User Detail
+        first_name = form.cleaned_data["first_name"]
+        last_name = form.cleaned_data["last_name"]
+        job_title = form.cleaned_data["job_title"]
+        user_detail = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "job_title": job_title,
+        }
+        # Company Detail
+        vendor_type = form.cleaned_data["vendor_type"]
+        vendor_name = form.cleaned_data["vendor_name"]
+        member_id = self.request.session.get("member_id")
+        member = Member.objects.get(pk=member_id)
+        company_detail = {
+            "company_id": member.company_id,
+            "company_name": member.company.name,
+            "vendor_name": vendor_name,
+            "vendor_type": vendor_type,
+        }
+        role = "vendor_admin"
+        role_obj = RolesManager.retrieve_role(role)
+        user_roles = {
+            "roles": [role],
+            "perms": list(role_obj.permission_names_list()),
+        }
+        extra_data = {}
+        extra_data["type"] = "Vendor Invitation"
+        invite = Invitation.create(
+            email,
+            inviter=self.request.user,
+            user_detail=user_detail,
+            company_detail=company_detail,
+            user_roles=user_roles,
+            extra_data=extra_data,
+        )
+        invite.send_invitation(self.request)
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        """Forward to url after sending invitation successfully."""
+        return reverse_lazy("company:vendor_dashboard")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        return context
+
+
+# Payment terms
+class SettingsPaymentTermsListView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    RevisionMixin,
+    ListView,
+):
+    """List all the payment terms."""
+
+    required_permission = "view_payment_terms"
+    model = CompanyPaymentTerms
+    template_name = "company/paymentterms/paymentterms_list.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "payment-terms"})
+        return context
+
+
+class SettingsPaymentTermsActiveListView(SettingsPaymentTermsListView):
+    """List all Active payment terms."""
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(
+            company=self.request.member.company, is_active=True
+        )
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "active"
+        return context
+
+
+class SettingsPaymentTermsArchivedListView(SettingsPaymentTermsListView):
+    """List all archived payment terms."""
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(
+            company=self.request.member.company, is_active=False
+        )
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "archived"
+        return context
+
+
+class SettingsPaymentTermsCreateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    CreateView,
+):
+    """Create Payment terms."""
+
+    required_permission = "add_payment_terms"
+    form_class = CompanyPaymentTermsForm
+    model = CompanyPaymentTerms
+    success_message = "Payment terms was created successfully"
+    template_name = "company/paymentterms/paymentterms_form.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        deposit = Decimal(self.object.deposit)
+        on_delivery = Decimal(self.object.on_delivery)
+        receiving = Decimal(self.object.receiving)
+        remaining_per = Decimal(100) - (deposit + on_delivery + receiving)
+        self.object.remaining = remaining_per
+        self.object.title = (
+            "PAY"
+            + str(self.object.deposit)
+            + "-"
+            + str(self.object.on_delivery)
+            + "-"
+            + str(self.object.receiving)
+            + "-"
+            + str(remaining_per)
+            + "-"
+            + str(self.object.payment_days)
+            + "Days"
+        )
+        self.object.company = self.request.member.company
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "payment-terms"})
+        return context
+
+
+class SettingsPaymentTermsUpdateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    RevisionMixin,
+    UpdateView,
+):
+    """Update Payment terms."""
+
+    required_permission = "change_payment_terms"
+    form_class = CompanyPaymentTermsForm
+    model = CompanyPaymentTerms
+    success_message = "Payment terms was created successfully"
+    template_name = "company/paymentterms/paymentterms_form.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        deposit = Decimal(self.object.deposit)
+        on_delivery = Decimal(self.object.on_delivery)
+        receiving = Decimal(self.object.receiving)
+        remaining_per = Decimal(100) - (deposit + on_delivery + receiving)
+        self.object.remaining = remaining_per
+        self.object.title = (
+            "PAY"
+            + str(self.object.deposit)
+            + "-"
+            + str(self.object.on_delivery)
+            + "-"
+            + str(self.object.receiving)
+            + "-"
+            + str(remaining_per)
+            + "-"
+            + str(self.object.payment_days)
+            + "Days"
+        )
+        self.object.user = self.request.user
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "payment-terms"})
+        return context
+
+
+class SettingsPaymentTermsGenricDeleteView(
+    LoginRequiredMixin, CompanySettingMenuMixin, DeleteMixin, DeleteView
+):
+    """Delete Payment Term."""
+
+    model = CompanyPaymentTerms
+    success_message = "%(title)s was deleted successfully"
+    protected_error = "can't delete %(title)s because it is used\
+     by other forms"
+    template_name = "company/paymentterms/paymentterms_confirm_delete.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_success_url(self):
+        """Forward to url after deleting Product Terms successfully."""
+        return reverse_lazy("company:settingspaymentterms_list")
+
+    def get_error_url(self):
+        """Forward to url if there is error while deleting Product Terms."""
+        return reverse_lazy("company:settingspaymentterms_list")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "payment-terms"})
+        return context
+
+
+class SettingsPaymentTermsDeleteView(SettingsPaymentTermsGenricDeleteView):
+    """Delete Payment Term."""
+
+    def get(self, request, *args, **kwargs):
+        """Forward to delete page without confirmation for archived."""
+        if has_permission(self.request.member, "delete_payment_terms"):
+            self.request.is_archived = False
+            self.request.is_restored = False
+            return super().get(request, *args, **kwargs)
+        else:
+            raise PermissionDenied
+
+
+class SettingsPaymentTermsArchivedView(SettingsPaymentTermsGenricDeleteView):
+    """Archived Payment Term."""
+
+    success_message = "%(title)s was archived successfully"
+
+    def get(self, request, *args, **kwargs):
+        """Forward to delete page without confirmation for archived."""
+        self.request.is_restored = False
+        if has_permission(
+            self.request.member, "archived_payment_terms"
+        ) or has_permission(self.request.member, "delete_payment_terms"):
+            self.request.is_archived = True
+            return self.post(request, *args, **kwargs)
+        else:
+            raise PermissionDenied
+
+
+class SettingsPaymentTermsRestoreView(SettingsPaymentTermsGenricDeleteView):
+    """Restore Payment Term."""
+
+    success_message = "%(title)s was activated successfully"
+
+    def get(self, request, *args, **kwargs):
+        """Forward to delete page without confirmation for activate."""
+        self.request.is_archived = False
+        if has_permission(
+            self.request.member, "archived_payment_terms"
+        ) or has_permission(self.request.member, "delete_payment_terms"):
+            self.request.is_restored = True
+            return self.post(request, *args, **kwargs)
+        else:
+            raise PermissionDenied
+
+
+# Membership
+class MembershipView(
+    LoginRequiredMixin, CompanySettingMenuMixin, TemplateView
+):
+    """Membership view."""
+
+    template_name = "company/membership/membership_detail.html"
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "membership"})
+        return context
+
+
+# Bank
+class SettingsBankListView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    RevisionMixin,
+    ListView,
+):
+    """List all the company banks."""
+
+    required_permission = "view_company_banks"
+    model = Bank
+    template_name = "company/bank/bank_list.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "bank"})
+        return context
+
+
+class SettingsBankCreateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    CreateView,
+):
+    """Create Company Bank."""
+
+    required_permission = "add_company_banks"
+    form_class = BankForm
+    model = Bank
+    success_message = "Bank was created successfully"
+    template_name = "company/bank/bank_form.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.company = self.request.member.company
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "bank"})
+        return context
+
+
+class SettingsBankDetailView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    DetailView,
+):
+    """Vendor bank detail page."""
+
+    required_permission = "view_company_banks"
+    model = Bank
+    template_name = "company/bank/bank_detail.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "bank"})
+        return context
+
+
+class SettingsBankDeleteView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    DeleteMixin,
+    DeleteView,
+):
+    """Delete Bank."""
+
+    required_permission = "delete_company_banks"
+    model = Bank
+    success_message = "%(name)s was deleted successfully"
+    protected_error = "can't delete %(name)s because it is used\
+     by other forms"
+    template_name = "company/bank/bank_confirm_delete.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_success_url(self):
+        """Forward to url after deleting Product Terms successfully."""
+        return reverse_lazy("company:settingsbank_list")
+
+    def get_error_url(self):
+        """Forward to url if there is error while deleting Product Terms."""
+        return reverse_lazy("company:settingsbank_list")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "bank"})
+        return context
+
+
+# Location
+class SettingsLocationListView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    RevisionMixin,
+    ListView,
+):
+    """List all the Locations."""
+
+    required_permission = "view_company_locations"
+    model = Location
+    template_name = "company/location/location_list.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "location"})
+        return context
+
+
+class SettingsLocationCreateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    CreateView,
+):
+    """Create Location."""
+
+    required_permission = "add_company_locations"
+    form_class = LocationForm
+    model = Location
+    success_message = "Location was created successfully"
+    template_name = "company/location/location_form.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.company = self.request.member.company
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "location"})
+        return context
+
+
+class SettingsLocationUpdateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    RevisionMixin,
+    UpdateView,
+):
+    """Update Locations."""
+
+    required_permission = "change_company_locations"
+    form_class = LocationForm
+    model = Location
+    success_message = "Location was created successfully"
+    template_name = "company/location/location_form.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "location"})
+        return context
+
+
+class SettingsLocationDeleteView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    DeleteMixin,
+    DeleteView,
+):
+    """Delete Location."""
+
+    required_permission = "delete_company_locations"
+    model = Location
+    success_message = "%(name)s was deleted successfully"
+    protected_error = "can't delete %(name)s because it is used\
+     by other forms"
+    template_name = "company/location/location_confirm_delete.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_success_url(self):
+        """Forward to url after deleting Product Terms successfully."""
+        return reverse_lazy("company:settingslocation_list")
+
+    def get_error_url(self):
+        """Forward to url if there is error while deleting Product Terms."""
+        return reverse_lazy("company:settingslocation_list")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "location"})
+        return context
+
+
+# Packing Box
+class SettingsPackingBoxListView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    RevisionMixin,
+    ListView,
+):
+    """List all the Packing Box."""
+
+    required_permission = "view_packing_box"
+    model = PackingBox
+    template_name = "company/packingbox/packingbox_list.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "packingbox"})
+        return context
+
+
+class SettingsPackingBoxCreateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    CreateView,
+):
+    """Create Packing Box."""
+
+    required_permission = "add_packing_box"
+    form_class = PackingBoxForm
+    model = PackingBox
+    success_message = "Packing Box was created successfully"
+    template_name = "company/packingbox/packingbox_form.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.company = self.request.member.company
+        self.object.cbm = get_cbm(
+            self.object.length,
+            self.object.width,
+            self.object.depth,
+            self.object.length_unit,
+        )
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "packingbox"})
+        return context
+
+
+class SettingsPackingBoxUpdateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    RevisionMixin,
+    UpdateView,
+):
+    """Update Packing Box."""
+
+    required_permission = "change_packing_box"
+    form_class = PackingBoxForm
+    model = PackingBox
+    success_message = "Packing Box was created successfully"
+    template_name = "company/packingbox/packingbox_form.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.cbm = get_cbm(
+            self.object.length,
+            self.object.width,
+            self.object.depth,
+            self.object.length_unit,
+        )
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "packingbox"})
+        return context
+
+
+class SettingsPackingBoxDeleteView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    DeleteMixin,
+    DeleteView,
+):
+    """Delete Packing Box."""
+
+    required_permission = "delete_packing_box"
+    model = PackingBox
+    success_message = "%(name)s was deleted successfully"
+    protected_error = "can't delete %(name)s because it is used\
+     by other forms"
+    template_name = "company/packingbox/packingbox_confirm_delete.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_success_url(self):
+        """Forward to url after deleting Product Terms successfully."""
+        return reverse_lazy("company:settingspackingbox_list")
+
+    def get_error_url(self):
+        """Forward to url if there is error while deleting Product Terms."""
+        return reverse_lazy("company:settingspackingbox_list")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "packingbox"})
+        return context
+
+
+# Hs Code
+class SettingsHsCodeListView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    RevisionMixin,
+    ListView,
+):
+    """List all the HS Code."""
+
+    required_permission = "view_hscode"
+    model = HsCode
+    template_name = "company/hscode/hscode_list.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "hscode"})
+        return context
+
+
+class SettingsHsCodeCreateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    CreateView,
+):
+    """Create HS Code."""
+
+    required_permission = "add_hscode"
+    form_class = HsCodeForm
+    model = HsCode
+    success_message = "Packing Box was created successfully"
+    template_name = "company/hscode/hscode_form.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.company = self.request.member.company
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "hscode"})
+        return context
+
+
+class SettingsHsCodeUpdateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    RevisionMixin,
+    UpdateView,
+):
+    """Update HS Code."""
+
+    required_permission = "change_hscode"
+    form_class = HsCodeForm
+    model = HsCode
+    success_message = "Packing Box was created successfully"
+    template_name = "company/hscode/hscode_form.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "hscode"})
+        return context
+
+
+class SettingsHsCodeDeleteView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    DeleteMixin,
+    DeleteView,
+):
+    """Delete HS Code."""
+
+    required_permission = "delete_hscode"
+    model = HsCode
+    success_message = "%(name)s was deleted successfully"
+    protected_error = "can't delete %(name)s because it is used\
+     by other forms"
+    template_name = "company/hscode/hscode_confirm_delete.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_success_url(self):
+        """Forward to url after deleting Product Terms successfully."""
+        return reverse_lazy("company:settingshscode_list")
+
+    def get_error_url(self):
+        """Forward to url if there is error while deleting Product Terms."""
+        return reverse_lazy("company:settingshscode_list")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "hscode"})
+        return context
+
+
+# Taxes
+class SettingsTaxListView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    RevisionMixin,
+    ListView,
+):
+    """List all the Tax."""
+
+    required_permission = "view_taxes"
+    model = Tax
+    template_name = "company/tax/tax_list.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "tax"})
+        return context
+
+
+class SettingsTaxCreateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    CreateView,
+):
+    """Create Tax."""
+
+    required_permission = "add_taxes"
+    form_class = TaxForm
+    model = Tax
+    success_message = "Tax was created successfully"
+    template_name = "company/tax/tax_form.html"
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.company = self.request.member.company
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "tax"})
+        return context
+
+
+class SettingsTaxUpdateView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    SuccessMessageMixin,
+    RevisionMixin,
+    UpdateView,
+):
+    """Update Tax."""
+
+    required_permission = "change_taxes"
+    form_class = TaxForm
+    model = Tax
+    success_message = "Packing Box was created successfully"
+    template_name = "company/tax/tax_form.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def form_valid(self, form):
+        """If form is valid update title."""
+        self.object = form.save(commit=False)
+        self.object.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "tax"})
+        return context
+
+
+class SettingsTaxDeleteView(
+    HasPermissionsMixin,
+    LoginRequiredMixin,
+    CompanySettingMenuMixin,
+    DeleteMixin,
+    DeleteView,
+):
+    """Delete Tax."""
+
+    required_permission = "delete_taxes"
+    model = Tax
+    success_message = "%(name)s was deleted successfully"
+    protected_error = "can't delete %(name)s because it is used\
+     by other forms"
+    template_name = "company/tax/tax_confirm_delete.html"
+
+    def get_queryset(self):
+        """Override the basic query with company object."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
+    def get_success_url(self):
+        """Forward to url after deleting Product Terms successfully."""
+        return reverse_lazy("company:settingstax_list")
+
+    def get_error_url(self):
+        """Forward to url if there is error while deleting Product Terms."""
+        return reverse_lazy("company:settingstax_list")
+
+    def get_context_data(self, **kwargs):
+        """Define extra context data that need to pass on template."""
+        context = super().get_context_data(**kwargs)
+        context["active_menu"].update({"menu2": "tax"})
         return context

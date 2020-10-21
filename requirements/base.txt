@@ -171,3 +171,21 @@ django-modeltranslation==0.15.2 #https://django-modeltranslation.readthedocs.io/
 # Django Plan and subscriptions
 # install by pip install -e git://github.com/cypreess/django-plans.git#egg=django-plans
 django-plans
+
+# Django defender
+django-defender==0.7.0 #https://github.com/jazzband/django-defender
+
+# Django Invitation
+django-invitations==1.9.3 #https://github.com/bee-keeper/django-invitations
+
+# Django Notifications
+django-notifications-hq==1.6.0 #https://github.com/django-notifications/django-notifications
+
+# Django multiselectfield
+django-multiselectfield==0.1.12
+
+# Django Taggit
+django-taggit==1.3.0 #https://github.com/jazzband/django-taggit
+
+# Django Selectable
+django-selectable==1.3.0 #https://github.com/mlavin/django-selectable

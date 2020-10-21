@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
 {% load crispy_forms_tags permission_tags core_utils %}
 {% block title %}
-My Companies
+{% translate 'My Companies' %}
 {% endblock title %}
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
@@ -11,11 +13,11 @@ My Companies
     {% include "user/sidebar.html" %}
     <div class="row">
       <div class="col-md-6">
-        <h1>My Companies</h1>
+        <h1>{% translate 'My Companies' %}</h1>
       </div>
       <div class="col-md-6">
         <div class="text-right">
-          <a href="{% url 'company:account_setup' %}" class="btn btn-primary btn-lg mr-1">Add New Company</a>
+          <a href="{% url 'company:account_setup' %}" class="btn btn-primary btn-lg mr-1">{% translate 'Add New Company' %}</a>
         </div>
       </div>
     </div>
@@ -27,11 +29,12 @@ My Companies
           <form action="" method="post" id="company_login">
             {% csrf_token %}
             <input type="hidden" name="member_id" value="">
+            <input type="hidden" name="type" value="" />
             <div class="card-body">
-              <h5 class="mb-4">Active Companies</h5>
+              <h5 class="mb-4">{% translate 'Active Companies' %}</h5>
               {% for member in active_members %}
               <div class="mb-4">
-                <a href="javascript:void(0)" onclick="submit_form({{member.pk}})">
+                <a href="javascript:void(0)" onclick="submit_form({{member.pk}}, 'company_login', 'company_login')">
                     <p class="list-item-heading mb-1 color-theme-1">{{member.company.name}}</p>
                     <p class="mb-3 text-muted text-small">{% for role in member.get_member_roles %}{% snake_to_title role.get_name %}{% endfor %}</p>
                 </a>
@@ -46,7 +49,7 @@ My Companies
         {% if inactive_members %}
         <div class="card mb-4">
           <div class="card-body">
-            <h5 class="mb-4">Inactive Companies</h5>
+            <h5 class="mb-4">{% translate 'Inactive Companies' %}</h5>
             {% for member in inactive_members %}
             <div class="mb-4">
               <p class="list-item-heading mb-1 color-theme-1">{{member.company.name}}</p>
@@ -59,22 +62,34 @@ My Companies
           </div>
         </div>
         {% endif %}
-        {% if pending_invitations %}
-        <div class="card mb-4">
-          <div class="card-body">
-            <h5 class="mb-4">Pending Invitation</h5>
-            {% for member in pending_invitations %}
-            <div class="mb-4">
-              <p class="list-item-heading mb-1 color-theme-1">{{member.company.name}}</p>
-              <p class="mb-3 text-muted text-small">{% for role in member.get_member_roles %}{% snake_to_title role.get_name %}{% endfor %}</p>
-              {% if not forloop.last %}
-              <div class="separator"></div>
-              {% endif %}
+        <form action="" method="post" id="pending_invitation">
+          {% csrf_token %}
+            <input type="hidden" name="invitation_id" value="" />
+            <input type="hidden" name="type" value="" />
+            {% if pending_invitations %}
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="mb-4">{% translate 'Pending Invitation' %}</h5>
+                {% for member in pending_invitations %}
+                <div class="mb-4">
+                  <p class="list-item-heading mb-1 color-theme-1">{{member.company_detail.company_name}}</p>
+                  <p class="mb-3 text-muted text-small">{% for role in member.user_roles.roles %}{% snake_to_title role %}{% endfor %}</p>
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="submit_form({{member.pk}}, 'pending_invitation', 'invitation_accepted')">
+                    <i class="simple-icon-check"></i> {% translate 'Accept' %}
+                  </button>
+                  <button type="button" class="btn btn-xs btn-outline-danger" onclick="submit_form({{member.pk}}, 'pending_invitation', 'invitation_rejected')">
+                    <i class="simple-icon-close"></i> {% translate 'Reject' %}
+                  </button>
+                  <p class="mb-3"></p>
+                  {% if not forloop.last %}
+                  <div class="separator"></div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
             </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
+            {% endif %}
+        </form>
       </div>
     </div>
   </div>
@@ -85,9 +100,14 @@ My Companies
 {% block form_script %}{% endblock %}
 {% block script %}
 <script type="text/javascript">
-function submit_form(member_id){
-  $("input[name=member_id]").val(member_id);
-  $( "#company_login" ).submit();
+function submit_form(member_id, id, type){
+  $("input[name=type]").val(type);
+  if(id == "company_login"){
+    $("input[name=member_id]").val(member_id);
+  }else if(id == "pending_invitation"){
+    $("input[name=invitation_id]").val(member_id);
+  }
+  $( "#"+id ).submit();
 }
 </script>
 {% endblock %}

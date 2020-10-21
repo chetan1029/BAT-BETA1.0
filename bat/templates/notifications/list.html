@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}
+Notifications
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block content %}
+{% with menu1='my-profile' menu2='user-notifications' %}
+<main>
+  <div class="container-fluid">
+    {% include "user/sidebar.html" %}
+  <div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Notifications</h5>
+        {% for notice in notifications %}
+            {% include 'notifications/notice.html' %}
+        {% endfor %}
+      </div>
+  </div>
+</main>
+{% endwith %}
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

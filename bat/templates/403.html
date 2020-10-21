@@ -3,7 +3,21 @@
 {% block title %}Permission Denied{% endblock %}
 {% block amazonsidebar %}{% endblock %}
 {% block content %}
-<h1>Permission Denied</h1>
-<p>You don't have permission for the requested action. Please contact admin to provide the required permission.</p>
-<img src="https://cdn.dribbble.com/users/605899/screenshots/4806791/animation_by_nikitin891.gif" />
+<main>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-body">
+              <div class="jumbotron">
+                  <h1 class="display-4 text-warning">Permission Denied</h1>
+                  <p class="lead">You don't have permission for the requested action. Please contact admin to provide the required permission.</p>
+                  <a class="btn btn-primary btn-lg" href="{% url 'core:dashboard' %}" role="button">Go back to home</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+</main>
 {% endblock content %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load static %}
+{% block title %}
+404 Page not found
+{% endblock %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-body">
+              <div class="jumbotron">
+                  <h1 class="display-4 text-warning">404 Page not found</h1>
+                  <p class="lead">You don't have permission for the requested action. Please contact admin to provide the required permission.</p>
+                  <a class="btn btn-primary btn-lg" href="{% url 'core:dashboard' %}" role="button">Go back to home</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

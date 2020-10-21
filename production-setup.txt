@@ -1,0 +1,7 @@
+# Django Defender
+1. Setup cronjob to clean old recored data. setting DEFENDER_ACCESS_ATTEMPT_EXPIRATION is default 24 hours we can change it in settings.py
+24 0 * * * /usr/bin/python manage.py cleanup_django_defender >> /var/log/django_defender_cleanup.log
+
+# Django Invitations
+1. Setup cronjob to clear expired and accepted invites
+24 0 * * * /usr/bin/python manage.py clear_expired_invitations >> /var/log/clear_expired_invitations.log

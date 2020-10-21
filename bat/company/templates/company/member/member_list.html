@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
 {% load crispy_forms_tags permission_tags core_utils %}
 {% block title %}
-Staff Members
+{% translate 'Staff Members' %}
 {% endblock title %}
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
@@ -11,27 +13,45 @@ Staff Members
     {% include "sidebar.html" %}
     <div class="row">
       <div class="col-md-6">
-        <h1>Staff Members</h1>
+        <h1>{% translate 'Staff Members' %}</h1>
       </div>
       <div class="col-md-6">
+        {% if loggedin_member|can:'add_staff_member' %}
         <div class="text-right">
-          <a href="{% url 'company:account_setup' %}" class="btn btn-primary btn-lg mr-1">Invite New Member</a>
+          <a href="{% url 'company:settingsmember_create' %}" class="btn btn-primary btn-lg mr-1">Invite New Member</a>
         </div>
+        {% endif %}
       </div>
     </div>
 
     <div class="separator mb-5"></div>
+    {% include "global/messages.html" %}
     <div class="row">
       <div class="col-12">
         <div class="card mb-4">
-          <form action="" method="post" id="company_login">
-            {% csrf_token %}
-            <input type="hidden" name="member_id" value="">
-            <div class="card-body">
-              <h5 class="mb-4">Active Members</h5>
+          <div class="card-body">
+              <h5 class="mb-4">{% translate 'Company Admin' %}</h5>
+              {% for member in companyadmin_members %}
+              <div class="mb-4">
+                <a href="{% url 'company:settingsmember_detail' pk=member.pk %}">
+                    <p class="list-item-heading mb-1 color-theme-1">{{member.user.get_full_name}}</p>
+                    <p class="mb-1">{{member.user.email}}</p>
+                    <p class="mb-3 text-muted text-small">{% for role in member.get_member_roles %}{% snake_to_title role.get_name %}{% endfor %}</p>
+                </a>
+                {% if not forloop.last %}
+                <div class="separator"></div>
+                {% endif %}
+              </div>
+              {% endfor %}
+          </div>
+        </div>
+        <div class="card mb-4">
+          <div class="card-body">
+              <h5 class="mb-4">{% translate 'Active Staff Members' %}</h5>
+              {% if active_members %}
               {% for member in active_members %}
               <div class="mb-4">
-                <a href="javascript:void(0)" onclick="submit_form({{member.pk}})">
+                <a href="{% url 'company:settingsmember_detail' pk=member.pk %}">
                     <p class="list-item-heading mb-1 color-theme-1">{{member.user.get_full_name}}</p>
                     <p class="mb-3 text-muted text-small">{% for role in member.get_member_roles %}{% snake_to_title role.get_name %}{% endfor %}</p>
                 </a>
@@ -40,13 +60,17 @@ Staff Members
                 {% endif %}
               </div>
               {% endfor %}
-            </div>
-          </form>
+              {% else %}
+              <div class="alert alert-info rounded">
+                {% translate "You don't have any active staff member" %}
+              </div>
+              {% endif %}
+          </div>
         </div>
         {% if inactive_members %}
         <div class="card mb-4">
           <div class="card-body">
-            <h5 class="mb-4">Inactive Members</h5>
+            <h5 class="mb-4">{% translate 'Inactive Staff Members' %}</h5>
             {% for member in inactive_members %}
             <div class="mb-4">
               <p class="list-item-heading mb-1 color-theme-1">{{member.user.get_full_name}}</p>
@@ -62,16 +86,28 @@ Staff Members
         {% if pending_invitations %}
         <div class="card mb-4">
           <div class="card-body">
-            <h5 class="mb-4">Pending Invitation</h5>
-            {% for member in pending_invitations %}
-            <div class="mb-4">
-              <p class="list-item-heading mb-1 color-theme-1">{{member.user.get_full_name}}</p>
-              <p class="mb-3 text-muted text-small">{% for role in member.get_member_roles %}{% snake_to_title role.get_name %}{% endfor %}</p>
-              {% if not forloop.last %}
-              <div class="separator"></div>
-              {% endif %}
-            </div>
-            {% endfor %}
+            <form action="" method="post" id="pending_invitation">
+              <h5 class="mb-4">{% translate 'Pending Invitation' %}</h5>
+              {% csrf_token %}
+              <input type="hidden" name="invitation_id" value="" />
+              <input type="hidden" name="type" value="" />
+              {% for member in pending_invitations %}
+              <div class="mb-4">
+                <p class="list-item-heading mb-1 color-theme-1">{{member.user_detail.first_name}} {{member.user_detail.last_name}}</p>
+                <p class="mb-1">{{member.email}}</p>
+                <p class="mb-3 text-muted text-small">{% for role in member.user_roles.roles %}{% snake_to_title role %}{% endfor %}</p>
+                <button type="button" class="btn btn-xs btn-outline-primary" onclick="submit_form({{member.pk}}, 'invitation_resend')">
+                  <i class="simple-icon-check"></i> {% translate 'Resend' %}
+                </button>
+                <button type="button" class="btn btn-xs btn-outline-danger" onclick="submit_form({{member.pk}}, 'invitation_delete')">
+                  <i class="simple-icon-trash"></i> {% translate 'Delete' %}
+                </button>
+                {% if not forloop.last %}
+                <div class="separator"></div>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </form>
           </div>
         </div>
         {% endif %}
@@ -85,9 +121,10 @@ Staff Members
 {% block form_script %}{% endblock %}
 {% block script %}
 <script type="text/javascript">
-function submit_form(member_id){
-  $("input[name=member_id]").val(member_id);
-  $( "#company_login" ).submit();
+function submit_form(member_id, type){
+  $("input[name=type]").val(type);
+  $("input[name=invitation_id]").val(member_id);
+  $( "#pending_invitation" ).submit();
 }
 </script>
 {% endblock %}

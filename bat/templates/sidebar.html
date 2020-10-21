@@ -13,7 +13,7 @@
           </a>
         </li>
         <!-- Product Management -->
-        {% if member|has_role:'supply_chain_manager,company_admin' %}
+        {% if loggedin_member|has_role:'supply_chain_manager,company_admin' %}
         <li {% if active_menu.menu1 == 'product-management' %}class="active"{% endif %}>
           <a href="#product-management">
             <i class="simple-icon-folder-alt"></i>
@@ -23,7 +23,7 @@
         {% endif %}
 
         <!-- Supply Chain -->
-        {% if member|has_role:'supply_chain_manager,company_admin' %}
+        {% if loggedin_member|has_role:'supply_chain_manager,company_admin,vendor_admin' %}
         <li {% if active_menu.menu1 == 'supply-chain' %}class="active"{% endif %}>
           <a href="#supply-chain">
             <i class="simple-icon-refresh"></i>
@@ -33,7 +33,7 @@
         {% endif %}
 
         <!-- Sales -->
-        {% if member|has_role:'sales_manager,company_admin' %}
+        {% if loggedin_member|has_role:'sales_manager,company_admin' %}
         <li {% if active_menu.menu1 == 'sales' %}class="active"{% endif %}>
           <a href="#sales">
             <i class="simple-icon-chart"></i>
@@ -43,7 +43,7 @@
         {% endif %}
 
         <!-- Finance -->
-        {% if member|has_role:'sales_manager,company_admin' %}
+        {% if loggedin_member|has_role:'sales_manager,company_admin' %}
         <li {% if active_menu.menu1 == 'payment' %}class="active"{% endif %}>
           <a href="#finance">
             <i class="simple-icon-wallet"></i>
@@ -53,7 +53,7 @@
         {% endif %}
 
         <!-- Departments -->
-        {% if member|has_role:'inventory_manager,company_admin' %}
+        {% if loggedin_member|has_role:'inventory_manager,company_admin' %}
         <li {% if active_menu.menu1 == 'inventorize' %}class="active"{% endif %}>
           <a href="#departments">
             <i class="simple-icon-organization"></i>
@@ -63,7 +63,7 @@
         {% endif %}
 
         <!-- Setting -->
-        {% if member|has_role:'setting_control,company_admin' %}
+        {% if loggedin_member|has_role:'supply_chain_manager,company_admin,vendor_admin' %}
         <li {% if active_menu.menu1 == 'setting' %}class="active"{% endif %}>
           <a href="#setting">
             <i class="simple-icon-settings"></i>
@@ -79,29 +79,23 @@
     <div class="scroll">
       <!-- Product Management -->
       <ul class="list-unstyled" data-link="product-management">
-        <li>
-          <a href="#">
+        <li class="{% if active_menu.menu2 == 'dashboard' %}active{% endif %}">
+          <a href="{% url 'product:product_dashboard' %}">
             <i class="iconsmind-Shop-4"></i> {% translate "Dashboard" %}
           </a>
         </li>
-        <li class="active">
-          <a href="#">
-            <i class="simple-icon-list"></i> {% translate "Product Catalog" %}
+        {% if loggedin_member|can:'view_product' %}
+        <li class="{% if active_menu.menu2 == 'component' %}active{% endif %}">
+          <a href="{% url 'product:component_list' %}">
+            <i class="simple-icon-layers"></i> {% translate "Components" %}
           </a>
-          <div class="sub-sub-menu">
-            <ul class="list-unstyled d-block">
-              <li class="active">
-                <a href="#"><i class="iconsmind-Right"></i> {% translate "Global" %}</a>
-              </li>
-              <li>
-                <a href="#"><i class="iconsmind-Right"></i> {% translate "Amazon" %}</a>
-              </li>
-              <li>
-                <a href="#"><i class="iconsmind-Right"></i> {% translate "Retail" %}</a>
-              </li>
-            </ul>
-          </div>
         </li>
+        <li class="{% if active_menu.menu2 == 'product' %}active{% endif %}">
+          <a href="{% url 'product:product_list' %}">
+            <i class="simple-icon-list"></i> {% translate "Products" %}
+          </a>
+        </li>
+        {% endif %}
         <li>
           <a href="#">
             <i class="simple-icon-map"></i> {% translate "RRP" %}
@@ -111,8 +105,8 @@
 
       <!-- Supply Chain -->
       <ul class="list-unstyled" data-link="supply-chain">
-        <li>
-          <a href="#">
+        <li {% if active_menu.menu2 == 'vendors' %}class="active"{% endif %}>
+          <a href="{% url 'company:vendor_dashboard' %}">
             <i class="iconsmind-Factory"></i> {% translate "Vendors" %}
           </a>
           <div class="sub-sub-menu">
@@ -218,46 +212,69 @@
       </ul>
       <!-- Setting -->
       <ul class="list-unstyled" data-link="setting">
+        {% if loggedin_member|can:'update_company_profile' %}
         <li class="{% if active_menu.menu2 == 'company-profile' %}active{% endif %}">
           <a href="{% url 'company:company_profile' %}">
             <i class="simple-icon-settings"></i> {% translate "Company Profile" %}
           </a>
         </li>
+        {% endif %}
+        {% if loggedin_member|can:'view_staff_member' %}
         <li class="{% if active_menu.menu2 == 'members' %}active{% endif %}">
-          <a href="{% url 'company:companymember_list' %}">
+          <a href="{% url 'company:settingsmember_list' %}">
             <i class="simple-icon-people"></i> {% translate "Members" %}
           </a>
         </li>
-        <li class="{% if active_menu.menu2 == 'paymentterms' %}active{% endif %}">
-          <a href="{% url 'setting:paymentterms_list' %}">
+        {% endif %}
+        {% if loggedin_member|can:'view_payment_terms' %}
+        <li class="{% if active_menu.menu2 == 'payment-terms' %}active{% endif %}">
+          <a href="{% url 'company:settingspaymentterms_list' %}">
             <i class="simple-icon-wallet"></i> {% translate "Payment Terms" %}
           </a>
         </li>
-        <li class="">
-          <a href="#">
+        {% endif %}
+        {% if loggedin_member|can:'view_membership_plan' %}
+        <li class="{% if active_menu.menu2 == 'membership' %}active{% endif %}">
+          <a href="{% url 'company:membership' %}">
             <i class="simple-icon-credit-card"></i> {% translate "Mebership Plan" %}
           </a>
         </li>
-        <li class="">
-          <a href="#">
+        {% endif %}
+        {% if loggedin_member|can:'view_company_banks' %}
+        <li class="{% if active_menu.menu2 == 'bank' %}active{% endif %}">
+          <a href="{% url 'company:settingsbank_list' %}">
             <i class="iconsmind-Bank"></i> {% translate "Banks" %}
           </a>
         </li>
-        <li class="">
-          <a href="#">
+        {% endif %}
+        {% if loggedin_member|can:'view_company_locations' %}
+        <li class="{% if active_menu.menu2 == 'location' %}active{% endif %}">
+          <a href="{% url 'company:settingslocation_list' %}">
             <i class="simple-icon-location-pin"></i> {% translate "Locations" %}
           </a>
         </li>
-        <li class="">
-          <a href="#">
+        {% endif %}
+        {% if loggedin_member|can:'view_packing_box' %}
+        <li class="{% if active_menu.menu2 == 'packingbox' %}active{% endif %}">
+          <a href="{% url 'company:settingspackingbox_list' %}">
             <i class="iconsmind-Box-Close"></i> {% translate "Packing Box" %}
           </a>
         </li>
-        <li class="">
-          <a href="#">
+        {% endif %}
+        {% if loggedin_member|can:'view_hscode' %}
+        <li class="{% if active_menu.menu2 == 'hscode' %}active{% endif %}">
+          <a href="{% url 'company:settingshscode_list' %}">
+            <i class="iconsmind-Box-Close"></i> {% translate "HS Code" %}
+          </a>
+        </li>
+        {% endif %}
+        {% if loggedin_member|can:'view_taxes' %}
+        <li class="{% if active_menu.menu2 == 'tax' %}active{% endif %}">
+          <a href="{% url 'company:settingstax_list' %}">
             <i class="iconsmind-Money-Bag"></i> {% translate "Taxes" %}
           </a>
         </li>
+        {% endif %}
       </ul>
     </div>
   </div>

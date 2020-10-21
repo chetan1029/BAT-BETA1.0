@@ -22,6 +22,66 @@ Dashboard
         </div>
     </div>
     <div class="separator mb-5"></div>
+    <div class="row">
+      <div class="col-12">
+        {% include "global/messages.html" %}
+          <div class="card mb-4">
+              <div class="card-body">
+                {% if loggedin_member %}
+                  <div class="jumbotron">
+                      <h1 class="display-4">You're off to a great start.</h1>
+                      <p class="lead"></p>
+                      <hr class="my-4">
+                      <div id="accordion">
+                        <div class="border">
+                            <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne"
+                                aria-expanded="true" aria-controls="collapseOne">
+                                Add Product
+                            </button>
+
+                            <div id="collapseOne" class="collapse show " data-parent="#accordion">
+                                <div class="p-4">
+                                    <h3>Add your first product</h3>
+                                    <p>Add physical items, digital downloads, services, or anything else you dream up.</p>
+                                    <p class="lead mb-0">
+                                        <a class="btn btn-primary btn-lg" href="#" role="button">Add Product</a>
+                                    </p>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="border">
+                            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo"
+                                aria-expanded="false" aria-controls="collapseTwo">
+                                Add Staff Member
+                            </button>
+                            <div id="collapseTwo" class="collapse" data-parent="#accordion">
+                                <div class="p-4">
+                                    <h3>Invite Staff Members</h3>
+                                    <p>Invite your supply chain manager, sales manager or simply anyone from your staff with specific Roles and Responsibility</p>
+                                    <p class="lead mb-0">
+                                        <a class="btn btn-primary btn-lg" href="#" role="button">Invite Member</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+                  {% else %}
+                  <div class="jumbotron">
+                      <h1 class="display-4 text-warning">You are not member of any company.</h1>
+                      <p class="lead">Please check out my companies page to accpet invitation if any or contact your company admin to invite you to join their company.</p>
+                      <p class="lead mb-0">
+                          <a class="btn btn-primary btn-lg" href="{% url 'accounts:my_companies' %}" role="button">My Companies</a>
+                      </p>
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
   </div>
 </main>
 {% endblock %}

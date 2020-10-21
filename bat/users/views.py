@@ -11,16 +11,21 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.db.models.signals import post_save
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.translation import LANGUAGE_SESSION_KEY, activate
+from django.utils.translation import ugettext_lazy as _
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from invitations.utils import get_invitation_model
+from notifications.signals import notify
 from reversion.views import RevisionMixin
 from rolepermissions.mixins import HasPermissionsMixin
 from rolepermissions.permissions import revoke_permission
 from rolepermissions.roles import RolesManager, assign_role, clear_roles
 
+Invitation = get_invitation_model()
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -41,18 +46,26 @@ class SignUp(CreateView):
     """View Class for User Signup."""
 
     form_class = UserCreateForm
-    success_url = reverse_lazy("company:account_setup")
+    success_url = reverse_lazy("core:dashboard")
     template_name = "user/signup.html"
 
     def form_valid(self, form):
         """Set Langauge of the submited form and set it as current."""
         self.object = form.save(commit=False)
         extra_data = {}
-        extra_data["step"] = "1"
-        extra_data["step_detail"] = "user signup"
+        # Check if this user has accpeted invitations or even have
+        # any invitation. we will signup and forward user.
+        invitations = Invitation.objects.filter(email=self.object.email)
+        if invitations.exists():
+            extra_data["step"] = "2"
+            extra_data["step_detail"] = "account setup"
+        else:
+            extra_data["step"] = "1"
+            extra_data["step_detail"] = "user signup"
         self.object.extra_data = extra_data
         self.object.save()
         to_return = super().form_valid(form)
+
         # Login the user
         user = authenticate(
             username=form.cleaned_data["username"],
@@ -70,7 +83,7 @@ class SignUp(CreateView):
         not.
         """
         if self.request.user.is_authenticated:
-            return HttpResponseRedirect("/dashboard/")
+            return HttpResponseRedirect(self.success_url)
         return super().get(request, *args, **kwargs)
 
 
@@ -78,6 +91,7 @@ class SignUpClose(TemplateView):
     """View Class for User Signup Close."""
 
     template_name = "user/signup_close.html"
+    success_url = reverse_lazy("core:dashboard")
 
     def get(self, request, *args, **kwargs):
         """
@@ -88,7 +102,7 @@ class SignUpClose(TemplateView):
         not.
         """
         if self.request.user.is_authenticated:
-            return HttpResponseRedirect("/dashboard/")
+            return HttpResponseRedirect(self.success_url)
         return super().get(request, *args, **kwargs)
 
 
@@ -118,6 +132,7 @@ class CustomLoginView(LoginView):
         try:
             member = Member.objects.get(user=user, is_active=True)
             self.request.session["member_id"] = member.pk
+            member.update_member_last_login()
         except (ObjectDoesNotExist, MultipleObjectsReturned):
             pass
         return reverse_lazy("core:dashboard")
@@ -278,10 +293,30 @@ class MyCompaniesView(LoginRequiredMixin, UserMenuMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         """Post member id to this view."""
         context = self.get_context_data(**kwargs)
-        member_id = request.POST.get("member_id", False)
-        if member_id:
-            request.session["member_id"] = member_id
-            return HttpResponseRedirect(self.success_url)
+        type = request.POST.get("type", False)
+        if type == "company_login":
+            member_id = request.POST.get("member_id", False)
+            if member_id:
+                request.session["member_id"] = member_id
+                member = Member.objects.get(pk=member_id)
+                member.update_member_last_login()
+                return HttpResponseRedirect(self.success_url)
+        elif type == "invitation_rejected":
+            invitation_id = request.POST.get("invitation_id", False)
+            invitation = Invitation.objects.get(pk=invitation_id)
+            notify.send(
+                self.request.user,
+                recipient=invitation.inviter,
+                verb=_("Rejected your invitation"),
+                target_id=invitation.company_detail["company_id"],
+            )
+            invitation.delete()
+        elif type == "invitation_accepted":
+            invitation_id = request.POST.get("invitation_id", False)
+            Invitation.objects.filter(pk=invitation_id).update(accepted=True)
+            post_save.send(
+                User, instance=self.request.user, created=False, using=None
+            )
         return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
@@ -294,8 +329,8 @@ class MyCompaniesView(LoginRequiredMixin, UserMenuMixin, TemplateView):
         context["inactive_members"] = Member.objects.filter(
             user=self.request.user, is_active=False, invitation_accepted=True
         )
-        context["pending_invitations"] = Member.objects.filter(
-            user=self.request.user, is_active=False, invitation_accepted=False
+        context["pending_invitations"] = Invitation.objects.filter(
+            accepted=False, email=self.request.user.email
         )
         return context
 
@@ -312,6 +347,8 @@ class CompanyLoginView(LoginRequiredMixin, UserMenuMixin, TemplateView):
         member_id = request.POST.get("member_id", False)
         if member_id:
             request.session["member_id"] = member_id
+            member = Member.objects.get(pk=member_id)
+            member.update_member_last_login()
             return HttpResponseRedirect(self.success_url)
         return self.render_to_response(context)
 

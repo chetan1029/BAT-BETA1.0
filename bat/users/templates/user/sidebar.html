@@ -6,7 +6,7 @@
     <div class="scroll">
       <ul class="list-unstyled">
         <!-- My Profile -->
-        <li {% if active_menu.menu1 == 'my-profile' %}class="active"{% endif %}>
+        <li {% if active_menu.menu1 == 'my-profile' or menu1 == 'my-profile' %}class="active"{% endif %}>
           <a href="#my-profile">
             <i class="simple-icon-user"></i>
             <span>{% translate "My Profile" %}</span>
@@ -35,6 +35,11 @@
         <li {% if active_menu.menu2 == 'update-profile' %}class="active"{% endif %}>
           <a href="{% url 'accounts:update_profile' %}">
             <i class="simple-icon-user-follow"></i> {% translate "Update Profile" %}
+          </a>
+        </li>
+        <li {% if active_menu.menu2 == 'user-notifications' or menu2 == 'user-notifications' %}class="active"{% endif %}>
+          <a href="{% url 'notifications:all' %}">
+            <i class="simple-icon-bell"></i> {% translate "Notifications" %}
           </a>
         </li>
         <li {% if active_menu.menu2 == 'password-change' %}class="active"{% endif %}>

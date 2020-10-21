@@ -11,4 +11,6 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         """Can be used as signalling and importing models for that."""
+        import bat.users.signals
+
         pass

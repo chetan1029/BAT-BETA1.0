@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load static permission_tags %}
+{% block title %}
+{% translate 'Bank' %}
+{% endblock title %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    {% include "sidebar.html" %}
+    <div class="row">
+      <div class="col-12">
+        <div class="mb-3">
+          <h1>{% translate 'Banks' %}</h1>
+          {% if loggedin_member|can:'add_company_banks' %}
+          <div class="float-sm-right text-zero">
+            <a href="{% url 'company:settingsbank_create' %}" class="btn btn-primary btn-lg mr-1">{% translate 'Add Bank' %}</a>
+          </div>
+          {% endif %}
+          <nav class="breadcrumb-container d-none d-sm-block d-lg-inline-block" aria-label="breadcrumb">
+            <ol class="breadcrumb pt-0">
+              <li class="breadcrumb-item">
+                <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
+              </li>
+              <li class="breadcrumb-item active" aria-current="page">{% translate 'Banks' %}</li>
+            </ol>
+          </nav>
+
+        </div>
+        <div class="separator mb-5"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 list">
+        {% include "global/messages.html" %}
+        <div class="card">
+          <div class="card-body">
+            {% if not bank_list %}
+            <div class="alert alert-warning">
+              {% translate 'No Bank found' %}
+            </div>
+            {% else %}
+            <table class="data-table responsive nowrap" data-order="[[ 1, &quot;desc&quot; ]]">
+              <thead>
+                <tr>
+                  <th>{% translate 'Name' %}</th>
+                  <th>{% translate 'Benificary' %}</th>
+                  <th>{% translate 'Account number' %}</th>
+                  <th>{% translate 'Country' %}</th>
+                  <th>{% translate 'Currency' %}</th>
+                  <th>{% translate 'Action' %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for bank in bank_list %}
+                <tr>
+                  <td>
+                    <p class="list-item-heading"><a href="{% url 'company:settingsbank_detail' pk=bank.pk %}" title="{{ bank.name }}">{{ bank.name }}</a></p>
+                  </td>
+                  <td>
+                    <p class="text-muted">{{ bank.benificary }}</p>
+                  </td>
+                  <td>
+                    <p class="text-muted">{{ bank.account_number }}</p>
+                  </td>
+                  <td>
+                    <p class="text-muted">{{ bank.country.name }}</p>
+                  </td>
+                  <td>
+                    <p class="text-muted">{{ bank.currency}}</p>
+                  </td>
+                  <td>
+                    {% if loggedin_member|can:'delete_company_banks' %}
+                    <a href="{% url 'company:settingsbank_delete' pk=bank.pk %}" class="btn btn-outline-danger icon-button ">
+                      <i class="simple-icon-trash"></i>
+                    </a>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block form_script %}{% endblock %}

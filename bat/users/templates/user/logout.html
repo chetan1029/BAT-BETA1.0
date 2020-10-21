@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
 {% load crispy_forms_tags %}
 {% block title %}
-Logout
+{% translate 'Logout' %}
 {% endblock title %}
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
@@ -16,22 +18,20 @@ Logout
           <div class="card auth-card">
             <div class="position-relative image-side ">
 
-              <p class=" text-white h2">BAT System</p>
-
+              <p class="text-white h2">{% translate "BAT System" %} </p>
               <p class="white mb-0">
-                Please use your credentials to login.
-                <br>If you are not a member, please
-                <a href="{% url 'accounts:signup' %}" class="white">register</a>.
+                  {% blocktranslate %}Please use your credentials to login.{% endblocktranslate %}
               </p>
+              <p class="white mb-0">{% blocktranslate %}If you are not a member, please{% endblocktranslate %} <a href="{% url 'accounts:signup' %}" class="white">{% translate "Register" %}</a>.</p>
             </div>
             <div class="form-side text-center">
-              <h1 class="mb-5">Thank you for using BAT!</h1>
+              <h1 class="mb-5">{% blocktranslate %}Thank you for using BAT!{% endblocktranslate %}</h1>
               <div class="row">
                 <div class="col">
-                  <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg btn-shadow btn-block">Login</a>
+                  <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg btn-shadow btn-block">{% translate "Login" %}</a>
                 </div>
                 <div class="col">
-                  <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-lg btn-shadow btn-block">Register</a>
+                  <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-lg btn-shadow btn-block">{% translate "Register" %}</a>
                 </div>
               </div>
             </div>

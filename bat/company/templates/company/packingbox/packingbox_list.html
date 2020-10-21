@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load static permission_tags %}
+{% block title %}
+{% translate 'Packing Boxes' %}
+{% endblock title %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    {% include "sidebar.html" %}
+    <div class="row">
+      <div class="col-12">
+        <div class="mb-3">
+          <h1>{% translate 'Packing Boxes' %}</h1>
+          {% if loggedin_member|can:'add_packing_box' %}
+          <div class="float-sm-right text-zero">
+            <a href="{% url 'company:settingspackingbox_create' %}" class="btn btn-primary btn-lg mr-1">{% translate 'Add Packing Box' %}</a>
+          </div>
+          {% endif %}
+          <nav class="breadcrumb-container d-none d-sm-block d-lg-inline-block" aria-label="breadcrumb">
+            <ol class="breadcrumb pt-0">
+              <li class="breadcrumb-item">
+                <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
+              </li>
+              <li class="breadcrumb-item active" aria-current="page">{% translate 'Packing Boxes' %}</li>
+            </ol>
+          </nav>
+
+        </div>
+        <div class="separator mb-5"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 list">
+        {% include "global/messages.html" %}
+        <div class="card">
+          <div class="card-body">
+            {% if not packingbox_list %}
+            <div class="alert alert-warning">
+              {% translate 'No Packing Box found' %}
+            </div>
+            {% else %}
+            {% for packingbox in packingbox_list %}
+              <div class="mb-4">
+                <a href="{% url 'company:settingspackingbox_update' pk=packingbox.pk %}">
+                    <p class="list-item-heading mb-1 color-theme-1">{{ packingbox.name }}</p>
+                    <p class="mb-0 text-muted">CBM: {{packingbox.cbm}}</p>
+                    <p class="mb-3 text-muted">{{packingbox.length}}x{{packingbox.width}}x{{packingbox.depth}} {{packingbox.length_unit}}, {{packingbox.weight}}</p>
+                </a>
+                {% if not forloop.last %}
+                <div class="separator"></div>
+                {% endif %}
+              </div>
+            {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block form_script %}{% endblock %}

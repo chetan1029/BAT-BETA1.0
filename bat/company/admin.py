@@ -3,7 +3,7 @@
 from django.contrib import admin
 from reversion.admin import VersionAdmin
 
-from .models import Company, Member
+from .models import Company, CompanyType, Member
 
 
 @admin.register(Company)
@@ -15,6 +15,13 @@ class CompanyAdmin(VersionAdmin):
 
 @admin.register(Member)
 class MemberAdmin(VersionAdmin):
+    """Setup List display, ordering, actions etc."""
+
+    pass
+
+
+@admin.register(CompanyType)
+class CompanyTypeAdmin(VersionAdmin):
     """Setup List display, ordering, actions etc."""
 
     pass

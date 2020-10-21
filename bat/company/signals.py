@@ -8,4 +8,8 @@ from rolepermissions.roles import assign_role
 @receiver(post_save, sender=Member)
 def assign_member_roles(sender, instance, **kwargs):
     """We will fetch user role from the User and assign after signup."""
-    assign_role(instance, instance.extra_data["user_role"])
+    try:
+        if instance.extra_data["user_role"]:
+            assign_role(instance, instance.extra_data["user_role"])
+    except (KeyError, TypeError):
+        pass

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load static permission_tags %}
+{% block title %}
+{% translate 'Bank' %}
+{% endblock title %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    {% include "sidebar.html" %}
+    <div class="row">
+      <div class="col-12">
+        <div class="mb-3">
+          <h1>{% translate 'Banks' %}</h1>
+          {% if loggedin_member|can:'add_company_banks' %}
+          <div class="float-sm-right text-zero">
+            <a href="{% url 'company:settingsbank_create' %}" class="btn btn-primary btn-lg mr-1">{% translate 'Add Bank' %}</a>
+          </div>
+          {% endif %}
+          <nav class="breadcrumb-container d-none d-sm-block d-lg-inline-block" aria-label="breadcrumb">
+            <ol class="breadcrumb pt-0">
+              <li class="breadcrumb-item">
+                <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
+              </li>
+              <li class="breadcrumb-item active" aria-current="page">{% translate 'Banks' %}</li>
+            </ol>
+          </nav>
+
+        </div>
+        <div class="separator mb-5"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 list">
+        {% include "global/messages.html" %}
+        <div class="card h-100">
+          <div class="card-body">
+            <h3><strong>{{bank.name}}</strong></h3>
+                <hr >
+                <div class="row">
+                  <div class="col-md-4">
+                    <p class="text-muted text-small mb-2">{% translate 'Bank Name' %}</p>
+                    <p class="mb-3">{{bank.name}}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="text-muted text-small mb-2">{% translate 'Benificary name' %}</p>
+                    <p class="mb-3">{{bank.benificary}}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="text-muted text-small mb-2">{% translate 'Account number' %}</p>
+                    <p class="mb-3">{{bank.account_number}}</p>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4">
+                    <p class="text-muted text-small mb-2">{% translate 'IBAN' %}</p>
+                    <p class="mb-3">{{bank.iban}}</p>
+                  </div>
+                  <div class="col-md-4">
+                    <p class="text-muted text-small mb-2">{% translate 'Swift code' %}</p>
+                    <p class="mb-3">{{bank.swift_code}}</p>
+                  </div>
+                </div>
+                <p class="text-muted text-small mb-2">{% translate 'Address' %}</p>
+                <p class="mb-3">{{bank.get_formatted_address|safe}}</p>
+                <p class="text-muted text-small mb-2">{% translate 'Currency' %}</p>
+                <p class="mb-3">{{bank.currency}}</p>
+                <hr >
+                <p class="text-muted text-small mb-2">{% translate 'Created at' %}</p>
+                <p class="mb-3">{{bank.create_date| date:"d M Y h:i A"}}</p>
+                <p class="text-muted text-small mb-2">{% translate 'Updated at' %}</p>
+                <p class="mb-3">{{bank.update_date| date:"d M Y h:i A"}}</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block form_script %}{% endblock %}

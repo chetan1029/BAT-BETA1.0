@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load static permission_tags %}
+{% block title %}
+{% translate 'Membership' %}
+{% endblock title %}
+{% block form_style %}{% endblock %}
+{% block amazonsidebar %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    {% include "sidebar.html" %}
+    <div class="row">
+      <div class="col-12">
+        <div class="mb-3">
+          <h1>{% translate 'Membership' %}</h1>
+          <nav class="breadcrumb-container d-none d-sm-block d-lg-inline-block" aria-label="breadcrumb">
+            <ol class="breadcrumb pt-0">
+              <li class="breadcrumb-item">
+                <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
+              </li>
+              <li class="breadcrumb-item active" aria-current="page">{% translate 'Membership' %}</li>
+            </ol>
+          </nav>
+
+        </div>
+        <div class="separator mb-5"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 list">
+        {% include "global/messages.html" %}
+        
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block form_script %}{% endblock %}

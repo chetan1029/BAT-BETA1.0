@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load crispy_forms_tags permission_tags core_utils %}
+{% block title %}
+{% translate 'Vendor Dashboard' %}
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block content %}
+<main>
+  <div class="container-fluid">
+    {% include "sidebar.html" %}
+    <div class="row">
+      <div class="col-md-6">
+        <h1>{% translate 'Vendor Dashboard' %}</h1>
+      </div>
+      <div class="col-md-6">
+        <div class="text-right">
+          <a href="{% url 'company:vendor_invite' %}" class="btn btn-primary btn-lg mr-1">{% translate 'Invite New Vendor' %}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="separator mb-5"></div>
+    {% include "global/messages.html" %}
+    <div class="row">
+      <div class="col-12">
+
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}

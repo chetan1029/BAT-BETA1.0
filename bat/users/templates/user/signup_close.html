@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
 {% load crispy_forms_tags %}
 {% block title %}
-Logout
+{% translate 'Logout' %}
 {% endblock title %}
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
@@ -16,10 +18,10 @@ Logout
           <div class="card auth-card">
             <div class="position-relative image-side ">
 
-              <p class=" text-white h2">BAT System</p>
+              <p class=" text-white h2">{% translate 'BAT System' %}</p>
             </div>
             <div class="form-side text-center">
-              <h1 class="mb-5">Registration is closed for now!</h1>
+              <h1 class="mb-5">{% translate 'Registration is closed for now!' %}</h1>
             </div>
           </div>
         </div>

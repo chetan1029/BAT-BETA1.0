@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load l10n %}
+{% load crispy_forms_tags %}
+{% block title %}
+{% translate 'Lockout' %}
+{% endblock title %}
+{% block table_style %}{% endblock %}
+{% block form_style %}{% endblock %}
+{% block body %}
+<body class="background show-spinner">
+    <div class="fixed-background"></div>
+    <main>
+        <div class="container">
+            <div class="row h-100">
+                <div class="col-12 col-md-10 mx-auto my-auto">
+                    <div class="card">
+                        <div class="card-body">
+                          <div class="jumbotron">
+                            <p class="mb-4 display-4 font-weight-bold text-warning">{% translate "Account locked" %}</p>
+                            <p class="lead mb-4">{% blocktranslate %}More than {{failure_limit}} failed login attempts.  Please try again in {{cooloff_time_minutes}} minutes.{% endblocktranslate %}</p>
+                            <a href="{% url 'core:home' %}" class="btn btn-primary btn-lg btn-shadow">GO BACK HOME</a>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+{% endblock %}
+{% block chart_script %}{% endblock %}
+{% block table_script %}{% endblock %}
+{% block form_script %}{% endblock %}
