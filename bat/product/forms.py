@@ -2,9 +2,10 @@
 import logging
 from decimal import Decimal
 
-from bat.product.lookups import (ProductHsCodeLookup, ProductSeriesLookup,
-                                 ProductTagLookup, ProductTypeLookup)
-from bat.product.models import Product, ProductParent
+from bat.product.lookups import (ProductHsCodeLookup, ProductOptionLookup,
+                                 ProductSeriesLookup, ProductTagLookup,
+                                 ProductTypeLookup)
+from bat.product.models import Product, ProductOption, ProductParent
 from bat.setting.models import Status
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Column, Layout, Row, Submit
@@ -61,7 +62,6 @@ class ProductParentForm(forms.ModelForm):
     tags_attrs = {
         "data-selectable-options": {"minLength": 0},
         "class": "form-control",
-        "onclick": "add_tags()",
     }
     tags = forms.CharField(
         widget=AutoComboboxSelectMultipleWidget(
@@ -94,6 +94,17 @@ class ProductParentForm(forms.ModelForm):
         )
 
 
+class ComponentParentForm(ProductParentForm):
+    """Form for Component Parent data."""
+
+    def __init__(self, *args, **kwargs):
+        """Init basic fields."""
+        super().__init__(*args, **kwargs)
+        self.fields["series"].required = False
+        self.fields["hscode"].required = False
+        self.fields["status"].required = False
+
+
 class ProductForm(forms.ModelForm):
     """Product Form."""
 
@@ -116,4 +127,73 @@ class ProductForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         """Init basic fields."""
         super().__init__(*args, **kwargs)
+        self.fields["sku"].required = True
         self.fields["weight"].widget.attrs = {"class": "form-control"}
+
+    def clean_sku(self, *args, **kwargs):
+        """
+        Perform validation on SKU.
+
+        Fetch SKU field and perform validation like unique SKU in database
+        or some other custom validation. you can raise error for perticular
+        field from here that will be display as error on the formself.
+        """
+        sku = self.cleaned_data["sku"]
+        if sku:
+            if self.instance.id:
+                if (
+                    ProductParent.objects.filter(sku=sku)
+                    .exclude(pk=self.instance.id)
+                    .exists()
+                ):
+                    msg = _("Parent Component with same SKU already exists.")
+                    raise forms.ValidationError(msg)
+                return sku
+            else:
+                if ProductParent.objects.filter(sku=sku).exists():
+                    msg = _("Parent Component with same SKU already exists.")
+                    raise forms.ValidationError(msg)
+                return sku
+
+
+class ComponentForm(forms.ModelForm):
+    """Component Form."""
+
+    class Meta:
+        """Defining Model and fields."""
+
+        model = Product
+        fields = ("model_number", "manufacturer_part_number", "weight")
+
+    def __init__(self, *args, **kwargs):
+        """Init basic fields."""
+        super().__init__(*args, **kwargs)
+        self.fields["model_number"].required = True
+        self.fields["manufacturer_part_number"].required = True
+        self.fields["weight"].widget.attrs = {"class": "form-control"}
+
+
+class ProductOptionForm(forms.ModelForm):
+    """Product Option Form."""
+
+    name_attrs = {
+        "data-selectable-options": {"minLength": 0},
+        "class": "form-control",
+    }
+    name = forms.CharField(
+        widget=AutoCompleteWidget(
+            lookup_class=ProductOptionLookup, allow_new=True, attrs=name_attrs
+        )
+    )
+
+    class Meta:
+        """Defining Model and fields."""
+
+        model = ProductOption
+        fields = ("name", "value")
+
+    def __init__(self, *args, **kwargs):
+        """Init basic fields."""
+        super().__init__(*args, **kwargs)
+        self.fields["name"].widget.attrs = {"onChange": "generate_variation()"}
+        self.fields["value"].widget.attrs = {"data-role": "tagsinput"}

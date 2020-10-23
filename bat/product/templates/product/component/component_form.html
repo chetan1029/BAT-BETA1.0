@@ -10,7 +10,7 @@
 {% block table_style %}{% endblock %}
 {% block form_style %}{% endblock %}
 {% block content %}
-
+<link rel="stylesheet" href="{% static 'app/css/vendor/bootstrap-tagsinput.css'%}" />
 <!-- Selectable plugin required Jquery css -->
 {% include_jquery_libs %}
 <!-- Selectable plugin required Jquery css -->
@@ -45,16 +45,20 @@
       <div class="col-12">
         <div class="card mb-4">
           <div class="card-body">
-            <form method="POST">
+            <div id="ajax_url" load-variation-url="{% url 'product:generate_variation' %}">
+
+            </div>
+            {% include "global/errors.html" %}
+            <div id="messages">
+
+            </div>
+            <form method="POST" novalidate onsubmit="return false;" id="add-component">
               {{ form.media.css }}
               {{ form.media.js }}
               {% csrf_token %}
-              <h5>Component Detail</h5>
+              <h5 class="mb-3">Component Detail</h5>
               {{ form.title|as_crispy_field }}
               <div class="row">
-                <div class="col-md-4">
-                  {{ form.sku|as_crispy_field }}
-                </div>
                 <div class="col-md-4">
                   {{ form.type|as_crispy_field }}
                 </div>
@@ -62,7 +66,51 @@
                   {{ form.series|as_crispy_field }}
                 </div>
               </div>
-              <button type="submit" class="btn btn-primary mb-0">Submit</button>
+              <div class="row">
+                <div class="col-md-4">
+                  {{ form.tags|as_crispy_field }}
+                </div>
+              </div>
+              <h5 class="mb-3">Variation Detail</h5>
+              <div class="custom-control custom-checkbox mb-3">
+                <input type="checkbox" class="custom-control-input" name="is_variation" id="is_variation" value="True">
+                <label class="custom-control-label" for="is_variation">This component has multiple options, like different sizes or colors </label>
+              </div>
+
+              <div id="variation_options" class="mb-3">
+
+                {{ optionforms.management_form }}
+                {% for form in optionforms %}
+                <div class="option_form row">
+                  <div class="col-md-2">
+                      {{ form.name|as_crispy_field }}
+                  </div>
+                  <div class="col-md-6">
+                    {{ form.value|as_crispy_field }}
+                  </div>
+                  <div class="col-md-1 delete">
+
+                  </div>
+                </div>
+                {% endfor %}
+                <div id="display_variations" class="mb-3 mt-3">
+
+                </div>
+              </div>
+              <div id="no_variations">
+                <div class="row">
+                  <div class="col-md-4">
+                    {{ component_form.model_number|as_crispy_field }}
+                  </div>
+                  <div class="col-md-4">
+                    {{ component_form.manufacturer_part_number|as_crispy_field }}
+                  </div>
+                  <div class="col-md-4">
+                    {{ component_form.weight|as_crispy_field }}
+                  </div>
+                </div>
+              </div>
+              <a class="btn btn-primary mb-0 text-white" onclick="submit_form()">Submit</a>
             </form>
           </div>
         </div>
@@ -75,21 +123,160 @@
 {% block table_script %}{% endblock %}
 {% block form_script %}{% endblock %}
 {% block script %}
+<script src="{% static 'formset/jquery.formset.js'%}"></script>
+<script src="{% static 'app/js/vendor/bootstrap-tagsinput.min.js'%}"></script>
 <script>
-    $.ui.djselectable.prototype._comboButtonTemplate = function (input) {
-        var icon = $("<i>").addClass("iconsmind-Scroll");
-        var button = $("<button>").append(icon).addClass("btn btn-outline-secondary default btn-sm");
-        // Remove current classes on the text input
-        $(input).attr("class", "form-control");
-        // Wrap with input-append
-        $(input).wrap('<div class="input-group" />');
-        // Return button link with the chosen icon
-        return $("<div>").append(button).addClass("input-group-append");
-    };
-    $.ui.djselectable.prototype._removeButtonTemplate = function (item) {
-        var icon = $("<i>").addClass("simple-icon-close ml-1");
-        // Return button link with the chosen icon
-        return $("<a>").append(icon).addClass("pull-right");
-    };
+$('.option_form').formset({
+ addCssClass: "btn btn-info btn-xs",
+ deleteContainerClass: "delete",
+ deleteCssClass: "btn btn-danger btn-xs mt-4",
+ //added: bindSelectables,
+ added: function(row) {
+   bindSelectables(row);
+   $("input[data-role=tagsinput]").tagsinput({
+     cancelConfirmKeysOnEmpty: true,
+     confirmKeys: [13],
+     trimValue: true
+   });
+   tagaction();
+ },
+ removed: function(row) {
+   generate_variation();
+ }
+});
+
+$.ui.djselectable.prototype._comboButtonTemplate = function (input) {
+    var icon = $("<i>").addClass("iconsmind-Scroll");
+    var button = $("<a>").append(icon).addClass("btn btn-outline-secondary default btn-sm");
+    // Remove current classes on the text input
+    $(input).attr("class", "form-control");
+    // Wrap with input-append
+    $(input).wrap('<div class="input-group" />');
+    // Return button link with the chosen icon
+    return $("<div>").append(button).addClass("input-group-append");
+};
+$.ui.djselectable.prototype._removeButtonTemplate = function (item) {
+    var icon = $("<i>").addClass("simple-icon-close ml-1");
+    // Return button link with the chosen icon
+    return $("<a>").append(icon).addClass("pull-right");
+};
+
+$("#variation_options").hide();
+$("#variation_options input, #variation_options select").prop("disabled",true);
+$('#is_variation').click(function() {
+    if(this.checked){
+      $("#variation_options input, #variation_options select").prop("disabled",false);
+      $("#variation_options").show();
+      $("#no_variations input, #no_variations select").prop("disabled",true);
+      $("#no_variations").hide();
+    }else{
+      $("#variation_options input, #variation_options select").prop("disabled",true);
+      $("#variation_options").hide();
+      $("#no_variations input, #no_variations select").prop("disabled",false);
+      $("#no_variations").show();
+    }
+});
+
+$(':input[name=form-1-name]').bind('djselectableselect', function(event, ui) {
+  generate_variation();
+});
+
+// Bootstrap tags
+if ($().tagsinput) {
+  $(".tags").tagsinput({
+    cancelConfirmKeysOnEmpty: true,
+    confirmKeys: [13],
+    trimValue: true
+  });
+}
+
+
+function tagaction(){
+  $('input[data-role=tagsinput]').on('itemAdded itemRemoved', function(event) {
+  // event.item: contains the item
+    generate_variation();
+  });
+}
+tagaction();
+
+
+/* Generate Variation */
+function generate_variation() {
+    var url = $("#ajax_url").attr("load-variation-url");
+    var option1 = $("input[name=form-0-name]").val();
+    if(option1 === undefined){
+      option1 = "";
+      option1_values = "";
+    }else{
+      option1_values = $("input[name=form-0-value]").val();
+    }
+    var option2 = $("input[name=form-1-name]").val();
+    if(option2 === undefined){
+      option2 = "";
+      option2_values = "";
+    }else{
+      option2_values = $("input[name=form-1-value]").val();
+    }
+    var option3 = $("input[name=form-2-name]").val();
+    if(option3 === undefined){
+      option3 = "";
+      option3_values = "";
+    }else{
+      option3_values = $("input[name=form-2-value]").val();
+    }
+    if (option1!="" || option2!="" || option3!=""){
+      console.log(option1+" "+option2+" "+option3);
+      $.ajax({
+        url: url,
+        data: {
+          'option1': option1,
+          'option2': option2,
+          'option3': option3,
+          'option1_values': option1_values,
+          'option2_values': option2_values,
+          'option3_values': option3_values,
+        },
+        success: function(data) {
+          $("#display_variations").html(data);
+        }
+      })
+    }
+}
+
+function delete_variation(id){
+  $("#"+id+" input").prop("disabled",true);
+  $("#"+id+" .col").hide();
+  $("#"+id+" .undo").show();
+}
+function restore_variation(id){
+  $("#"+id+" input").prop("disabled",false);
+  $("#"+id+" .col").show();
+  $("#"+id+" .undo").hide();
+}
+
+function submit_form(){
+  console.log("ffffff");
+  var form = $("#add-component");
+  var url = form.attr('action');
+  $('div[role="alert"]').remove();
+
+  $.ajax({
+         type: "POST",
+         url: url,
+         data: form.serialize(),
+         success: function(data)
+         {
+            form.children("div.alert").remove();
+            if(data.success){
+               $("#messages").html('<div class="alert alert-success" role="alert">'+data.message+'</div>');
+               window.open("{% url 'product:product_list' %}","_self");
+            }else if(data.error){
+               $("#variation").children("div.alert").remove();
+               $("#"+data.id).before('<div class="alert alert-danger" role="alert">'+data.message+'</div>');
+            }
+         }
+       });
+  }
+
 </script>
 {% endblock %}

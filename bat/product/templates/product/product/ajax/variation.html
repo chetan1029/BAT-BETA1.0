@@ -1,0 +1,64 @@
+<input type="hidden" name="option1" value="{{option1}}" />
+<input type="hidden" name="option2" value="{{option2}}" />
+<input type="hidden" name="option3" value="{{option3}}" />
+<input type="hidden" name="option1_values" value="{{option1_values}}" />
+<input type="hidden" name="option2_values" value="{{option2_values}}" />
+<input type="hidden" name="option3_values" value="{{option3_values}}" />
+<div class="row">
+  <div class="col">
+    <p><strong>Variation</strong></p>
+  </div>
+  <div class="col">
+    <p><strong>Model Number*</strong></p>
+  </div>
+  <div class="col">
+    <p><strong>Manufacturer Part Number*</strong></p>
+  </div>
+  <div class="col">
+    <p><strong>Weight</strong></p>
+  </div>
+  <div class="col">
+    <p></p>
+  </div>
+</div>
+{% for variation in variation_options %}
+<div class="row" id="variation{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}">
+  <input type="hidden" name="available{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}" value="Yes" />
+  <div class="col">
+    <p class="mt-3">{{variation.option1_value}} {{variation.option2_value}} {{variation.option3_value}}</p>
+  </div>
+  <div class="col">
+    <div class="form-group">
+      <input type="text" class="form-control" name="model_number{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}" required />
+    </div>
+  </div>
+  <div class="col">
+    <div class="form-group">
+      <input type="text" class="form-control" name="manufacturer_part_number{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}" required />
+    </div>
+  </div>
+  <div class="col">
+    <div class="input-group">
+      <input type="text" class="form-control" name="weight{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}"  />
+      <div class="input-group-append">
+        <select name="weight_unit{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}" class="select form-control">
+          <option value="kg" {% if weight_unit == "kg" %}selected{% endif %}>kg</option>
+          <option value="g" {% if weight_unit == "g" %}selected{% endif %}>g</option>
+          <option value="lb" {% if weight_unit == "lb" %}selected{% endif %}>lb</option>
+          <option value="oz" {% if weight_unit == "oz" %}selected{% endif %}>oz</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="text-center mt-3 mb-3">
+      <a href="javascript:void()" onclick="delete_variation('variation{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}')" class="text-danger mt-2"><i class="simple-icon-trash"></i></a>
+    </div>
+  </div>
+  <div class="col undo" style="display:none">
+    <div class="text-center mt-3 mb-3">
+      This variant will not be created <a href="javascript:void()" onclick="restore_variation('variation{{variation.option1_value|slugify}}{{variation.option2_value|slugify}}{{variation.option3_value|slugify}}')" class="text-info mt-2">Undo</a>
+    </div>
+  </div>
+</div>
+{% endfor %}

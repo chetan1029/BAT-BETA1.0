@@ -51,17 +51,6 @@
           </a>
         </li>
         {% endif %}
-
-        <!-- Departments -->
-        {% if loggedin_member|has_role:'inventory_manager,company_admin' %}
-        <li {% if active_menu.menu1 == 'inventorize' %}class="active"{% endif %}>
-          <a href="#departments">
-            <i class="simple-icon-organization"></i>
-            <span>{% translate "Departments" %}</span>
-          </a>
-        </li>
-        {% endif %}
-
         <!-- Setting -->
         {% if loggedin_member|has_role:'supply_chain_manager,company_admin,vendor_admin' %}
         <li {% if active_menu.menu1 == 'setting' %}class="active"{% endif %}>
@@ -202,14 +191,7 @@
           </a>
         </li>
       </ul>
-      <!-- Departments -->
-      <ul class="list-unstyled" data-link="departments">
-        <li>
-          <a href="#">
-            <i class="simple-icon-user-following"></i> {% translate "Roles & Responsibility" %}
-          </a>
-        </li>
-      </ul>
+
       <!-- Setting -->
       <ul class="list-unstyled" data-link="setting">
         {% if loggedin_member|can:'update_company_profile' %}

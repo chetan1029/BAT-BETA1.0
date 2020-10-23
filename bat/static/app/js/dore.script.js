@@ -3934,3 +3934,55 @@ $.fn.dore = function(options) {
     }
   });
 };
+
+// array recursive
+function combineArraysRecursively( array_of_arrays ){
+
+        // First, handle some degenerate cases...
+        //console.table(array_of_arrays);
+        if( ! array_of_arrays ){
+            // Or maybe we should toss an exception...?
+            return [];
+        }
+
+        if( ! Array.isArray( array_of_arrays ) ){
+            // Or maybe we should toss an exception...?
+            return [];
+        }
+
+        if( array_of_arrays.length == 0 ){
+            return [];
+        }
+        if (array_of_arrays[0].constructor !== Array){
+          // if its not 2d array
+          return array_of_arrays;
+        }
+        for( let i = 0 ; i < array_of_arrays.length; i++ ){
+            if( ! Array.isArray(array_of_arrays[i]) || array_of_arrays[i].length == 0 ){
+                // If any of the arrays in array_of_arrays are not arrays or are zero-length array, return an empty array...
+                //return [];
+                array_of_arrays.pop(i);
+            }
+        }
+        //console.table(array_of_arrays)
+        // Done with degenerate cases...
+        let outputs = [];
+
+        function permute(arrayOfArrays, whichArray=0, output=""){
+
+            arrayOfArrays[whichArray].forEach((array_element)=>{
+                if( whichArray == array_of_arrays.length - 1 ){
+                    // Base case...
+                    outputs.push( output + array_element );
+                }
+                else{
+                    // Recursive case...
+                    permute(arrayOfArrays, whichArray+1, output + array_element+" / " );
+                }
+            });/*  forEach() */
+        }
+
+        permute(array_of_arrays);
+
+        return outputs;
+}

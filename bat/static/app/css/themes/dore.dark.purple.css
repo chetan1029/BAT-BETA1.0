@@ -5368,4 +5368,13 @@ ul.selectable-deck li.selectable-deck-item {
   font-size: 14px;
   color: #212b36;
   display: inline-flex;
-  margin-right: 5px !important; }
+  margin-right: 5px !important;
+  margin-bottom: 5px !important; }
+
+.bootstrap-tagsinput .tag {
+  background: #dfe3e8;
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: 14px;
+  color: #212b36 !important;
+  display: inline-flex; }

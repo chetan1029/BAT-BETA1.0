@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 import logging
 
 from bat.company.models import HsCode
-from bat.product.models import Product
-from selectable.base import ModelLookup
+from bat.product.models import Product, ProductParent
+from selectable.base import LookupBase, ModelLookup
 from selectable.decorators import login_required
 from selectable.registry import registry
 from taggit.models import Tag
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class ProductTypeLookup(ModelLookup):
     """Product Type Lookup class."""
 
-    model = Product
+    model = ProductParent
     search_fields = ("type__icontains",)
 
     def get_query(self, request, term):
@@ -44,7 +44,7 @@ registry.register(ProductTypeLookup)
 class ProductSeriesLookup(ModelLookup):
     """Product Series Lookup class."""
 
-    model = Product
+    model = ProductParent
     search_fields = ("series__icontains",)
 
     def get_query(self, request, term):
@@ -106,8 +106,12 @@ class ProductTagLookup(ModelLookup):
         results = super(ProductTagLookup, self).get_query(request, term)
         return results
 
+    def get_item(self, value):
+        """Display for choice listings."""
+        return value
+
     def get_item_id(self, item):
-        """Display for currently selected item."""
+        """Display for choice listings."""
         return item.name
 
     def get_item_label(self, item):
@@ -116,3 +120,15 @@ class ProductTagLookup(ModelLookup):
 
 
 registry.register(ProductTagLookup)
+
+
+class ProductOptionLookup(LookupBase):
+    """Custom Lookup for product option."""
+
+    def get_query(self, request, term):
+        """Make a get_query."""
+        data = ["Size", "Color", "Material", "Style"]
+        return [x for x in data if x.startswith(term)]
+
+
+registry.register(ProductOptionLookup)

@@ -34,11 +34,7 @@ urlpatterns = [
         name="product_restore",
     ),
     # Component
-    path(
-        "component/add",
-        views.ComponentCreateView.as_view(),
-        name="component_create",
-    ),
+    path("component/add", views.create_component, name="component_create"),
     path(
         "component",
         views.ComponentActiveListView.as_view(),
@@ -63,5 +59,10 @@ urlpatterns = [
         "component/<int:pk>/restore/",
         views.ComponentRestoreView.as_view(),
         name="component_restore",
+    ),
+    path(
+        "ajax/generate-variation",
+        views.generate_variation,
+        name="generate_variation",
     ),
 ]

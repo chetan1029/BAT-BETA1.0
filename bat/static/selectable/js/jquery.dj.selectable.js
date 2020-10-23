@@ -188,6 +188,16 @@
                     $input.focus();
                 });
             }
+						// show option on focus event on input
+						$input.focus(function (e) {
+								e.preventDefault();
+								// close if already visible
+								if (self.widget().is(":visible")) {
+										self.close();
+								}
+								// pass empty string as value to search for, displaying all results
+								self._search("");
+						});
         },
 
         // Override the default source creation
@@ -287,13 +297,10 @@
         },
         // Override default trigger for additional change/select logic
         _trigger: function (type, event, data) {
-						console.log("select event")
-            var $input = $(this.element),
+						var $input = $(this.element),
                 self = this;
             if (type === "select") {
-								console.log("select event 1")
-								console.log(data);
-                $input.removeClass('ui-state-error');
+								$input.removeClass('ui-state-error');
                 if (data.item.page) {
                     $input.data("page", data.item.page);
                     this._search(data.item.term);
@@ -333,7 +340,7 @@
 							content = this._normalize( content );
 						}
 						/* push add search terms content here if there is no sugesstion */
-						if( !content.length){
+						if( !content.length && this.allowMultiple){
 							content.push({
 								"id": search_term,
 								"value": search_term,

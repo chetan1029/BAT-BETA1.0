@@ -4,6 +4,7 @@ import os
 from bat.company.models import Company, HsCode
 from bat.setting.models import Status
 from django.contrib.postgres.fields import HStoreField
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -15,7 +16,7 @@ from taggit.managers import TaggableManager
 CM = "cm"
 IN = "in"
 LENGTH_UNIT_TYPE = ((CM, "cm"), (IN, "in"))
-STATUS_DEFAULT = "Active"
+
 
 # Create your models here.
 class ProductParent(models.Model):
@@ -46,9 +47,7 @@ class ProductParent(models.Model):
     description = models.TextField(blank=True)
     tags = TaggableManager(blank=True)
     is_active = models.BooleanField(default=True)
-    status = models.ForeignKey(
-        Status, on_delete=models.PROTECT, default=STATUS_DEFAULT
-    )
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -75,6 +74,7 @@ class Product(models.Model):
     """
 
     productparent = models.ForeignKey(ProductParent, on_delete=models.CASCADE)
+    title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
     ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
     model_number = models.CharField(
@@ -130,6 +130,36 @@ class Product(models.Model):
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
+
+    def validate_unique(self, exclude=None):
+        """Set unique Validation."""
+        super(Product, self).validate_unique(exclude=exclude)
+        errors = []
+        if not self.id:
+            if self.__class__.objects.filter(
+                model_number=self.model_number
+            ).exists():
+                errors.append(
+                    ValidationError(
+                        _(
+                            "Component %(name)s with same model number already exists"
+                        ),
+                        params={"name": self.title},
+                    )
+                )
+            if self.__class__.objects.filter(
+                manufacturer_part_number=self.manufacturer_part_number
+            ).exists():
+                errors.append(
+                    ValidationError(
+                        _(
+                            "Component %(name)s with same manufacturer part number already exists"
+                        ),
+                        params={"name": self.title},
+                    )
+                )
+            if errors:
+                raise ValidationError(errors)
 
     def __str__(self):
         """Return Value."""
