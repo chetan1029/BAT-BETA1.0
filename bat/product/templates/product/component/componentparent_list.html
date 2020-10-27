@@ -25,10 +25,7 @@
               <li class="breadcrumb-item">
                 <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
               </li>
-              <li class="breadcrumb-item">
-                <a href="{% url 'product:componentparent_list' %}">{% translate 'Components' %}</a>
-              </li>
-              <li class="breadcrumb-item active" aria-current="page">{{parentproduct.title}}</li>
+              <li class="breadcrumb-item active" aria-current="page">{% translate 'Components' %}</li>
             </ol>
           </nav>
 
@@ -42,14 +39,14 @@
         {% include "global/messages.html" %}
         <div class="text-right mb-2">
           {% if page_type == "active" %}
-          <a href="{% url 'product:componentarchived_list' pk=parentproduct.pk %}">{% translate 'View archived Component' %}</a>
+          <a href="{% url 'product:componentparentarchived_list' %}">{% translate 'View archived Component' %}</a>
           {% else %}
-          <a href="{% url 'product:component_list' pk=parentproduct.pk %}">{% translate 'View active Component' %}</a>
+          <a href="{% url 'product:componentparent_list' %}">{% translate 'View active Component' %}</a>
           {% endif %}
         </div>
         <div class="card">
           <div class="card-body">
-            {% if not product_list %}
+            {% if not productparent_list %}
             <div class="alert alert-warning">
               {% translate 'No component found' %}
             </div>
@@ -58,40 +55,42 @@
               <thead>
                 <tr>
                   <th>{% translate 'Title' %}</th>
-                  <th>{% translate 'Model number' %}</th>
-                  <th>{% translate 'Manufacturer part number' %}</th>
-                  <th>{% translate 'Weight' %}</th>
+                  <th>{% translate 'Type' %}</th>
+                  <th>{% translate 'Tags' %}</th>
                   <th>{% translate 'Action' %}</th>
                 </tr>
               </thead>
               <tbody>
-                {% for component in product_list %}
+                {% for component in productparent_list %}
                 <tr>
                   <td>
-                    <p class="list-item-heading">{{ component.title }}</p>
+                    <p class="list-item-heading">
+                      {% if component.is_active %}
+                      <a href="{% url 'product:component_list' pk=component.pk %}">{{ component.title }}</a>
+                      {% else %}
+                      <a href="{% url 'product:componentarchived_list' pk=component.pk %}">{{ component.title }}</a>
+                      {% endif %}
+                    </p>
                   </td>
                   <td>
-                    <p class="list-item-heading">{{ component.model_number }}</p>
+                    <p class="list-item-heading">{{ component.type }}</p>
                   </td>
                   <td>
-                    <p class="list-item-heading">{{ component.manufacturer_part_number }}</p>
-                  </td>
-                  <td>
-                    <p class="list-item-heading">{{ component.weight }}</p>
+                    <p class="list-item-heading">{% for tag in component.tags.names %}{{tag}}{% if not forloop.last %},{% endif %} {% endfor %}</p>
                   </td>
                   <td>
                     {% if loggedin_member|can:'delete_product' or loggedin_member|can:'archived_product' %}
                     {% if component.is_active %}
-                    <a href="{% url 'product:component_archived' pk=component.pk %}" class="btn btn-outline-warning icon-button ">
+                    <a href="{% url 'product:componentparent_archived' pk=component.pk %}" class="btn btn-outline-warning icon-button ">
                       <i class="simple-icon-action-redo"></i>
                     </a>
                     {% else %}
-                    <a href="{% url 'product:component_restore' pk=component.pk %}" class="btn btn-outline-success icon-button ">
+                    <a href="{% url 'product:componentparent_restore' pk=component.pk %}" class="btn btn-outline-success icon-button ">
                       <i class="simple-icon-action-undo"></i>
                     </a>
                     {% endif %}
                     {% if loggedin_member|can:'delete_product' %}
-                    <a href="{% url 'product:component_delete' pk=component.pk %}" class="btn btn-outline-danger icon-button ">
+                    <a href="{% url 'product:componentparent_delete' pk=component.pk %}" class="btn btn-outline-danger icon-button ">
                       <i class="simple-icon-trash"></i>
                     </a>
                     {% endif %}

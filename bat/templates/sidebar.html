@@ -75,7 +75,7 @@
         </li>
         {% if loggedin_member|can:'view_product' %}
         <li class="{% if active_menu.menu2 == 'component' %}active{% endif %}">
-          <a href="{% url 'product:component_list' %}">
+          <a href="{% url 'product:componentparent_list' %}">
             <i class="simple-icon-layers"></i> {% translate "Components" %}
           </a>
         </li>

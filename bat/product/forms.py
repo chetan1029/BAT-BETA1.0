@@ -12,6 +12,7 @@ from crispy_forms.layout import HTML, Column, Layout, Row, Submit
 from django import forms
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django_measurement.forms import MeasurementWidget
 from invitations.utils import get_invitation_model
 from selectable.forms import (AutoComboboxSelectMultipleWidget,
                               AutoComboboxWidget,
@@ -20,6 +21,12 @@ from selectable.forms import (AutoComboboxSelectMultipleWidget,
 
 logger = logging.getLogger(__name__)
 Invitation = get_invitation_model()
+
+
+class CustomMeasurementWidget(MeasurementWidget):
+    """Override measurementWidget class styles."""
+
+    template_name = "forms/widgets/measurement.html"  # inside product template
 
 
 class ProductParentForm(forms.ModelForm):
@@ -170,7 +177,13 @@ class ComponentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["model_number"].required = True
         self.fields["manufacturer_part_number"].required = True
-        self.fields["weight"].widget.attrs = {"class": "form-control"}
+
+        weight_value, weight_units = self.fields["weight"].fields
+        self.fields["weight"].widget = CustomMeasurementWidget(
+            float_widget=weight_value.widget,
+            unit_choices_widget=weight_units.widget,
+            attrs={"class": "form-control"},
+        )
 
 
 class ProductOptionForm(forms.ModelForm):

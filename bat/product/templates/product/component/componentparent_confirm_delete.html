@@ -21,7 +21,7 @@
               <a href="{% url 'core:dashboard' %}">{% translate 'Dashboard' %}</a>
             </li>
             <li class="breadcrumb-item">
-              <a href="{% url 'product:component_list' pk=product.productparent_id %}">{% translate 'Component' %}</a>
+              <a href="{% url 'product:componentparent_list' %}">{% translate 'Component' %}</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">{% translate 'Delete Component' %}</li>
           </ol>
@@ -37,7 +37,7 @@
             <form action="" method="post">{% csrf_token %}
             <p>{% blocktranslate %}Are you sure you want to delete "{{ object }}"?{% endblocktranslate %}</p>
             <input class='btn btn-danger' type="submit" value="{% translate 'Confirm' %}" />
-            <a href="{% url 'product:component_list' pk=product.productparent_id %}" class="btn btn-info mb-0">{% translate 'Cancel' %}</a>
+            <a href="{% url 'product:componentparent_list' %}" class="btn btn-info mb-0">{% translate 'Cancel' %}</a>
           </form>
 
           </div>
