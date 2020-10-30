@@ -28,6 +28,8 @@ from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
 from rest_framework import permissions, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from reversion.views import RevisionMixin
 from rolepermissions.checkers import has_permission
 from rolepermissions.permissions import revoke_permission
@@ -404,9 +406,30 @@ class SettingsPaymentTermsList(viewsets.ModelViewSet):
     queryset = CompanyPaymentTerms.objects.all()
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        """Override get queryset with current loggedin company."""
+        queryset = super().get_queryset()
+        return queryset.filter(company=self.request.member.company)
+
     def perform_create(self, serializer):
         """Set the data for who is the owner or creater."""
         serializer.save(company=self.request.member.company)
+
+    @action(detail=True, methods=["get"])
+    def archived(self, request, *args, **kwargs):
+        """Set the archived action."""
+        paymentterms = self.get_object()
+        paymentterms.is_active = False
+        paymentterms.save()
+        return Response({"status": "Paymentterms is archived"})
+
+    @action(detail=True, methods=["get"])
+    def restore(self, request, *args, **kwargs):
+        """Set the archived action."""
+        paymentterms = self.get_object()
+        paymentterms.is_active = True
+        paymentterms.save()
+        return Response({"status": "Paymentterms is restored"})
 
 
 class SettingsPaymentTermsCreateView(
