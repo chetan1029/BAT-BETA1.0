@@ -77,6 +77,8 @@ THIRD_PARTY_APPS = [
     # Rest Framwork
     "corsheaders",
     "rest_framework",
+    # Django Filter
+    "django_filters",
     # Django Swagger for documentation
     "rest_framework_swagger",
     # Crispy Forms

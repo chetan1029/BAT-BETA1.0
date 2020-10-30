@@ -4,13 +4,30 @@ import logging
 from collections import OrderedDict
 from decimal import Decimal
 
-from bat.company.forms import (AccountSetupForm, BankForm, CompanyForm,
-                               CompanyPaymentTermsForm, CompanyUpdateForm,
-                               HsCodeForm, LocationForm, MemberForm,
-                               MemberUpdateForm, PackingBoxForm, TaxForm,
-                               VendorInviteForm)
-from bat.company.models import (Bank, Company, CompanyPaymentTerms, HsCode,
-                                Location, Member, PackingBox, Tax)
+from bat.company.forms import (
+    AccountSetupForm,
+    BankForm,
+    CompanyForm,
+    CompanyPaymentTermsForm,
+    CompanyUpdateForm,
+    HsCodeForm,
+    LocationForm,
+    MemberForm,
+    MemberUpdateForm,
+    PackingBoxForm,
+    TaxForm,
+    VendorInviteForm,
+)
+from bat.company.models import (
+    Bank,
+    Company,
+    CompanyPaymentTerms,
+    HsCode,
+    Location,
+    Member,
+    PackingBox,
+    Tax,
+)
 from bat.company.serializers import CompanyPaymentTermsSerializer
 from bat.company.utils import get_cbm
 from bat.core.mixins import HasPermissionsMixin
@@ -23,11 +40,18 @@ from django.db.models.deletion import ProtectedError
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
-                                  TemplateView, UpdateView)
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
+from django_filters.rest_framework import DjangoFilterBackend
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
-from rest_framework import permissions, viewsets
+from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from reversion.views import RevisionMixin
@@ -398,18 +422,20 @@ class SettingsMemberCreateView(
         return context
 
 
-# Payment terms
-class SettingsPaymentTermsList(viewsets.ModelViewSet):
+# Company Filter backend.
+class CompanyFilterBackend(filters.BaseFilterBackend):
+    """Filter that only allows company to see their own objects."""
+
+    def filter_queryset(self, request, queryset, view):
+        """Override queryset with company filter."""
+        return queryset.filter(company=request.member.company).order_by(
+            "-create_date"
+        )
+
+
+# Company setting common viewset
+class CompanySettingViewSet(viewsets.ModelViewSet):
     """List all the payment terms."""
-
-    serializer_class = CompanyPaymentTermsSerializer
-    queryset = CompanyPaymentTerms.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        """Override get queryset with current loggedin company."""
-        queryset = super().get_queryset()
-        return queryset.filter(company=self.request.member.company)
 
     def perform_create(self, serializer):
         """Set the data for who is the owner or creater."""
@@ -418,18 +444,37 @@ class SettingsPaymentTermsList(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def archived(self, request, *args, **kwargs):
         """Set the archived action."""
-        paymentterms = self.get_object()
-        paymentterms.is_active = False
-        paymentterms.save()
-        return Response({"status": "Paymentterms is archived"})
+        object = self.get_object()
+        object.is_active = False
+        object.save()
+        return Response({"status": self.archived_message})
 
     @action(detail=True, methods=["get"])
     def restore(self, request, *args, **kwargs):
         """Set the archived action."""
-        paymentterms = self.get_object()
-        paymentterms.is_active = True
-        paymentterms.save()
-        return Response({"status": "Paymentterms is restored"})
+        object = self.get_object()
+        object.is_active = True
+        object.save()
+        return Response({"status": self.restore_message})
+
+
+# Payment terms
+class SettingsPaymentTermsList(CompanySettingViewSet):
+    """List all the payment terms."""
+
+    serializer_class = CompanyPaymentTermsSerializer
+    queryset = CompanyPaymentTerms.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        CompanyFilterBackend,
+    ]
+    filterset_fields = ["is_active", "payment_days"]
+    search_fields = ["title"]
+
+    archived_message = _("Paymentterms is archived")
+    restore_message = _("Paymentterms is restored")
 
 
 class SettingsPaymentTermsCreateView(

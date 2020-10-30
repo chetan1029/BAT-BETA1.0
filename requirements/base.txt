@@ -198,3 +198,6 @@ django-cors-headers==3.5.0
 
 # Django Swagger for documentation
 django-rest-swagger==2.2.0
+
+# Django Filter
+django-filter==2.4.0
