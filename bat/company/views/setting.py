@@ -11,6 +11,7 @@ from bat.company.forms import (AccountSetupForm, BankForm, CompanyForm,
                                VendorInviteForm)
 from bat.company.models import (Bank, Company, CompanyPaymentTerms, HsCode,
                                 Location, Member, PackingBox, Tax)
+from bat.company.serializers import CompanyPaymentTermsSerializer
 from bat.company.utils import get_cbm
 from bat.core.mixins import HasPermissionsMixin
 from django.contrib import messages
@@ -26,6 +27,7 @@ from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   TemplateView, UpdateView)
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
+from rest_framework import permissions, viewsets
 from reversion.views import RevisionMixin
 from rolepermissions.checkers import has_permission
 from rolepermissions.permissions import revoke_permission
@@ -394,144 +396,17 @@ class SettingsMemberCreateView(
         return context
 
 
-# Vendor
-class VendorDashboardView(LoginRequiredMixin, VendorMenuMixin, TemplateView):
-    """View Class to show Supply Chain dashboard after login."""
-
-    template_name = "company/vendor/vendor_dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        return context
-
-
-class VendorInviteView(
-    LoginRequiredMixin,
-    SuccessMessageMixin,
-    RevisionMixin,
-    VendorMenuMixin,
-    CreateView,
-):
-    """Invite Vendor."""
-
-    form_class = VendorInviteForm
-    model = Company
-    success_message = _("Invitation was successfully sent.")
-    template_name = "company/vendor/vendor_form.html"
-
-    def form_valid(self, form):
-        """If form is valid update title."""
-        self.object = form.save(commit=False)
-        email = form.cleaned_data["email"].lower()
-        # User Detail
-        first_name = form.cleaned_data["first_name"]
-        last_name = form.cleaned_data["last_name"]
-        job_title = form.cleaned_data["job_title"]
-        user_detail = {
-            "first_name": first_name,
-            "last_name": last_name,
-            "job_title": job_title,
-        }
-        # Company Detail
-        vendor_type = form.cleaned_data["vendor_type"]
-        vendor_name = form.cleaned_data["vendor_name"]
-        member_id = self.request.session.get("member_id")
-        member = Member.objects.get(pk=member_id)
-        company_detail = {
-            "company_id": member.company_id,
-            "company_name": member.company.name,
-            "vendor_name": vendor_name,
-            "vendor_type": vendor_type,
-        }
-        role = "vendor_admin"
-        role_obj = RolesManager.retrieve_role(role)
-        user_roles = {
-            "roles": [role],
-            "perms": list(role_obj.permission_names_list()),
-        }
-        extra_data = {}
-        extra_data["type"] = "Vendor Invitation"
-        invite = Invitation.create(
-            email,
-            inviter=self.request.user,
-            user_detail=user_detail,
-            company_detail=company_detail,
-            user_roles=user_roles,
-            extra_data=extra_data,
-        )
-        invite.send_invitation(self.request)
-
-        return HttpResponseRedirect(self.get_success_url())
-
-    def get_success_url(self):
-        """Forward to url after sending invitation successfully."""
-        return reverse_lazy("company:vendor_dashboard")
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        return context
-
-
 # Payment terms
-class SettingsPaymentTermsListView(
-    HasPermissionsMixin,
-    LoginRequiredMixin,
-    CompanySettingMenuMixin,
-    RevisionMixin,
-    ListView,
-):
+class SettingsPaymentTermsList(viewsets.ModelViewSet):
     """List all the payment terms."""
 
-    required_permission = "view_payment_terms"
-    model = CompanyPaymentTerms
-    template_name = "company/paymentterms/paymentterms_list.html"
+    serializer_class = CompanyPaymentTermsSerializer
+    queryset = CompanyPaymentTerms.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        """Override the basic query with company object."""
-        queryset = super().get_queryset()
-        return queryset.filter(company=self.request.member.company)
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["active_menu"].update({"menu2": "payment-terms"})
-        return context
-
-
-class SettingsPaymentTermsActiveListView(SettingsPaymentTermsListView):
-    """List all Active payment terms."""
-
-    def get_queryset(self):
-        """Override the basic query with company object."""
-        queryset = super().get_queryset()
-        return queryset.filter(
-            company=self.request.member.company, is_active=True
-        )
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["page_type"] = "active"
-        return context
-
-
-class SettingsPaymentTermsArchivedListView(SettingsPaymentTermsListView):
-    """List all archived payment terms."""
-
-    def get_queryset(self):
-        """Override the basic query with company object."""
-        queryset = super().get_queryset()
-        return queryset.filter(
-            company=self.request.member.company, is_active=False
-        )
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["page_type"] = "archived"
-        return context
+    def perform_create(self, serializer):
+        """Set the data for who is the owner or creater."""
+        serializer.save(company=self.request.member.company)
 
 
 class SettingsPaymentTermsCreateView(

@@ -1,12 +1,16 @@
 """URL Patterns for Company app."""
 
-from django.urls import path
+from django.urls import include, path
+from rest_framework import routers
 
 from . import views
 
 app_name = "company"
 
-urlpatterns = [
+router = routers.DefaultRouter()
+router.register(r"settings/payment-terms", views.SettingsPaymentTermsList)
+urlpatterns = [path("api/", include(router.urls))]
+urlpatterns += [
     # Account Setup
     path(
         "account-setup", views.AccountSetupView.as_view(), name="account_setup"
@@ -41,41 +45,41 @@ urlpatterns = [
         name="settingsmember_create",
     ),
     # Payment Terms
-    path(
-        "settings/payment-terms",
-        views.SettingsPaymentTermsActiveListView.as_view(),
-        name="settingspaymentterms_list",
-    ),
-    path(
-        "settings/payment-terms/archived",
-        views.SettingsPaymentTermsArchivedListView.as_view(),
-        name="settingspaymenttermsarchived_list",
-    ),
-    path(
-        "settings/payment-terms/add",
-        views.SettingsPaymentTermsCreateView.as_view(),
-        name="settingspaymentterms_create",
-    ),
-    path(
-        "settings/payment-terms/<int:pk>/edit/",
-        views.SettingsPaymentTermsUpdateView.as_view(),
-        name="settingspaymentterms_update",
-    ),
-    path(
-        "settings/payment-terms/<int:pk>/archived/",
-        views.SettingsPaymentTermsArchivedView.as_view(),
-        name="settingspaymentterms_archived",
-    ),
-    path(
-        "settings/payment-terms/<int:pk>/delete/",
-        views.SettingsPaymentTermsDeleteView.as_view(),
-        name="settingspaymentterms_delete",
-    ),
-    path(
-        "settings/payment-terms/<int:pk>/restore/",
-        views.SettingsPaymentTermsRestoreView.as_view(),
-        name="settingspaymentterms_restore",
-    ),
+    # path(
+    #     "settings/payment-terms",
+    #     views.SettingsPaymentTermsActiveListView.as_view(),
+    #     name="settingspaymentterms_list",
+    # ),
+    # path(
+    #     "settings/payment-terms/archived",
+    #     views.SettingsPaymentTermsArchivedListView.as_view(),
+    #     name="settingspaymenttermsarchived_list",
+    # ),
+    # path(
+    #     "settings/payment-terms/add",
+    #     views.SettingsPaymentTermsCreateView.as_view(),
+    #     name="settingspaymentterms_create",
+    # ),
+    # path(
+    #     "settings/payment-terms/<int:pk>/edit/",
+    #     views.SettingsPaymentTermsUpdateView.as_view(),
+    #     name="settingspaymentterms_update",
+    # ),
+    # path(
+    #     "settings/payment-terms/<int:pk>/archived/",
+    #     views.SettingsPaymentTermsArchivedView.as_view(),
+    #     name="settingspaymentterms_archived",
+    # ),
+    # path(
+    #     "settings/payment-terms/<int:pk>/delete/",
+    #     views.SettingsPaymentTermsDeleteView.as_view(),
+    #     name="settingspaymentterms_delete",
+    # ),
+    # path(
+    #     "settings/payment-terms/<int:pk>/restore/",
+    #     views.SettingsPaymentTermsRestoreView.as_view(),
+    #     name="settingspaymentterms_restore",
+    # ),
     # Membership
     path(
         "settings/membership",

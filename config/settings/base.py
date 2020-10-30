@@ -74,6 +74,11 @@ DJANGO_APPS = [
     "django.contrib.postgres",
 ]
 THIRD_PARTY_APPS = [
+    # Rest Framwork
+    "corsheaders",
+    "rest_framework",
+    # Django Swagger for documentation
+    "rest_framework_swagger",
     # Crispy Forms
     "crispy_forms",
     # mptt for managing tree like strcuture for categories
@@ -184,6 +189,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 MIDDLEWARE = [
+    # Cors Middleware
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -407,3 +414,15 @@ TAGGIT_CASE_INSENSITIVE = True
 
 # Some Global Variable for app
 STATUS_PRODUCT = env.bool("STATUS_PRODUCT", "Product")
+
+# Whitelist URL that frontend can be server on
+CORS_ORIGIN_WHITELIST = env.list(
+    "DJANGO_ALLOWED_HOSTS", default=["beta.thebatonline.com"]
+)
+
+# Rest Framework
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+}

@@ -8,6 +8,7 @@ from django.urls import include, path
 from django.views import defaults as default_views
 from django.views.decorators.csrf import csrf_exempt
 from django_ses.views import handle_bounce
+from rest_framework_swagger.views import get_swagger_view
 
 admin.autodiscover()
 urlpatterns = [
@@ -29,12 +30,15 @@ urlpatterns = [
     path("taggit_autosuggest/", include("taggit_autosuggest.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+schema_view = get_swagger_view(title="BAT API")
+
+urlpatterns += [path("docs", schema_view)]
+
 urlpatterns += i18n_patterns(
     # App Url Patterns
     path("plan/", include("plans.urls")),
     path("accounts/", include("bat.users.urls", namespace="accounts")),
     path("accounts/", include("django.contrib.auth.urls")),
-    path("setting/", include("bat.setting.urls", namespace="setting")),
     path("company/", include("bat.company.urls", namespace="company")),
     path("product/", include("bat.product.urls", namespace="product")),
     path("", include("bat.core.urls", namespace="core")),
