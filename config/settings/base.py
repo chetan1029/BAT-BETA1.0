@@ -336,3 +336,4 @@ ACCOUNT_ADAPTER = 'invitations.models.InvitationsAdapter'
 
 # Django Role Permissions
 ROLEPERMISSIONS_MODULE = "config.roles"
+

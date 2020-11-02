@@ -115,7 +115,6 @@ class Address(models.Model):
 class Company(Address):
     """
     Company Model.
-
     Model to store information for companies.
     """
 
