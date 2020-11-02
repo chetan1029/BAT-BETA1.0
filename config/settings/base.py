@@ -65,6 +65,7 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # "django.contrib.humanize", # Handy template tags
+    "django.contrib.postgres",
     "django.contrib.admin",
     "django.forms",
 ]
@@ -88,6 +89,10 @@ THIRD_PARTY_APPS = [
     "mptt",
     # Tagging Manager to model
     "taggit",
+    # Django Invitation
+    "invitations",
+    # Django Role Permissions
+    "rolepermissions",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -300,7 +305,7 @@ SOCIALACCOUNT_ADAPTER = "bat.users.adapters.SocialAccountAdapter"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_jwt.authentication.JSONWebTokenAuthentication",
-        # "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
         # "rest_framework.authentication.TokenAuthentication",
     ),
     'DEFAULT_PERMISSION_CLASSES': [
@@ -316,7 +321,18 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # rest-auth
 SITE_ID = 1
 REST_USE_JWT = True
+
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'bat.users.serializers.RestAuthRegisterSerializer',
+}
+
 # jwt
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': timedelta(seconds=3600),
 }
+
+# Django Invitation
+ACCOUNT_ADAPTER = 'invitations.models.InvitationsAdapter'
+
+# Django Role Permissions
+ROLEPERMISSIONS_MODULE = "config.roles"

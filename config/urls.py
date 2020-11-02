@@ -47,14 +47,16 @@ urlpatterns = [
     path("users/", include("bat.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
 
-    # apps
-    path("", include("bat.core.urls", namespace="core")),
+    # Django Invitation
+    path("invitations/", include("invitations.urls", namespace="invitations")),
+
+    # API base url
+    path("api/", include("config.api_router")),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # API URLS
 urlpatterns += [
-    # API base url
-    path("api/", include("config.api_router")),
     # DRF auth token
     path("auth-token/", obtain_auth_token),
 ]
