@@ -93,6 +93,8 @@ THIRD_PARTY_APPS = [
     "invitations",
     # Django Role Permissions
     "rolepermissions",
+    # Django Notifications
+    "notifications",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -337,3 +339,15 @@ ACCOUNT_ADAPTER = 'invitations.models.InvitationsAdapter'
 # Django Role Permissions
 ROLEPERMISSIONS_MODULE = "config.roles"
 
+# Dajngo Invitation
+# INVITATIONS_SIGNUP_REDIRECT = "accounts:signup"
+INVITATIONS_GONE_ON_ACCEPT_ERROR = False
+INVITATIONS_INVITATION_MODEL = "users.InvitationDetail"
+
+# django-defender
+DEFENDER_LOGIN_FAILURE_LIMIT = 3
+DEFENDER_DISABLE_IP_LOCKOUT = True
+DEFENDER_LOCKOUT_TEMPLATE = "user/lockout.html"
+
+# Django Taggit
+TAGGIT_CASE_INSENSITIVE = True

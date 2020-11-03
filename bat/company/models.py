@@ -186,7 +186,7 @@ class Company(Address):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return str(self.id) + " - " + self.name
 
 
 class CompanyType(models.Model):

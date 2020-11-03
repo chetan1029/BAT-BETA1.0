@@ -1,11 +1,15 @@
+from rest_framework import serializers
 
 from rest_auth.registration.serializers import RegisterSerializer
 from invitations.utils import get_invitation_model
+
+from bat.users.models import InvitationDetail
 
 Invitation = get_invitation_model()
 
 
 class RestAuthRegisterSerializer(RegisterSerializer):
+
     def custom_signup(self, request, user):
         '''
         save extra_data to user
@@ -24,3 +28,12 @@ class RestAuthRegisterSerializer(RegisterSerializer):
         user.extra_data = extra_data
         user.save()
         print('user in RestAuthRegisterSerializer :', user)
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invitation
+        fields = ('email', 'created', 'user_detail',
+                  'company_detail', 'user_roles', 'extra_data',)
+        read_only_fields = ('email', 'user_detail',
+                            'company_detail', 'user_roles', 'extra_data')

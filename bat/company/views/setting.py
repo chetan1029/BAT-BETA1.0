@@ -1,14 +1,23 @@
 from rest_framework import status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
 
 from collections import OrderedDict
 from rolepermissions.roles import RolesManager
+from invitations.utils import get_invitation_model
+from notifications.signals import notify
 
 
 from bat.company.models import Company, Member
 from bat.company import serializers
+
+Invitation = get_invitation_model()
+User = get_user_model()
 
 
 class CompanyViewset(mixins.ListModelMixin,
@@ -48,34 +57,78 @@ class CompanyViewset(mixins.ListModelMixin,
         return queryset
 
 
-class MemberViewset(mixins.CreateModelMixin,
-                    mixins.ListModelMixin,
-                    viewsets.GenericViewSet):
-    queryset = Member.objects.all()
-    serializer_class = serializers.MemberSerializer
-    permission_classes = (IsAuthenticated, )
+class InvitationCreate(viewsets.ViewSet):
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        all_roles = OrderedDict()
-        for role in RolesManager.get_roles():
-            role_name = role.get_name()
-            all_roles[role_name] = {
-                "display_name": "".join(
-                    x.capitalize() + " " or "_" for x in role_name.split("_")
-                ),
-                "permissions": {
-                    perm: "".join(
-                        x.capitalize() + " " or "_" for x in perm.split("_")
-                    )
-                    for perm in role.permission_names_list()
-                },
-            }
+    def create(self, request, company_pk):
+        """
+        create and seng invivation to given email address
+        """
+        company_qs = Company.objects.filter(
+            member_company__user__id=request.user.id)
+        company = get_object_or_404(
+            company_qs, pk=company_pk)
+        serializer = serializers.InvitationDataSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.data
 
-        context["available_roles"] = all_roles
-        return context
+        # User Detail
+        first_name = data["first_name"]
+        last_name = data["last_name"]
+        job_title = data["job_title"]
+        user_detail = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "job_title": job_title,
+        }
+        email = data["email"].lower()
 
-    def perform_create(self, serializer):
-        Member = serializer.save()
-        # company = get_object_or_404(
-        #     Company, pk=self.kwargs.get("company_pk", None))
+        # Company Detail
+        company_detail = {
+            "company_id": company.id,
+            "company_name": company.name,
+        }
+
+        # User Roles
+        user_roles = {"roles": data["role"],
+                      "perms": list(data["permissions"])}
+
+        extra_data = {}
+        extra_data["type"] = "Member Invitation"
+
+        inviter = User.objects.get(pk=request.user.id)
+
+        invite = Invitation.create(
+            email,
+            inviter=inviter,
+            user_detail=user_detail,
+            company_detail=company_detail,
+            user_roles=user_roles,
+            extra_data=extra_data,
+        )
+        invite.send_invitation(request)
+
+        user = User.objects.filter(email=email).first()
+        # url to accept invitation
+        print("accept url : ", reverse("api:users:invitationdetail-accept",
+                                       kwargs={"pk": invite.id}))
+        if user:
+            actions = [
+                {
+                    "href": reverse("api:users:invitationdetail-accept", kwargs={"pk": invite.id}),
+                    "title": _("View invitation"),
+                }
+            ]
+            notify.send(
+                request.user,
+                recipient=user,
+                verb=_("sent you an staff member invitation"),
+                action_object=invite,
+                target=company,
+                description=_(
+                    "{} has invited you to access {} as a staff \
+                    member."
+                ).format(request.user.username, company.name),
+                actions=actions,
+            )
+        return Response(status=status.HTTP_200_OK)

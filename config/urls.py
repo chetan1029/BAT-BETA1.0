@@ -44,7 +44,7 @@ urlpatterns = [
     path('admin/defender/', include('defender.urls')),
 
     # User management
-    path("users/", include("bat.users.urls", namespace="users")),
+    # path("users/", include("bat.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
 
     # Django Invitation

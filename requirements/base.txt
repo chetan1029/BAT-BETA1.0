@@ -39,3 +39,6 @@ django-role-permissions==3.1.0
 django-measurement==3.2.3
 django-multiselectfield==0.1.12
 djangorestframework-jwt==1.11.0
+
+# Django Notifications
+django-notifications-hq==3.2.10
