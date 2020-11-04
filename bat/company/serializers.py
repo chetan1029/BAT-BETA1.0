@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
+from django.utils.translation import ugettext_lazy as _
+
 from bat.company.models import Company, Member
 from bat.company.utils import get_list_of_roles, get_list_of_permissions
+from invitations.utils import get_invitation_model
+
+Invitation = get_invitation_model()
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -20,6 +25,28 @@ class InvitationDataSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=get_list_of_roles(), required=True)
     permissions = serializers.MultipleChoiceField(
         choices=get_list_of_permissions(), required=True)
+
+    def validate(self, data):
+        """
+        Check that start is before finish.
+        """
+        email = data['email']
+        company_id = self.context.get("company_id", None)
+        if company_id and email:
+            if Member.objects.filter(
+                company_id=int(company_id), user__email=email
+            ).exists():
+                raise serializers.ValidationError(
+                    _("User already is your staff member."))
+            else:
+                invitations = Invitation.objects.filter(
+                    email=email, company_detail__company_id=int(company_id)
+                )
+                if invitations.exists():
+                    msg = _("Invitation already sent for this email.")
+                    raise serializers.ValidationError(msg)
+
+        return super().validate(data)
 
 
 # class MemberSerializer(serializers.ModelSerializer):

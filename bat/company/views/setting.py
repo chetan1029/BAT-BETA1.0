@@ -51,8 +51,6 @@ class CompanyViewset(mixins.ListModelMixin,
             # fetch user role from the User and assign after signup.
             assign_role(member, member.extra_data["user_role"])
 
-        # we have a signal that will allot that role to this user.
-        # TODO if current user is allready company_admin of one of the company then skip "step"
         if self.request.user.extra_data["step"] == 1:
             self.request.user.extra_data["step"] = 2
             self.request.user.extra_data["step_detail"] = "account setup"
@@ -69,7 +67,7 @@ input to content
 {
 "first_name":"fname",
 "last_name":"lname",
-"email":"fname@gmail.com",
+"email":"fnamelname@gmail.com",
 "job_title":"manager",
 "role":"supply_chain_manager",
 "permissions":["view_product","add_product"]
@@ -92,7 +90,10 @@ class InvitationCreate(viewsets.ViewSet):
             Member, company__id=company.id, user__id=request.user.id)
         if not has_permission(member, "add_staff_member"):
             return Response({"message": _("You are not allowed to add staff member to this company")}, status=status.HTTP_403_FORBIDDEN)
-        serializer = serializers.InvitationDataSerializer(data=request.data)
+        context = {}
+        context["company_id"] = company.id
+        serializer = serializers.InvitationDataSerializer(
+            data=request.data, context=context)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         data = serializer.data
