@@ -1,6 +1,10 @@
 from rest_framework import status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+
 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -15,8 +19,10 @@ from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles, assign_role
 
 
-from bat.company.models import Company, Member
+from bat.company.models import Company, Member, CompanyPaymentTerms
 from bat.company import serializers
+from bat.company.utils import get_member
+from bat.company.permissions import CompanyPaymentTermsPermission
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -82,12 +88,15 @@ class InvitationCreate(viewsets.ViewSet):
         create and seng invivation to given email address
         """
 
-        company_qs = Company.objects.filter(
-            member_company__user__id=request.user.id)
-        company = get_object_or_404(
-            company_qs, pk=company_pk)
-        member = get_object_or_404(
-            Member, company__id=company.id, user__id=request.user.id)
+        # company_qs = Company.objects.filter(
+        #     member_company__user__id=request.user.id)
+        # company = get_object_or_404(
+        #     company_qs, pk=company_pk)
+        # member = get_object_or_404(
+        #     Member, company__id=company.id, user__id=request.user.id)
+
+        member = get_member(company_id=company_pk, user_id=request.user.id)
+        company = member.company
         if not has_permission(member, "add_staff_member"):
             return Response({"message": _("You are not allowed to add staff member to this company")}, status=status.HTTP_403_FORBIDDEN)
         context = {}
@@ -158,3 +167,61 @@ class InvitationCreate(viewsets.ViewSet):
                 actions=actions,
             )
         return Response(status=status.HTTP_200_OK)
+
+
+# Company setting common viewset
+class CompanySettingBaseViewSet(viewsets.ModelViewSet):
+    """List all the payment terms."""
+
+    class Meta:
+        abstract = True
+
+    def filter_queryset(self, queryset):
+        member = get_member(company_id=self.kwargs.get(
+            "company_pk", None), user_id=self.request.user.id)
+        queryset = queryset.filter(
+            company=member.company).order_by(
+            "-create_date"
+        )
+        return super().filter_queryset(queryset)
+
+    def perform_create(self, serializer):
+        """Set the data for who is the owner or creater."""
+        member = get_member(company_id=self.kwargs.get(
+            "company_pk", None), user_id=self.request.user.id)
+        serializer.save(company=member.company)
+
+    @action(detail=True, methods=["get"])
+    def archive(self, request, *args, **kwargs):
+        """Set the archive action."""
+        instance = self.get_object()
+        instance.is_active = False
+        instance.save()
+        return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"])
+    def restore(self, request, *args, **kwargs):
+        """Set the restore action."""
+        instance = self.get_object()
+        instance.is_active = True
+        instance.save()
+        return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
+
+# Payment terms
+
+
+class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
+    """List all the payment terms."""
+
+    serializer_class = serializers.CompanyPaymentTermsSerializer
+    queryset = CompanyPaymentTerms.objects.all()
+    permission_classes = (IsAuthenticated, CompanyPaymentTermsPermission,)
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+    ]
+    filterset_fields = ["is_active", "payment_days"]
+    search_fields = ["title"]
+
+    archive_message = _("Paymentterms is archived")
+    restore_message = _("Paymentterms is restored")

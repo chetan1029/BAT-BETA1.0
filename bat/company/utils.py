@@ -1,5 +1,18 @@
+from django.shortcuts import get_object_or_404
+
 from collections import OrderedDict
+
 from rolepermissions.roles import RolesManager
+
+from bat.company.models import Member
+
+
+def get_member(company_id, user_id):
+    """
+    get member 
+    """
+    member = get_object_or_404(Member, company__id=company_id, user=user_id)
+    return member
 
 
 def get_list_of_roles_permissions():

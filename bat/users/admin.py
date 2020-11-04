@@ -15,6 +15,3 @@ class UserAdmin(auth_admin.UserAdmin):
 
     form = UserChangeForm
     add_form = UserCreationForm
-
-
-# admin.register(Invitation)

@@ -95,6 +95,8 @@ THIRD_PARTY_APPS = [
     "rolepermissions",
     # Django Notifications
     "notifications",
+    # Django Filter
+    "django_filters",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -162,6 +164,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Django defender middleware for failed login.
     "defender.middleware.FailedLoginMiddleware",
+    # timezone middleware
+    "bat.setting.middleware.TimezoneMiddleware",
 ]
 
 # STATIC
@@ -313,6 +317,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
