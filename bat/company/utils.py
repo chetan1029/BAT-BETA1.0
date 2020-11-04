@@ -9,6 +9,7 @@ def get_list_of_roles_permissions():
     all_roles = OrderedDict()
     for role in RolesManager.get_roles():
         role_name = role.get_name()
+        print("\nrole_name : ", role_name)
         all_roles[role_name] = {
             "permissions": list(role.permission_names_list()),
         }

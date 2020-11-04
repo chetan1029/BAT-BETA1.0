@@ -37,7 +37,10 @@ def process_invitations(sender, instance, **kwargs):
             company_id = company_detail["company_id"]
             user_roles = invitation.user_roles
             roles = user_roles["roles"]
+            print("roles : ", roles)
+
             perms = user_roles["perms"]
+            print("perms : ", perms)
 
             if invitation.extra_data["type"] == "Vendor Invitation":
                 vendor_name = company_detail["vendor_name"]
@@ -71,13 +74,22 @@ def process_invitations(sender, instance, **kwargs):
                     invitation_accepted=True,
                 )
 
-            for role in roles:
-                assign_role(member, role)
-                role_obj = RolesManager.retrieve_role(role)
-                # remove unneccesary permissions
-                for perm in role_obj.permission_names_list():
-                    if perm not in perms:
-                        revoke_permission(member, perm)
+            # for role in roles:
+            #     print("role : ", role)
+            #     assign_role(member, role)
+            #     role_obj = RolesManager.retrieve_role(role)
+            #     # remove unneccesary permissions
+            #     for perm in role_obj.permission_names_list():
+            #         if perm not in perms:
+            #             revoke_permission(member, perm)
+
+            print("roles : ", roles)
+            assign_role(member, roles)
+            role_obj = RolesManager.retrieve_role(roles)
+            # remove unneccesary permissions
+            for perm in role_obj.permission_names_list():
+                if perm not in perms:
+                    revoke_permission(member, perm)
 
             notify.send(
                 instance,

@@ -57,6 +57,19 @@ class CompanyViewset(mixins.ListModelMixin,
         return queryset
 
 
+"""
+input to content
+{
+"first_name":"fname",
+"last_name":"lname",
+"email":"fname@gmail.com",
+"job_title":"manager",
+"role":"supply_chain_manager",
+"permissions":["view_product","add_product"]
+}
+"""
+
+
 class InvitationCreate(viewsets.ViewSet):
 
     def create(self, request, company_pk):

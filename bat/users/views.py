@@ -46,7 +46,7 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """
-        reject invitation 
+        reject invitation
         and notify sender
         """
         instance = self.get_object()
