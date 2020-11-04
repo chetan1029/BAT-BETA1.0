@@ -2,7 +2,7 @@ from django.urls import path, include
 
 from rest_framework_nested.routers import DefaultRouter
 
-from bat.users.views import InvitationViewSet
+from bat.users.views import InvitationViewSet, RolesandPermissionsViewSet
 # from bat.users.views import (
 #     user_detail_view,
 #     user_redirect_view,
@@ -12,7 +12,8 @@ from bat.users.views import InvitationViewSet
 router = DefaultRouter()
 
 router.register('invitations', InvitationViewSet)
-
+router.register('role-permissions', RolesandPermissionsViewSet,
+                basename="role-permissions")
 app_name = "users"
 
 

@@ -10,9 +10,19 @@ from invitations.utils import get_invitation_model
 from notifications.signals import notify
 
 from bat.users import serializers
+from bat.company.utils import get_list_of_roles_permissions
 
 User = get_user_model()
 Invitation = get_invitation_model()
+
+
+class RolesandPermissionsViewSet(viewsets.ViewSet):
+    def list(self, request):
+        """
+        list available Roles and Permissions for user
+        """
+        all_roles = get_list_of_roles_permissions()
+        return Response(all_roles, status=status.HTTP_200_OK)
 
 
 class InvitationViewSet(viewsets.ReadOnlyModelViewSet):

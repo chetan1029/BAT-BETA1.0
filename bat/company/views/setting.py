@@ -11,6 +11,8 @@ from collections import OrderedDict
 from rolepermissions.roles import RolesManager
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
+from rolepermissions.checkers import has_permission
+from rolepermissions.roles import get_user_roles, assign_role
 
 
 from bat.company.models import Company, Member
@@ -35,7 +37,7 @@ class CompanyViewset(mixins.ListModelMixin,
 
         extra_data = {}
         extra_data["user_role"] = "company_admin"
-        member, _c = Member.objects.get_or_create(
+        member, create = Member.objects.get_or_create(
             job_title="Admin",
             user=self.request.user,
             company=company,
@@ -45,11 +47,16 @@ class CompanyViewset(mixins.ListModelMixin,
             invitation_accepted=True,
             extra_data=extra_data,
         )
+        if create:
+            # fetch user role from the User and assign after signup.
+            assign_role(member, member.extra_data["user_role"])
+
         # we have a signal that will allot that role to this user.
         # TODO if current user is allready company_admin of one of the company then skip "step"
-        self.request.user.extra_data["step"] = 2
-        self.request.user.extra_data["step_detail"] = "account setup"
-        self.request.user.save()
+        if self.request.user.extra_data["step"] == 1:
+            self.request.user.extra_data["step"] = 2
+            self.request.user.extra_data["step_detail"] = "account setup"
+            self.request.user.save()
 
     def filter_queryset(self, queryset):
         request = self.request
@@ -76,10 +83,15 @@ class InvitationCreate(viewsets.ViewSet):
         """
         create and seng invivation to given email address
         """
+
         company_qs = Company.objects.filter(
             member_company__user__id=request.user.id)
         company = get_object_or_404(
             company_qs, pk=company_pk)
+        member = get_object_or_404(
+            Member, company__id=company.id, user__id=request.user.id)
+        if not has_permission(member, "add_staff_member"):
+            return Response({"message": _("You are not allowed to add staff member to this company")}, status=status.HTTP_403_FORBIDDEN)
         serializer = serializers.InvitationDataSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -103,7 +115,7 @@ class InvitationCreate(viewsets.ViewSet):
         }
 
         # User Roles
-        user_roles = {"roles": data["role"],
+        user_roles = {"role": data["role"],
                       "perms": list(data["permissions"])}
 
         extra_data = {}

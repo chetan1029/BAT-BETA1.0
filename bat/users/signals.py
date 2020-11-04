@@ -25,7 +25,7 @@ User = get_user_model()
 @receiver(post_save, sender=User)
 def process_invitations(sender, instance, **kwargs):
     """We will fetch all the invitations for user after signup."""
-    print(instance)
+    print(instance, "in post_save user")
     invitations = Invitation.objects.filter(
         email=instance.email, accepted=True
     )
@@ -36,8 +36,8 @@ def process_invitations(sender, instance, **kwargs):
             company_detail = invitation.company_detail
             company_id = company_detail["company_id"]
             user_roles = invitation.user_roles
-            roles = user_roles["roles"]
-            print("roles : ", roles)
+            role = user_roles["role"]
+            print("role : ", role)
 
             perms = user_roles["perms"]
             print("perms : ", perms)
@@ -74,18 +74,9 @@ def process_invitations(sender, instance, **kwargs):
                     invitation_accepted=True,
                 )
 
-            # for role in roles:
-            #     print("role : ", role)
-            #     assign_role(member, role)
-            #     role_obj = RolesManager.retrieve_role(role)
-            #     # remove unneccesary permissions
-            #     for perm in role_obj.permission_names_list():
-            #         if perm not in perms:
-            #             revoke_permission(member, perm)
-
-            print("roles : ", roles)
-            assign_role(member, roles)
-            role_obj = RolesManager.retrieve_role(roles)
+            print("role : ", role)
+            assign_role(member, role)
+            role_obj = RolesManager.retrieve_role(role)
             # remove unneccesary permissions
             for perm in role_obj.permission_names_list():
                 if perm not in perms:
