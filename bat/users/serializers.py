@@ -1,11 +1,14 @@
 from rest_framework import serializers
 
+from django.contrib.auth import get_user_model
+
 from rest_auth.registration.serializers import RegisterSerializer
 from invitations.utils import get_invitation_model
 
 from bat.users.models import InvitationDetail
 
 Invitation = get_invitation_model()
+User = get_user_model()
 
 
 class RestAuthRegisterSerializer(RegisterSerializer):
@@ -37,3 +40,12 @@ class InvitationSerializer(serializers.ModelSerializer):
                   'company_detail', 'user_roles', 'extra_data',)
         read_only_fields = ('email', 'user_detail',
                             'company_detail', 'user_roles', 'extra_data')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('last_login', 'date_joined', 'username', 'email',
+                  'first_name', 'last_name', 'profile_picture', 'phone_number',
+                  'language', 'timezone',)
+        read_only_fields = ('last_login', 'date_joined', 'username', 'email',)

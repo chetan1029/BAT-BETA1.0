@@ -1,10 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
+from django.shortcuts import get_object_or_404
 
 from rest_framework import status, viewsets
+from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
@@ -14,6 +17,19 @@ from bat.company.utils import get_list_of_roles_permissions
 
 User = get_user_model()
 Invitation = get_invitation_model()
+
+
+class UserViewsets(RetrieveModelMixin, UpdateModelMixin, viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+    permission_classes = (IsAuthenticated,)
+    lookup_field = "username"
+
+    def get_queryset(self, *args, **kwargs):
+        '''
+        filter query for current user
+        '''
+        return self.queryset.filter(username=self.kwargs.get("username"))
 
 
 class RolesandPermissionsViewSet(viewsets.ViewSet):
@@ -69,28 +85,3 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
         instance.delete()
         return Response({"message": _("Rejected successfully")},
                         status=status.HTTP_200_OK)
-
-
-# class UserDetailView(LoginRequiredMixin, DetailView):
-#     model = User
-#     slug_field = "username"
-#     slug_url_kwarg = "username"
-# user_detail_view = UserDetailView.as_view()
-# class UserUpdateView(LoginRequiredMixin, UpdateView):
-#     model = User
-#     fields = ["name"]
-#     def get_success_url(self):
-#         return reverse("users:detail", kwargs={"username": self.request.user.username})
-#     def get_object(self):
-#         return User.objects.get(username=self.request.user.username)
-#     def form_valid(self, form):
-#         messages.add_message(
-#             self.request, messages.INFO, _("Infos successfully updated")
-#         )
-#         return super().form_valid(form)
-# user_update_view = UserUpdateView.as_view()
-# class UserRedirectView(LoginRequiredMixin, RedirectView):
-#     permanent = False
-#     def get_redirect_url(self):
-#         return reverse("users:detail", kwargs={"username": self.request.user.username})
-# user_redirect_view = UserRedirectView.as_view()
