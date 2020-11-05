@@ -22,9 +22,9 @@ urlpatterns = [
     path('api-token-verify/', jwt_views.verify_jwt_token),
 
     # rest-auth urls
-    path('rest-auth/', include('rest_auth.urls')),
+    path('auth/', include('rest_auth.urls')),
     # verifay mail (provide template name) # logic for verifay email address
-    path('rest-auth/registration/', include('rest_auth.registration.urls')),
+    path('auth/registration/', include('rest_auth.registration.urls')),
     path('password/reset/confirm/<uidb64>/<token>/',
          PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('registration/account-confirm-email/<key>', confirm_email,

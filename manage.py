@@ -5,8 +5,8 @@ from pathlib import Path
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE",
-                          "config.settings.production")
-    #   "config.settings.local")
+                          #   "config.settings.production")
+                          "config.settings.local")
 
     try:
         from django.core.management import execute_from_command_line
