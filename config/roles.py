@@ -71,6 +71,7 @@ class SupplyChainManager(AbstractUserRole):
         "add_company_locations": True,
         "change_company_locations": True,
         "archived_company_locations": True,
+        "restore_company_locations": True,
         "view_packing_box": True,
         "add_packing_box": True,
         "change_packing_box": True,

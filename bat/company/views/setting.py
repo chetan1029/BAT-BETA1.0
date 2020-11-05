@@ -21,7 +21,8 @@ from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles, assign_role
 from dry_rest_permissions.generics import DRYPermissions
 
-from bat.company.models import Company, Member, CompanyPaymentTerms, Bank
+from bat.company.models import (
+    Company, Member, CompanyPaymentTerms, Bank, Location)
 from bat.company import serializers
 from bat.company.utils import get_member
 
@@ -287,6 +288,7 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
 
 # Bank
 
+
 class BankViewSet(CompanySettingBaseViewSet):
     """Operations on bank."""
 
@@ -299,6 +301,23 @@ class BankViewSet(CompanySettingBaseViewSet):
     ]
     filterset_fields = ["is_active"]
     search_fields = ["name"]
+
+    archive_message = _("Bank is archived")
+    restore_message = _("Bank is restored")
+
+
+class LocationViewSet(CompanySettingBaseViewSet):
+    """Operations on location."""
+
+    serializer_class = serializers.LocationSerializer
+    queryset = Location.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions,)
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+    ]
+    filterset_fields = ["is_active", "city", "region"]
+    search_fields = ["name", "city", "region"]
 
     archive_message = _("Bank is archived")
     restore_message = _("Bank is restored")

@@ -6,7 +6,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from invitations.utils import get_invitation_model
 
-from bat.company.models import (Company, Member, CompanyPaymentTerms, Bank)
+from bat.company.models import (
+    Company, Member, CompanyPaymentTerms, Bank, Location)
 from bat.company.utils import get_list_of_roles, get_list_of_permissions
 
 
@@ -91,4 +92,28 @@ class BankSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
         )
-        read_only_fields = ("is_active", "extra_data", "company ")
+        read_only_fields = ("is_active", "extra_data",
+                            "company", "create_date", "update_date")
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    """Serializer for bank."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = Location
+        fields = (
+            "id",
+            "name",
+            "is_active",
+            "extra_data",
+            "address1",
+            "address2",
+            "zip",
+            "city",
+            "region",
+            "country",
+        )
+        read_only_fields = ("is_active", "extra_data",
+                            "company", "create_date", "update_date")
