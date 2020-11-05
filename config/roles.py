@@ -66,6 +66,7 @@ class SupplyChainManager(AbstractUserRole):
         "add_company_banks": True,
         "change_company_banks": True,
         "archived_company_banks": True,
+        "restore_company_banks": True,
         "view_company_locations": True,
         "add_company_locations": True,
         "change_company_locations": True,

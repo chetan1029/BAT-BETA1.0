@@ -346,21 +346,22 @@ class CompanyPaymentTerms(models.Model):
         max_length=200, verbose_name=_("PaymentTerms Title")
     )
     deposit = models.DecimalField(
-        max_digits=5, decimal_places=2, verbose_name=_("Deposit (in %)")
+        max_digits=5, decimal_places=2, verbose_name=_("Deposit (in %)"), default=0
     )
     on_delivery = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         verbose_name=_("Payment on delivery (in %)"),
+        default=0
     )
     receiving = models.DecimalField(
-        max_digits=5, decimal_places=2, verbose_name=_("Receiving (in %)")
+        max_digits=5, decimal_places=2, verbose_name=_("Receiving (in %)"), default=0
     )
     remaining = models.DecimalField(
         max_digits=5, decimal_places=2, verbose_name=_("Remaining (in %)")
     )
     payment_days = models.PositiveIntegerField(
-        verbose_name=_("Payment Days (in days)")
+        verbose_name=_("Payment Days (in days)"), default=0
     )
     is_active = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)
@@ -483,6 +484,71 @@ class Bank(Address):
     def __str__(self):
         """Return Value."""
         return self.name
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_banks")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_banks")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_banks")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_banks")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_banks")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_banks")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_banks")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_banks")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_company_banks")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_company_banks")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archive_company_banks")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archive_company_banks")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_banks")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_banks")
 
 
 class Location(Address):

@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from invitations.utils import get_invitation_model
 
-from bat.company.models import Company, Member, CompanyPaymentTerms
+from bat.company.models import (Company, Member, CompanyPaymentTerms, Bank)
 from bat.company.utils import get_list_of_roles, get_list_of_permissions
 
 
@@ -53,7 +53,7 @@ class InvitationDataSerializer(serializers.Serializer):
         return super().validate(data)
 
 
-class CompanyPaymentTermsSerializer(serializers.HyperlinkedModelSerializer):
+class CompanyPaymentTermsSerializer(serializers.ModelSerializer):
     """Serializer for payment terms."""
 
     class Meta:
@@ -73,62 +73,22 @@ class CompanyPaymentTermsSerializer(serializers.HyperlinkedModelSerializer):
         )
         read_only_fields = ("is_active", "extra_data", "remaining", "title")
 
-    def create(self, validated_data):
-        """Append extra data in validated data by overriding."""
-        deposit = validated_data.get("deposit", 0)
-        on_delivery = validated_data.get("on_delivery", 0)
-        receiving = validated_data.get("receiving", 0)
-        remaining = Decimal(100) - (
-            Decimal(deposit) + Decimal(on_delivery) + Decimal(receiving)
-        )
-        payment_days = validated_data.get("payment_days", 0)
-        title = (
-            "PAY"
-            + str(deposit)
-            + "-"
-            + str(on_delivery)
-            + "-"
-            + str(receiving)
-            + "-"
-            + str(remaining)
-            + "-"
-            + str(payment_days)
-            + "Days"
-        )
-        return CompanyPaymentTerms.objects.create(
-            title=title, remaining=remaining, **validated_data
-        )
 
-    def update(self, instance, validated_data):
-        """Append extra data in validated data by overriding."""
-        instance.deposit = validated_data.get("deposit", instance.deposit)
-        instance.on_delivery = validated_data.get(
-            "on_delivery", instance.on_delivery
+class BankSerializer(serializers.ModelSerializer):
+    """Serializer for bank."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = Bank
+        fields = (
+            "id",
+            "name",
+            "account_number",
+            "iban",
+            "swift_code",
+            "currency",
+            "is_active",
+            "extra_data",
         )
-        instance.receiving = validated_data.get(
-            "receiving", instance.receiving
-        )
-        remaining = Decimal(100) - (
-            Decimal(instance.deposit)
-            + Decimal(instance.on_delivery)
-            + Decimal(instance.receiving)
-        )
-        instance.payment_days = validated_data.get(
-            "payment_days", instance.payment_days
-        )
-        instance.title = (
-            "PAY"
-            + str(instance.deposit)
-            + "-"
-            + str(instance.on_delivery)
-            + "-"
-            + str(instance.receiving)
-            + "-"
-            + str(remaining)
-            + "-"
-            + str(instance.payment_days)
-            + "Days"
-        )
-        instance.remaining = remaining
-        instance.save()
-        return instance
+        read_only_fields = ("is_active", "extra_data", "company ")

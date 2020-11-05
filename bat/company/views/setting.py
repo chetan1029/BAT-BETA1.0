@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -19,7 +21,7 @@ from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles, assign_role
 from dry_rest_permissions.generics import DRYPermissions
 
-from bat.company.models import Company, Member, CompanyPaymentTerms
+from bat.company.models import Company, Member, CompanyPaymentTerms, Bank
 from bat.company import serializers
 from bat.company.utils import get_member
 
@@ -215,7 +217,7 @@ class CompanySettingBaseViewSet(viewsets.ModelViewSet):
 
 
 class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
-    """List all the payment terms."""
+    """Operations on payment terms."""
 
     serializer_class = serializers.CompanyPaymentTermsSerializer
     queryset = CompanyPaymentTerms.objects.all()
@@ -229,3 +231,74 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
 
     archive_message = _("Paymentterms is archived")
     restore_message = _("Paymentterms is restored")
+
+    def perform_create(self, serializer):
+        """
+        Append extra data in validated data.
+        """
+        data = serializer.validated_data
+        remaining = Decimal(100) - (
+            Decimal(data.get("deposit") or 0) +
+            Decimal(data.get("on_delivery") or 0) +
+            Decimal(data.get("receiving") or 0)
+        )
+        title = (
+            "PAY"
+            + str(data.get("deposit") or 0)
+            + "-"
+            + str(data.get("on_delivery") or 0)
+            + "-"
+            + str(data.get("receiving") or 0)
+            + "-"
+            + str(remaining)
+            + "-"
+            + str(data.get("payment_days") or 0)
+            + "Days"
+        )
+        member = get_member(company_id=self.kwargs.get(
+            "company_pk", None), user_id=self.request.user.id)
+        serializer.save(company=member.company,
+                        remaining=remaining, title=title)
+
+    def perform_update(self, serializer):
+        """
+        Append extra data in validated data.
+        """
+        data = serializer.validated_data
+        remaining = Decimal(100) - (
+            Decimal(data.get("deposit") or 0) +
+            Decimal(data.get("on_delivery") or 0) +
+            Decimal(data.get("receiving") or 0)
+        )
+        title = (
+            "PAY"
+            + str(data.get("deposit") or 0)
+            + "-"
+            + str(data.get("on_delivery") or 0)
+            + "-"
+            + str(data.get("receiving") or 0)
+            + "-"
+            + str(remaining)
+            + "-"
+            + str(data.get("payment_days") or 0)
+            + "Days"
+        )
+        serializer.save(remaining=remaining, title=title)
+
+# Bank
+
+class BankViewSet(CompanySettingBaseViewSet):
+    """Operations on bank."""
+
+    serializer_class = serializers.BankSerializer
+    queryset = Bank.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions,)
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+    ]
+    filterset_fields = ["is_active"]
+    search_fields = ["name"]
+
+    archive_message = _("Bank is archived")
+    restore_message = _("Bank is restored")
