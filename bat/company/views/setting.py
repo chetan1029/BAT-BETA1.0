@@ -17,12 +17,12 @@ from invitations.utils import get_invitation_model
 from notifications.signals import notify
 from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles, assign_role
-
+from dry_rest_permissions.generics import DRYPermissions
 
 from bat.company.models import Company, Member, CompanyPaymentTerms
 from bat.company import serializers
 from bat.company.utils import get_member
-from bat.company.permissions import CompanyPaymentTermsPermission
+
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -195,6 +195,8 @@ class CompanySettingBaseViewSet(viewsets.ModelViewSet):
     def archive(self, request, *args, **kwargs):
         """Set the archive action."""
         instance = self.get_object()
+        if not instance.is_active:
+            return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
         instance.is_active = False
         instance.save()
         return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
@@ -203,6 +205,8 @@ class CompanySettingBaseViewSet(viewsets.ModelViewSet):
     def restore(self, request, *args, **kwargs):
         """Set the restore action."""
         instance = self.get_object()
+        if instance.is_active:
+            return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
         instance.is_active = True
         instance.save()
         return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
@@ -215,7 +219,7 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
 
     serializer_class = serializers.CompanyPaymentTermsSerializer
     queryset = CompanyPaymentTerms.objects.all()
-    permission_classes = (IsAuthenticated, CompanyPaymentTermsPermission,)
+    permission_classes = (IsAuthenticated, DRYPermissions,)
     filter_backends = [
         DjangoFilterBackend,
         SearchFilter,

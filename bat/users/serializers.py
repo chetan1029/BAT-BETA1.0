@@ -21,7 +21,6 @@ class RestAuthRegisterSerializer(RegisterSerializer):
         # # Check if this user has accpeted invitations or even have
         # # any invitation. we will signup and forward user.
         invitations = Invitation.objects.filter(email=user.email)
-        print("invitations : ", invitations)
         if invitations.exists():
             extra_data["step"] = "2"
             extra_data["step_detail"] = "account setup"
@@ -30,7 +29,6 @@ class RestAuthRegisterSerializer(RegisterSerializer):
             extra_data["step_detail"] = "user signup"
         user.extra_data = extra_data
         user.save()
-        print('user in RestAuthRegisterSerializer :', user)
 
 
 class InvitationSerializer(serializers.ModelSerializer):

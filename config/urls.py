@@ -39,7 +39,7 @@ urlpatterns = [
     ),
 
     # Django Admin, use {% url 'admin:index' %}
-    path(settings.ADMIN_URL, admin.site.urls),
+    path("admin/", admin.site.urls),
     # defender admin
     path('admin/defender/', include('defender.urls')),
 

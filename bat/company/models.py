@@ -12,18 +12,21 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.shortcuts import get_object_or_404
 
 from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
 from measurement.measures import Weight
 from defender.models import AccessAttempt
-# from djmoney.models.fields import MoneyField
+
 from djmoney.settings import CURRENCY_CHOICES
 from multiselectfield import MultiSelectField
 from rolepermissions.roles import get_user_roles
+from rolepermissions.checkers import has_permission
 
 from bat.globalprop.validator import validator
 from bat.setting.models import Category
+
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -43,6 +46,16 @@ IN = "in"
 LENGTH_UNIT_TYPE = ((CM, "cm"), (IN, "in"))
 
 DEFAULT_CURRENCY = "USD"
+
+
+def get_member_from_request(request):
+    """
+    get member from request bye resolving it
+    """
+    kwargs = request.resolver_match.kwargs
+    member = get_object_or_404(Member, company__id=kwargs.get(
+        "company_pk"), user=request.user.id)
+    return member
 
 
 # Create your models here.
@@ -318,7 +331,7 @@ class Member(MemberPermissionsMixin):
 
     def __str__(self):
         """Return Value."""
-        return self.user.username
+        return self.user.username + " - " + self.company.name + " - " + str(self.company.id)
 
 
 class CompanyPaymentTerms(models.Model):
@@ -366,6 +379,71 @@ class CompanyPaymentTerms(models.Model):
     def __str__(self):
         """Return Value."""
         return self.title
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_payment_terms")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_payment_terms")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_payment_terms")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_payment_terms")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_payment_terms")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_payment_terms")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_payment_terms")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_payment_terms")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_payment_terms")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_payment_terms")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archive_payment_terms")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archive_payment_terms")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_payment_terms")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_payment_terms")
 
 
 class Bank(Address):
