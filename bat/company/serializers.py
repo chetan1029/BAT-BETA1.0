@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 
 
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import Group, Permission
 
 from invitations.utils import get_invitation_model
 from measurement.measures import Weight
@@ -20,6 +21,67 @@ from bat.company import constants
 from bat.company.utils import get_member
 
 Invitation = get_invitation_model()
+
+
+class WeightField(serializers.Field):
+
+    def to_representation(self, value):
+        ret = {"weight": value.value,
+               "unit": value.unit}
+        return ret
+
+    def to_internal_value(self, data):
+        try:
+            data = eval(data)
+            unit = data["unit"]
+            value = data["weight"]
+            kwargs = {unit: value}
+            if unit in constants.WEIGHT_UNIT_TYPE_LIST:
+                return Weight(**kwargs)
+            else:
+                raise ValidationError("%s is not a valid %s" % (data, "Unit"))
+        except Exception:
+            if data:
+                raise ValidationError(
+                    "%s is not a valid %s" % (data, "formate"))
+            else:
+                if self.required:
+                    raise ValidationError("%s is %s" % ("weight", "required"))
+                else:
+                    # TODO
+                    return data
+
+
+class GroupsListField(serializers.ListField):
+
+    def to_representation(self, data):
+        """
+        List of group name.
+        """
+        return [group.name for group in data.all()]
+
+    def to_internal_value(self, data):
+        """
+        return queryset of Group model from list of group name.
+        """
+        qs = Group.objects.filter(name__in=data)
+        return qs
+
+
+class PermissionListField(serializers.ListField):
+
+    def to_representation(self, data):
+        """
+        List of permission name.
+        """
+        return [permission.codename for permission in data.all()]
+
+    def to_internal_value(self, data):
+        """
+        return queryset of Permission model from list of permission name.
+        """
+        qs = Permission.objects.filter(codename__in=data)
+        return qs
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -38,8 +100,10 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class MemberSerializer(serializers.ModelSerializer):
-    roles = serializers.SerializerMethodField()
-    user_permissions_list = serializers.SerializerMethodField()
+    # roles = serializers.SerializerMethodField()
+    # user_permissions_list = serializers.SerializerMethodField()
+    groups = GroupsListField()
+    user_permissions = PermissionListField()
 
     class Meta:
         model = Member
@@ -56,23 +120,17 @@ class MemberSerializer(serializers.ModelSerializer):
             "invitation_accepted",
             "extra_data",
             "last_login",
-            "roles",
-            "user_permissions_list",
         )
         read_only_fields = ("is_superuser", "user", "is_active",
                             "invited_by", "is_admin", "invitation_accepted", "extra_data", "last_login")
 
-    def get_roles(self, obj):
-        roles = get_user_roles(obj)
-        return [role.get_name() for role in roles]
+    # def get_roles(self, obj):
+    #     roles = get_user_roles(obj)
+    #     return [role.get_name() for role in roles]
 
-    def get_user_permissions_list(self, obj):
-        perms = available_perm_status(obj)
-        perms_name = []
-        for perm, temp in perms.items():
-            if temp:
-                perms_name.append(perm)
-        return perms_name
+    # def get_user_permissions_list(self, obj):
+    #     perms = available_perm_status(obj)
+    #     return [perm for perm, condition in perms.items() if condition]
 
 
 class InvitationDataSerializer(serializers.Serializer):
@@ -170,39 +228,6 @@ class LocationSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("is_active", "extra_data",
                             "company", "create_date", "update_date")
-
-
-class WeightField(serializers.Field):
-
-    def to_representation(self, value):
-        ret = {"weight": value.value,
-               "unit": value.unit}
-        return ret
-
-    def to_internal_value(self, data):
-        try:
-            data = eval(data)
-            print("\n \n data : ", data)
-            unit = data["unit"]
-            value = data["weight"]
-            kwargs = {unit: value}
-            print("\n \n unit : ", unit)
-            print("\n \n value : ", value)
-            print("\n \n kwargs : ", kwargs)
-            if unit in constants.WEIGHT_UNIT_TYPE_LIST:
-                return Weight(**kwargs)
-            else:
-                raise ValidationError("%s is not a valid %s" % (data, "Unit"))
-        except Exception:
-            if data:
-                raise ValidationError(
-                    "%s is not a valid %s" % (data, "formate"))
-            else:
-                if self.required:
-                    raise ValidationError("%s is %s" % ("weight", "required"))
-                else:
-                    # TODO
-                    return data
 
 
 class PackingBoxSerializer(serializers.ModelSerializer):
