@@ -22,7 +22,7 @@ urlpatterns = [
     path('api-token-verify/', jwt_views.verify_jwt_token),
 
     # rest-auth urls
-    path('auth/', include('rest_auth.urls')),
+    path('auth/', include('users.rest_auth_custome_urls')),
     # verifay mail (provide template name) # logic for verifay email address
     path('auth/registration/', include('rest_auth.registration.urls')),
     path('password/reset/confirm/<uidb64>/<token>/',

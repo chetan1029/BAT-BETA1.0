@@ -38,8 +38,8 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class MemberSerializer(serializers.ModelSerializer):
-    groups = serializers.SerializerMethodField()
-    user_permissions = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+    user_permissions_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Member
@@ -55,20 +55,19 @@ class MemberSerializer(serializers.ModelSerializer):
             "is_active",
             "invitation_accepted",
             "extra_data",
-            "last_login"
-
+            "last_login",
+            "roles",
+            "user_permissions_list",
         )
         read_only_fields = ("is_superuser", "user", "is_active",
                             "invited_by", "is_admin", "invitation_accepted", "extra_data", "last_login")
 
-    def get_groups(self, obj):
+    def get_roles(self, obj):
         roles = get_user_roles(obj)
         return [role.get_name() for role in roles]
 
-    def get_user_permissions(self, obj):
+    def get_user_permissions_list(self, obj):
         perms = available_perm_status(obj)
-        # return perms
-        # return [if temp: perm for perm, temp in perms]
         perms_name = []
         for perm, temp in perms.items():
             if temp:

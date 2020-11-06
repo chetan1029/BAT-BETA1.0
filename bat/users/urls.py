@@ -8,7 +8,7 @@ app_name = "users"
 
 router = DefaultRouter()
 
-router.register('users', UserViewsets)
+router.register('user', UserViewsets)
 router.register('invitations', InvitationViewSet)
 router.register('role-permissions', RolesandPermissionsViewSet,
                 basename="role-permissions")

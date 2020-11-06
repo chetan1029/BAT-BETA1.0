@@ -99,6 +99,9 @@ THIRD_PARTY_APPS = [
     "django_filters",
     # Dry Rest Permissions
     "dry_rest_permissions",
+    # API documentation
+    "drf_yasg2",
+
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",

@@ -48,3 +48,5 @@ django-filter==2.4.0
 
 django-dry-rest-permissions==1.1.0
 
+# API documentation
+drf-yasg2-1.19.4
