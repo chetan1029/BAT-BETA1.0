@@ -1,25 +1,79 @@
 from decimal import Decimal
 
 from rest_framework import serializers
+from rest_framework.utils import json
+from rest_framework.exceptions import ValidationError
+
 
 from django.utils.translation import ugettext_lazy as _
 
 from invitations.utils import get_invitation_model
+from measurement.measures import Weight
+from rolepermissions.roles import get_user_roles, assign_role
+from rolepermissions.permissions import available_perm_status
+
 
 from bat.company.models import (
-    Company, Member, CompanyPaymentTerms, Bank, Location)
+    Company, Member, CompanyPaymentTerms, Bank, Location, PackingBox, HsCode, Tax)
 from bat.company.utils import get_list_of_roles, get_list_of_permissions
-
+from bat.company import constants
+from bat.company.utils import get_member
 
 Invitation = get_invitation_model()
 
 
 class CompanySerializer(serializers.ModelSerializer):
+    roles = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
         fields = "__all__"
         # read_only_fields = ('owner',)
+
+    def get_roles(self, obj):
+        user_id = self.context.get("user_id", None)
+        member = get_member(company_id=obj.id, user_id=user_id)
+        roles = get_user_roles(member)
+        return [role.get_name() for role in roles]
+
+
+class MemberSerializer(serializers.ModelSerializer):
+    groups = serializers.SerializerMethodField()
+    user_permissions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Member
+        fields = (
+            "id",
+            "is_superuser",
+            "groups",
+            "user_permissions",
+            "job_title",
+            "user",
+            "invited_by",
+            "is_admin",
+            "is_active",
+            "invitation_accepted",
+            "extra_data",
+            "last_login"
+
+        )
+        read_only_fields = ("is_superuser", "user", "is_active",
+                            "invited_by", "is_admin", "invitation_accepted", "extra_data", "last_login")
+
+    def get_groups(self, obj):
+        roles = get_user_roles(obj)
+        return [role.get_name() for role in roles]
+
+    def get_user_permissions(self, obj):
+        perms = available_perm_status(obj)
+        # return perms
+        # return [if temp: perm for perm, temp in perms]
+        perms_name = []
+        for perm, temp in perms.items():
+            if temp:
+                perms_name.append(perm)
+        return perms_name
 
 
 class InvitationDataSerializer(serializers.Serializer):
@@ -97,7 +151,7 @@ class BankSerializer(serializers.ModelSerializer):
 
 
 class LocationSerializer(serializers.ModelSerializer):
-    """Serializer for bank."""
+    """Serializer for location."""
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -114,6 +168,102 @@ class LocationSerializer(serializers.ModelSerializer):
             "city",
             "region",
             "country",
+        )
+        read_only_fields = ("is_active", "extra_data",
+                            "company", "create_date", "update_date")
+
+
+class WeightField(serializers.Field):
+
+    def to_representation(self, value):
+        ret = {"weight": value.value,
+               "unit": value.unit}
+        return ret
+
+    def to_internal_value(self, data):
+        try:
+            data = eval(data)
+            print("\n \n data : ", data)
+            unit = data["unit"]
+            value = data["weight"]
+            kwargs = {unit: value}
+            print("\n \n unit : ", unit)
+            print("\n \n value : ", value)
+            print("\n \n kwargs : ", kwargs)
+            if unit in constants.WEIGHT_UNIT_TYPE_LIST:
+                return Weight(**kwargs)
+            else:
+                raise ValidationError("%s is not a valid %s" % (data, "Unit"))
+        except Exception:
+            if data:
+                raise ValidationError(
+                    "%s is not a valid %s" % (data, "formate"))
+            else:
+                if self.required:
+                    raise ValidationError("%s is %s" % ("weight", "required"))
+                else:
+                    # TODO
+                    return data
+
+
+class PackingBoxSerializer(serializers.ModelSerializer):
+    """Serializer for PackingBox."""
+    weight = WeightField(required=True)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = PackingBox
+        fields = (
+            "id",
+            "name",
+            "length",
+            "width",
+            "depth",
+            "cbm",
+            "length_unit",
+            "weight",
+            "is_active",
+            "extra_data",
+        )
+        read_only_fields = ("is_active", "extra_data",
+                            "company", "create_date", "update_date")
+
+
+class HsCodeSerializer(serializers.ModelSerializer):
+    """Serializer for HsCode."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = HsCode
+        fields = (
+            "id",
+            "hscode",
+            "material",
+            "use",
+            "is_active",
+            "extra_data",
+        )
+        read_only_fields = ("is_active", "extra_data",
+                            "company", "create_date", "update_date")
+
+
+class TaxSerializer(serializers.ModelSerializer):
+    """Serializer for Tax."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = Tax
+        fields = (
+            "id",
+            "from_country",
+            "to_country",
+            "custom_duty",
+            "vat",
+            "is_active",
+            "extra_data",
         )
         read_only_fields = ("is_active", "extra_data",
                             "company", "create_date", "update_date")

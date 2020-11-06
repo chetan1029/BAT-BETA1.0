@@ -22,13 +22,15 @@ from rolepermissions.roles import get_user_roles, assign_role
 from dry_rest_permissions.generics import DRYPermissions
 
 from bat.company.models import (
-    Company, Member, CompanyPaymentTerms, Bank, Location)
+    Company, Member, CompanyPaymentTerms, Bank, Location, PackingBox, HsCode, Tax)
 from bat.company import serializers
 from bat.company.utils import get_member
 
 
 Invitation = get_invitation_model()
 User = get_user_model()
+
+viewsets.ReadOnlyModelViewSet
 
 
 class CompanyViewset(mixins.ListModelMixin,
@@ -38,7 +40,12 @@ class CompanyViewset(mixins.ListModelMixin,
                      viewsets.GenericViewSet):  # TODO perform delete
     queryset = Company.objects.all()
     serializer_class = serializers.CompanySerializer
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated, DRYPermissions)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        return context
 
     def perform_create(self, serializer):
         company = serializer.save()
@@ -90,14 +97,6 @@ class InvitationCreate(viewsets.ViewSet):
         """
         create and seng invivation to given email address
         """
-
-        # company_qs = Company.objects.filter(
-        #     member_company__user__id=request.user.id)
-        # company = get_object_or_404(
-        #     company_qs, pk=company_pk)
-        # member = get_object_or_404(
-        #     Member, company__id=company.id, user__id=request.user.id)
-
         member = get_member(company_id=company_pk, user_id=request.user.id)
         company = member.company
         if not has_permission(member, "add_staff_member"):
@@ -170,6 +169,58 @@ class InvitationCreate(viewsets.ViewSet):
                 actions=actions,
             )
         return Response(status=status.HTTP_200_OK)
+
+
+# Member
+
+class MemberViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = serializers.MemberSerializer
+    queryset = Member.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions,)
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+    ]
+    filterset_fields = ["is_active", "is_admin", "invitation_accepted"]
+    search_fields = ["job_title"]
+
+    archive_message = _("Member is archived")
+    restore_message = _("Member is restored")
+
+    # def get_serializer_context(self):
+    #     context = super().get_serializer_context()
+    #     context["user_id"] = self.request.user.id
+    #     return context
+
+    def filter_queryset(self, queryset):
+        member = get_member(company_id=self.kwargs.get(
+            "company_pk", None), user_id=self.request.user.id)
+        queryset = queryset.filter(
+            company=member.company).order_by(
+            "-create_date"
+        )
+        return super().filter_queryset(queryset)
+
+    @action(detail=True, methods=["get"])
+    def archive(self, request, *args, **kwargs):
+        """Set the archive action."""
+        instance = self.get_object()
+        if not instance.is_active:
+            return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
+        instance.is_active = False
+        instance.save()
+        return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"])
+    def restore(self, request, *args, **kwargs):
+        """Set the restore action."""
+        instance = self.get_object()
+        if instance.is_active:
+            return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
+        instance.is_active = True
+        instance.save()
+        return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
 
 
 # Company setting common viewset
@@ -305,6 +356,8 @@ class BankViewSet(CompanySettingBaseViewSet):
     archive_message = _("Bank is archived")
     restore_message = _("Bank is restored")
 
+# Location
+
 
 class LocationViewSet(CompanySettingBaseViewSet):
     """Operations on location."""
@@ -319,5 +372,60 @@ class LocationViewSet(CompanySettingBaseViewSet):
     filterset_fields = ["is_active", "city", "region"]
     search_fields = ["name", "city", "region"]
 
-    archive_message = _("Bank is archived")
-    restore_message = _("Bank is restored")
+    archive_message = _("Location is archived")
+    restore_message = _("Location is restored")
+
+# PackingBox
+
+
+class PackingBoxViewSet(CompanySettingBaseViewSet):
+    """Operations on PackingBox."""
+
+    serializer_class = serializers.PackingBoxSerializer
+    queryset = PackingBox.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions,)
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+    ]
+    filterset_fields = ["is_active", ]
+    search_fields = ["name"]
+
+    archive_message = _("Packing box is archived")
+    restore_message = _("Packing box is restored")
+
+
+# HsCode
+class HsCodeBoxViewSet(CompanySettingBaseViewSet):
+    """Operations on HsCode."""
+
+    serializer_class = serializers.HsCodeSerializer
+    queryset = HsCode.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions,)
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+    ]
+    filterset_fields = ["is_active"]
+    search_fields = ["hscode", "material", "use"]
+
+    archive_message = _("HsCode is archived")
+    restore_message = _("HsCode is restored")
+
+
+# Tax
+class TaxBoxViewSet(CompanySettingBaseViewSet):
+    """Operations on Tax."""
+
+    serializer_class = serializers.TaxSerializer
+    queryset = Tax.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions,)
+    filter_backends = [
+        DjangoFilterBackend,
+        # SearchFilter,
+    ]
+    filterset_fields = ["is_active", ]
+    # search_fields = ["name"]
+
+    archive_message = _("Tax is archived")
+    restore_message = _("Tax is restored")

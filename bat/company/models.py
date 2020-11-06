@@ -26,26 +26,11 @@ from rolepermissions.checkers import has_permission
 
 from bat.globalprop.validator import validator
 from bat.setting.models import Category
+from bat.company.constants import *
 
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
-# Variables
-IMPERIAL = "Imperial"
-METRIC = "Metric"
-UNIT_SYSTEM_TYPE = ((IMPERIAL, "Imperial"), (METRIC, "Metric"))
-
-KG = "kg"
-GM = "g"
-LB = "lb"
-OZ = "oz"
-WEIGHT_UNIT_TYPE = ((KG, "kg"), (GM, "g"), (LB, "lb"), (OZ, "oz"))
-
-CM = "cm"
-IN = "in"
-LENGTH_UNIT_TYPE = ((CM, "cm"), (IN, "in"))
-
-DEFAULT_CURRENCY = "USD"
 
 
 def get_member_from_request(request):
@@ -53,8 +38,9 @@ def get_member_from_request(request):
     get member from request bye resolving it
     """
     kwargs = request.resolver_match.kwargs
-    member = get_object_or_404(Member, company__id=kwargs.get(
-        "company_pk"), user=request.user.id)
+    company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
+    member = get_object_or_404(
+        Member, company__id=company_pk, user=request.user.id)
     return member
 
 
@@ -201,6 +187,29 @@ class Company(Address):
         """Return Value."""
         return str(self.id) + " - " + self.name
 
+    @staticmethod
+    def has_read_permission(request):
+        return True
+
+    def has_object_read_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "update_company_profile")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "update_company_profile")
+
+    @staticmethod
+    def has_create_permission(request):
+        return True
+
+    def has_object_create_permission(self, request):
+        return True
+
 
 class CompanyType(models.Model):
     """
@@ -333,6 +342,62 @@ class Member(MemberPermissionsMixin):
         """Return Value."""
         return self.user.username + " - " + self.company.name + " - " + str(self.company.id)
 
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_staff_member")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_staff_member")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_staff_member")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_staff_member")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_staff_member")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_staff_member")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_staff_member")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_staff_member")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_staff_member")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_staff_member")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_staff_member")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_staff_member")
+
 
 class CompanyPaymentTerms(models.Model):
     """
@@ -431,11 +496,11 @@ class CompanyPaymentTerms(models.Model):
     @staticmethod
     def has_archive_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "archive_payment_terms")
+        return has_permission(member, "archived_payment_terms")
 
     def has_object_archive_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "archive_payment_terms")
+        return has_permission(member, "archived_payment_terms")
 
     @staticmethod
     def has_restore_permission(request):
@@ -535,11 +600,11 @@ class Bank(Address):
     @staticmethod
     def has_archive_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "archive_company_banks")
+        return has_permission(member, "archived_company_banks")
 
     def has_object_archive_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "archive_company_banks")
+        return has_permission(member, "archived_company_banks")
 
     @staticmethod
     def has_restore_permission(request):
@@ -628,11 +693,11 @@ class Location(Address):
     @staticmethod
     def has_archive_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "archive_company_locations")
+        return has_permission(member, "archived_company_locations")
 
     def has_object_archive_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "archive_company_locations")
+        return has_permission(member, "archived_company_locations")
 
     @staticmethod
     def has_restore_permission(request):
@@ -693,6 +758,71 @@ class PackingBox(models.Model):
         """Return Value."""
         return self.name
 
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_packing_box")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_packing_box")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_packing_box")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_packing_box")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_packing_box")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_packing_box")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_packing_box")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_packing_box")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_packing_box")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_packing_box")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_packing_box")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_packing_box")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_packing_box")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_packing_box")
+
 
 class HsCode(models.Model):
     """
@@ -726,6 +856,71 @@ class HsCode(models.Model):
     def __str__(self):
         """Return Value."""
         return self.hscode
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_hscode")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_hscode")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_hscode")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_hscode")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_hscode")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_hscode")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_hscode")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_hscode")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_hscode")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_hscode")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_hscode")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_hscode")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_hscode")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_hscode")
 
 
 class Tax(models.Model):
@@ -762,3 +957,68 @@ class Tax(models.Model):
     def __str__(self):
         """Return Value."""
         return str(self.from_country) + "-" + str(self.to_country)
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_taxes")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_taxes")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_taxes")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_taxes")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_taxes")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_taxes")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_taxes")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_taxes")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_taxes")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_taxes")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_taxes")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_taxes")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_taxes")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_taxes")
