@@ -337,6 +337,10 @@ REST_USE_JWT = True
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'bat.users.serializers.RestAuthRegisterSerializer',
 }
+REST_AUTH_SERIALIZERS = {
+
+    "USER_DETAILS_SERIALIZER": 'bat.users.serializers.UserSerializer'
+}
 
 # jwt
 JWT_AUTH = {

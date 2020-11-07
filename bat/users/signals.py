@@ -47,7 +47,7 @@ def process_invitations(sender, instance, **kwargs):
                 companytype = CompanyType(
                     partner=vendor,
                     company_id=company_id,
-                    category_id=vendor_type,
+                    category_id=vendor_type.get("id", None),
                 )
                 companytype.save()
 

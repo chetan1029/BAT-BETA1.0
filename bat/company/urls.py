@@ -3,12 +3,12 @@ from django.urls import path, include
 from rest_framework_nested import routers
 
 from bat.company.views.setting import (
-    CompanyViewset, InvitationCreate, CompanyPaymentTermsViewSet,
+    CompanyViewSet, InvitationCreate, CompanyPaymentTermsViewSet,
     BankViewSet, LocationViewSet, PackingBoxViewSet, HsCodeBoxViewSet,
     TaxBoxViewSet, MemberViewSet)
 
 router = routers.SimpleRouter()
-router.register('companies', CompanyViewset)
+router.register('companies', CompanyViewSet)
 
 invitation_router = routers.NestedSimpleRouter(
     router, "companies", lookup='company')

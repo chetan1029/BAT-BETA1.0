@@ -15,6 +15,7 @@ from bat.company.models import (
 from bat.company.utils import get_list_of_roles, get_list_of_permissions
 from bat.company import constants
 from bat.company.utils import get_member
+from bat.setting.models import Category
 
 Invitation = get_invitation_model()
 
@@ -100,8 +101,9 @@ class CompanySerializer(serializers.ModelSerializer):
             "time_zone",
             "is_active",
             "extra_data",
+            "roles",
         )
-        read_only_fields = ("id", "is_active", "extra_data",)
+        read_only_fields = ("id", "is_active", "extra_data", "roles")
 
     def get_roles(self, obj):
         user_id = self.context.get("user_id", None)
@@ -139,9 +141,18 @@ class InvitationDataSerializer(serializers.Serializer):
     last_name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
     job_title = serializers.CharField(required=True)
-    role = serializers.ChoiceField(choices=get_list_of_roles(), required=True)
+    role = serializers.ChoiceField(choices=get_list_of_roles(), required=False)
     permissions = serializers.MultipleChoiceField(
-        choices=get_list_of_permissions(), required=True)
+        choices=get_list_of_permissions(), required=False)
+    invitation_type = serializers.ChoiceField(
+        ["vendor_invitation"], required=False)
+    vendor_name = serializers.CharField(required=False)
+    vendor_type = serializers.JSONField(required=False)
+
+    # def __init__(self, *args, **kwargs):
+    #     print("\n \n", self.fields,
+    #           " : self.fields")
+    #     super().__init__(self, *args, **kwargs)
 
     def validate(self, data):
         """
@@ -149,19 +160,46 @@ class InvitationDataSerializer(serializers.Serializer):
         """
         email = data['email']
         company_id = self.context.get("company_id", None)
-        if company_id and email:
-            if Member.objects.filter(
-                company_id=int(company_id), user__email=email
-            ).exists():
+
+        if data["invitation_type"] and data["invitation_type"] == "vendor_invitation":
+            if not data["vendor_name"]:
                 raise serializers.ValidationError(
-                    _("User already is your staff member."))
-            else:
+                    _("Vendor name is required field"))
+            if not data["vendor_type"]:
+                raise serializers.ValidationError(
+                    _("Vendor type is required field"))
+            if data["vendor_type"]:
+                choices = list(Category.objects.values("id", "name"))
+                if data["vendor_type"] not in choices:
+                    raise serializers.ValidationError(
+                        _("Vendor type is not valid"))
+            if data["vendor_type"] and data["vendor_name"] and email:
                 invitations = Invitation.objects.filter(
-                    email=email, company_detail__company_id=int(company_id)
+                    email=email, company_detail__company_name__iexact=data["vendor_name"]
                 )
                 if invitations.exists():
-                    msg = _("Invitation already sent for this email.")
+                    msg = _("Invitation already sent for this vendor and email.")
                     raise serializers.ValidationError(msg)
+        else:
+            if not data["role"]:
+                raise serializers.ValidationError(
+                    _("Role is required field"))
+            if not data["permissions"]:
+                raise serializers.ValidationError(
+                    _("permissions is required field"))
+            if company_id and email:
+                if Member.objects.filter(
+                    company_id=int(company_id), user__email=email
+                ).exists():
+                    raise serializers.ValidationError(
+                        _("User already is your staff member."))
+                else:
+                    invitations = Invitation.objects.filter(
+                        email=email, company_detail__company_id=int(company_id)
+                    )
+                    if invitations.exists():
+                        msg = _("Invitation already sent for this email.")
+                        raise serializers.ValidationError(msg)
 
         return super().validate(data)
 

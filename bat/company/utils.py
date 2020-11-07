@@ -6,6 +6,7 @@ from rolepermissions.roles import RolesManager
 from rolepermissions.checkers import has_permission
 
 from bat.company.models import Member
+from bat.setting.models import Category
 
 
 def get_member(company_id=None, user_id=None):
@@ -23,7 +24,7 @@ def get_list_of_roles_permissions():
     all_roles = OrderedDict()
     for role in RolesManager.get_roles():
         role_name = role.get_name()
-        
+
         all_roles[role_name] = {
             "permissions": list(role.permission_names_list()),
         }
@@ -31,7 +32,7 @@ def get_list_of_roles_permissions():
 
 
 def get_list_of_roles():
-   
+
     return list(get_list_of_roles_permissions().keys())
 
 
@@ -51,3 +52,15 @@ def has_permissions(object=None, permissions=[]):
         if not has_permission(object, perm):
             return False
     return True
+
+
+# def test():
+#     """
+#     docstring
+#     """
+#     data = {"id": 1, "name": "test"}
+#     choices = list(Category.objects.values("id", "name"))
+#     if data in choices:
+#         print("\n\n YES \n\n")
+#     else:
+#         print("\n\n NO \n\n")

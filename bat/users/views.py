@@ -19,7 +19,7 @@ User = get_user_model()
 Invitation = get_invitation_model()
 
 
-class UserViewsets(RetrieveModelMixin, UpdateModelMixin, viewsets.GenericViewSet):
+class UserViewSet(RetrieveModelMixin, UpdateModelMixin, viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = serializers.UserSerializer
     permission_classes = (IsAuthenticated,)
@@ -29,7 +29,8 @@ class UserViewsets(RetrieveModelMixin, UpdateModelMixin, viewsets.GenericViewSet
         '''
         filter query for current user
         '''
-        return self.queryset.filter(username=self.kwargs.get("username"))
+        # return self.queryset.filter(username=self.kwargs.get("username"))
+        return self.queryset.filter(username=self.request.user.username)
 
 
 class RolesandPermissionsViewSet(viewsets.ViewSet):

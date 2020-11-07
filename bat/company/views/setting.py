@@ -4,7 +4,6 @@ from rest_framework import status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 
 
@@ -13,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rolepermissions.roles import RolesManager
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
@@ -32,7 +32,7 @@ Invitation = get_invitation_model()
 User = get_user_model()
 
 
-class CompanyViewset(mixins.ListModelMixin,
+class CompanyViewSet(mixins.ListModelMixin,
                      mixins.CreateModelMixin,
                      mixins.UpdateModelMixin,
                      mixins.RetrieveModelMixin,
@@ -87,6 +87,16 @@ input to content
 "role":"supply_chain_manager",
 "permissions":["view_product","add_product"]
 }
+
+{
+"first_name":"fname",
+"last_name":"lname",
+"email":"fnamelname@gmail.com",
+"job_title":"manager",
+"invitation_type":"vendor_invitation",
+"vendor_name":"test",
+"vendor_type":{"id":1,"name":"test"}
+}
 """
 
 
@@ -102,11 +112,19 @@ class InvitationCreate(viewsets.ViewSet):
             return Response({"message": _("You are not allowed to add staff member to this company")}, status=status.HTTP_403_FORBIDDEN)
         context = {}
         context["company_id"] = company.id
+        print("request.data.............:", request.data)
         serializer = serializers.InvitationDataSerializer(
             data=request.data, context=context)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         data = serializer.data
+
+        email = data["email"].lower()
+        notify_verb = _("sent you an staff member invitation")
+        notify_description = _(
+            "{} has invited you to access {} as a staff \
+                    member."
+        )
 
         # User Detail
         first_name = data["first_name"]
@@ -117,20 +135,46 @@ class InvitationCreate(viewsets.ViewSet):
             "last_name": last_name,
             "job_title": job_title,
         }
-        email = data["email"].lower()
 
-        # Company Detail
-        company_detail = {
-            "company_id": company.id,
-            "company_name": company.name,
-        }
+        # TODO vendor_invitation test
+        invitation_type = data["invitation_type"]
+        if invitation_type and invitation_type == "vendor_invitation":
+            notify_verb = _("sent you an vendor admin invitation")
+            notify_description = _(
+                "{} has invited you to access {} as a vendor \
+                    admin."
+            )
+            # Company Detail
+            company_detail = {
+                "company_id": company.id,
+                "company_name": company.name,
+                "vendor_name": data["vendor_name"],
+                "vendor_type": data["vendor_type"],
+            }
 
-        # User Roles
-        user_roles = {"role": data["role"],
-                      "perms": list(data["permissions"])}
+            # User Roles
+            role = "vendor_admin"
+            role_obj = RolesManager.retrieve_role(role)
+            user_roles = {
+                "role": role,
+                "perms": list(role_obj.permission_names_list()),
+            }
 
-        extra_data = {}
-        extra_data["type"] = "Member Invitation"
+            extra_data = {}
+            extra_data["type"] = "Vendor Invitation"
+        else:
+            # Company Detail
+            company_detail = {
+                "company_id": company.id,
+                "company_name": company.name,
+            }
+
+            # User Roles
+            user_roles = {"role": data["role"],
+                          "perms": list(data["permissions"])}
+
+            extra_data = {}
+            extra_data["type"] = "Member Invitation"
 
         inviter = User.objects.get(pk=request.user.id)
 
@@ -146,8 +190,8 @@ class InvitationCreate(viewsets.ViewSet):
 
         user = User.objects.filter(email=email).first()
         # url to accept invitation
-        print("accept url : ", reverse("api:users:invitationdetail-accept",
-                                       kwargs={"pk": invite.id}))
+        print("\n \n \naccept url : ", reverse("api:users:invitationdetail-accept",
+                                               kwargs={"pk": invite.id}), "\n \n \n")
         if user:
             actions = [
                 {
@@ -158,19 +202,17 @@ class InvitationCreate(viewsets.ViewSet):
             notify.send(
                 request.user,
                 recipient=user,
-                verb=_("sent you an staff member invitation"),
+                verb=notify_verb,
                 action_object=invite,
                 target=company,
-                description=_(
-                    "{} has invited you to access {} as a staff \
-                    member."
-                ).format(request.user.username, company.name),
+                description=notify_description.format(
+                    request.user.username, company.name),
                 actions=actions,
             )
-        return Response(status=status.HTTP_200_OK)
-
+        return Response({"message": _("Invitation was successfully sent.")}, status=status.HTTP_200_OK)
 
 # Member
+
 
 class MemberViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                     mixins.UpdateModelMixin, viewsets.GenericViewSet):
