@@ -1,7 +1,4 @@
-from decimal import Decimal
-
 from rest_framework import serializers
-from rest_framework.utils import json
 from rest_framework.exceptions import ValidationError
 
 
@@ -10,8 +7,7 @@ from django.contrib.auth.models import Group, Permission
 
 from invitations.utils import get_invitation_model
 from measurement.measures import Weight
-from rolepermissions.roles import get_user_roles, assign_role
-from rolepermissions.permissions import available_perm_status
+from rolepermissions.roles import get_user_roles
 
 
 from bat.company.models import (
@@ -89,8 +85,23 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = "__all__"
-        # read_only_fields = ('owner',)
+        fields = (
+            "id",
+            "name",
+            "abbreviation",
+            "email",
+            "logo",
+            "phone_number",
+            "organization_number",
+            "currency",
+            "unit_system",
+            "weight_unit",
+            "language",
+            "time_zone",
+            "is_active",
+            "extra_data",
+        )
+        read_only_fields = ("id", "is_active", "extra_data",)
 
     def get_roles(self, obj):
         user_id = self.context.get("user_id", None)
@@ -100,8 +111,6 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class MemberSerializer(serializers.ModelSerializer):
-    # roles = serializers.SerializerMethodField()
-    # user_permissions_list = serializers.SerializerMethodField()
     groups = GroupsListField()
     user_permissions = PermissionListField()
 
@@ -121,16 +130,8 @@ class MemberSerializer(serializers.ModelSerializer):
             "extra_data",
             "last_login",
         )
-        read_only_fields = ("is_superuser", "user", "is_active",
+        read_only_fields = ("id", "is_superuser", "user", "is_active",
                             "invited_by", "is_admin", "invitation_accepted", "extra_data", "last_login")
-
-    # def get_roles(self, obj):
-    #     roles = get_user_roles(obj)
-    #     return [role.get_name() for role in roles]
-
-    # def get_user_permissions_list(self, obj):
-    #     perms = available_perm_status(obj)
-    #     return [perm for perm, condition in perms.items() if condition]
 
 
 class InvitationDataSerializer(serializers.Serializer):
@@ -183,7 +184,8 @@ class CompanyPaymentTermsSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
         )
-        read_only_fields = ("is_active", "extra_data", "remaining", "title")
+        read_only_fields = ("id", "is_active", "extra_data",
+                            "remaining", "title")
 
 
 class BankSerializer(serializers.ModelSerializer):
@@ -203,7 +205,7 @@ class BankSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
         )
-        read_only_fields = ("is_active", "extra_data",
+        read_only_fields = ("id", "is_active", "extra_data",
                             "company", "create_date", "update_date")
 
 
@@ -226,7 +228,7 @@ class LocationSerializer(serializers.ModelSerializer):
             "region",
             "country",
         )
-        read_only_fields = ("is_active", "extra_data",
+        read_only_fields = ("id", "is_active", "extra_data",
                             "company", "create_date", "update_date")
 
 
@@ -250,7 +252,7 @@ class PackingBoxSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
         )
-        read_only_fields = ("is_active", "extra_data",
+        read_only_fields = ("id", "is_active", "extra_data",
                             "company", "create_date", "update_date")
 
 
@@ -269,7 +271,7 @@ class HsCodeSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
         )
-        read_only_fields = ("is_active", "extra_data",
+        read_only_fields = ("id", "is_active", "extra_data",
                             "company", "create_date", "update_date")
 
 
@@ -289,5 +291,5 @@ class TaxSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
         )
-        read_only_fields = ("is_active", "extra_data",
+        read_only_fields = ("id", "is_active", "extra_data",
                             "company", "create_date", "update_date")

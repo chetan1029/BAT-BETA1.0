@@ -13,12 +13,13 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from collections import OrderedDict
 from rolepermissions.roles import RolesManager
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
 from rolepermissions.checkers import has_permission
-from rolepermissions.roles import get_user_roles, assign_role
+from rolepermissions.roles import assign_role, RolesManager, clear_roles
+from rolepermissions.permissions import revoke_permission
+
 from dry_rest_permissions.generics import DRYPermissions
 
 from bat.company.models import (
@@ -29,8 +30,6 @@ from bat.company.utils import get_member
 
 Invitation = get_invitation_model()
 User = get_user_model()
-
-viewsets.ReadOnlyModelViewSet
 
 
 class CompanyViewset(mixins.ListModelMixin,
@@ -188,12 +187,9 @@ class MemberViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     archive_message = _("Member is archived")
     restore_message = _("Member is restored")
 
-    # def get_serializer_context(self):
-    #     context = super().get_serializer_context()
-    #     context["user_id"] = self.request.user.id
-    #     return context
-
     def filter_queryset(self, queryset):
+        """Filter members by current company"""
+
         member = get_member(company_id=self.kwargs.get(
             "company_pk", None), user_id=self.request.user.id)
         queryset = queryset.filter(
@@ -201,6 +197,22 @@ class MemberViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             "-create_date"
         )
         return super().filter_queryset(queryset)
+
+    def perform_update(self, serializer):
+        """ update member with given roles and permissions """
+        instance = self.get_object()
+        data = serializer.validated_data.copy()
+        clear_roles(instance)
+        for group in data.get("groups", None):
+            assign_role(instance, group.name)
+            role_obj = RolesManager.retrieve_role(group.name)
+            # remove unneccesary permissions
+            for perm in role_obj.get_all_permissions():
+                if perm not in data.get("user_permissions", None):
+                    revoke_permission(instance, perm.codename)
+        serializer.validated_data.pop("groups")
+        serializer.validated_data.pop("user_permissions")
+        serializer.save()
 
     @action(detail=True, methods=["get"])
     def archive(self, request, *args, **kwargs):
