@@ -1,5 +1,3 @@
-# Django
-# ------------------------------------------------------------------------------
 aiohttp==3.6.2
 alabaster==0.7.12
 appdirs==1.4.4
@@ -189,3 +187,11 @@ django-taggit==1.3.0 #https://github.com/jazzband/django-taggit
 
 # Django Selectable
 django-selectable==1.3.0 #https://github.com/mlavin/django-selectable
+=======
+pytz==2020.1  # https://github.com/stub42/pytz
+python-slugify==4.0.1  # https://github.com/un33k/python-slugify
+Pillow==8.0.0  # https://github.com/python-pillow/Pillow
+argon2-cffi==20.1.0  # https://github.com/hynek/argon2_cffi
+#whitenoise==5.2.0  # https://github.com/evansd/whitenoise
+redis==3.5.3  # https://github.com/andymccurdy/redis-py
+hiredis==1.1.0  # https://github.com/redis/hiredis-py

@@ -1,9 +1,16 @@
 # PRECAUTION: avoid production dependencies that aren't in development
 
--r ./base.txt
+-r base.txt
 
 gunicorn==20.0.4  # https://github.com/benoitc/gunicorn
-Collectfast==0.6.2  # https://github.com/antonagestam/collectfast
+psycopg2==2.8.6  # https://github.com/psycopg/psycopg2
 
 # Django
 # ------------------------------------------------------------------------------
+django-anymail==8.1  # https://github.com/anymail/django-anymail
+
+boto3==1.16.11
+django-storages==1.10.1
+
+#Collectfast
+Collectfast==2.2.0

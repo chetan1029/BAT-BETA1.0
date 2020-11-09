@@ -1,27 +1,9 @@
-"""Make model available for admin to perform action."""
-# https://docs.djangoproject.com/en/3.1/ref/contrib/admin/actions/
 from django.contrib import admin
-from reversion.admin import VersionAdmin
 
-from .models import Category, PaymentTerms, Status
+# Register your models here.
 
+from bat.setting.models import Category, Status, PaymentTerms
 
-@admin.register(Status)
-class StatusAdmin(VersionAdmin):
-    """Setup List display, ordering, actions etc."""
-
-    pass
-
-
-@admin.register(Category)
-class CategoryAdmin(VersionAdmin):
-    """Setup List display, ordering, actions etc."""
-
-    pass
-
-
-@admin.register(PaymentTerms)
-class PaymentTermsAdmin(VersionAdmin):
-    """Setup List display, ordering, actions etc."""
-
-    pass
+admin.site.register(Category)
+admin.site.register(Status)
+admin.site.register(PaymentTerms)

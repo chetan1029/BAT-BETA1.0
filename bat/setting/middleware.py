@@ -1,4 +1,6 @@
 """Midlleware to use for global use mostly related to settins."""
+import logging
+
 import pytz
 
 from django.utils import timezone
@@ -13,9 +15,12 @@ class TimezoneMiddleware:
 
     def __call__(self, request):
         """Call is called every new request django make."""
-        tzname = request.session.get("user_timezone")
-        if tzname:
-            timezone.activate(pytz.timezone(tzname))
+        logger = logging.getLogger(__name__)
+        logger.warning("---TimeZone Setup---")
+        if not request.user.is_anonymous:
+            tzname = request.user.timezone
+            if tzname:
+                timezone.activate(pytz.timezone(tzname))
         else:
             timezone.deactivate()
         return self.get_response(request)

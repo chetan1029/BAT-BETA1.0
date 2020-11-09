@@ -6,63 +6,71 @@ from .base import env
 # https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["thebatonline.com"])
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[
+                         "beta.thebatonline.com"])
 
 # DATABASES
 # ------------------------------------------------------------------------------
 DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
-DATABASES["default"]["CONN_MAX_AGE"] = env.int(
-    "CONN_MAX_AGE", default=60
-)  # noqa F405
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)  # noqa F405
 
 # CACHES
 # ------------------------------------------------------------------------------
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env("REDIS_URL"),
+        "LOCATION": env("REDIS_URL", default="redis://127.0.0.1: 6379/1"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             # Mimicing memcache behavior.
-            # http://niwinz.github.io/django-redis/latest/#_memcached_exceptions_behavior
+            # https://github.com/jazzband/django-redis#memcached-exceptions-behavior
             "IGNORE_EXCEPTIONS": True,
         },
     }
 }
 
-# SECURITY
-# ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#secure-proxy-ssl-header
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-# https://docs.djangoproject.com/en/dev/ref/settings/#secure-ssl-redirect
-SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
-# https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-secure
-SESSION_COOKIE_SECURE = True
-# https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-secure
-CSRF_COOKIE_SECURE = True
-# https://docs.djangoproject.com/en/dev/topics/security/#ssl-https
-# https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-seconds
-# TODO: set this to 60 seconds first and then to 518400 once you prove the former works
-SECURE_HSTS_SECONDS = 60
-# https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-include-subdomains
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
-    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
-)
-# https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-preload
-SECURE_HSTS_PRELOAD = env.bool("DJANGO_SECURE_HSTS_PRELOAD", default=True)
-# https://docs.djangoproject.com/en/dev/ref/middleware/#x-content-type-options-nosniff
-SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
-    "DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True
-)
+# # SECURITY
+# # ------------------------------------------------------------------------------
+# # https://docs.djangoproject.com/en/dev/ref/settings/#secure-proxy-ssl-header
+# SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# # https://docs.djangoproject.com/en/dev/ref/settings/#secure-ssl-redirect
+# SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
+# # https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-secure
+# SESSION_COOKIE_SECURE = True
+# # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-secure
+# CSRF_COOKIE_SECURE = True
+# # https://docs.djangoproject.com/en/dev/topics/security/#ssl-https
+# # https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-seconds
+# # TODO: set this to 60 seconds first and then to 518400 once you prove the former works
+# SECURE_HSTS_SECONDS = 60
+# # https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-include-subdomains
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+#     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+# )
+# # https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-preload
+# SECURE_HSTS_PRELOAD = env.bool("DJANGO_SECURE_HSTS_PRELOAD", default=True)
+# # https://docs.djangoproject.com/en/dev/ref/middleware/#x-content-type-options-nosniff
+# SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
+#     "DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True
+# )
 
+# STATIC
+# ------------------------
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+COLLECTFAST_STRATEGY = "collectfast.strategies.boto3.Boto3Strategy"
+COLLECTFAST_THREADS = 20
+
+INSTALLED_APPS += ["collectfast"]
 # MEDIA
 # ------------------------------------------------------------------------------
 
 # TEMPLATES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#templates
-TEMPLATES[0]["OPTIONS"]["loaders"] = [  # noqa F405
+TEMPLATES[-1]["OPTIONS"]["loaders"] = [  # type: ignore[index] # noqa F405
     (
         "django.template.loaders.cached.Loader",
         [
@@ -76,49 +84,30 @@ TEMPLATES[0]["OPTIONS"]["loaders"] = [  # noqa F405
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email
 DEFAULT_FROM_EMAIL = env(
-    "DJANGO_DEFAULT_FROM_EMAIL", default="bat <care@volutz.com>"
+    "DJANGO_DEFAULT_FROM_EMAIL", default="bat-beta1.0 <noreply@beta.thebatonline.com>"
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#server-email
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-subject-prefix
-EMAIL_SUBJECT_PREFIX = env("DJANGO_EMAIL_SUBJECT_PREFIX", default="[bat]")
+EMAIL_SUBJECT_PREFIX = env(
+    "DJANGO_EMAIL_SUBJECT_PREFIX", default="[bat-beta1.0]"
+)
 
 # ADMIN
 # ------------------------------------------------------------------------------
 # Django Admin URL regex.
-ADMIN_URL = env("DJANGO_ADMIN_URL")
+# ADMIN_URL = env("DJANGO_ADMIN_URL")
 
-EMAIL_BACKEND = "django_ses.SESBackend"
-AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-AWS_SES_REGION_NAME = "us-west-2"
-AWS_SES_REGION_ENDPOINT = "email.us-west-2.amazonaws.com"
-
-# # Anymail (Mailgun)
-# # ------------------------------------------------------------------------------
-# # https://anymail.readthedocs.io/en/stable/installation/#installing-anymail
-# INSTALLED_APPS += ["anymail"]  # noqa F405
-# EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
-# # https://anymail.readthedocs.io/en/stable/installation/#anymail-settings-reference
-# ANYMAIL = {
-#     "MAILGUN_API_KEY": env("MAILGUN_API_KEY"),
-#     "MAILGUN_SENDER_DOMAIN": env("MAILGUN_DOMAIN"),
-#     "MAILGUN_API_URL": env("MAILGUN_API_URL", default="https://api.mailgun.net/v3"),
-# }
-
-# django-compressor
+# Anymail
 # ------------------------------------------------------------------------------
-# https://django-compressor.readthedocs.io/en/latest/settings/#django.conf.settings.COMPRESS_ENABLED
-COMPRESS_ENABLED = env.bool("COMPRESS_ENABLED", default=True)
-# https://django-compressor.readthedocs.io/en/latest/settings/#django.conf.settings.COMPRESS_STORAGE
-COMPRESS_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-# https://django-compressor.readthedocs.io/en/latest/settings/#django.conf.settings.COMPRESS_URL
-COMPRESS_URL = STATIC_URL  # noqa F405
-# Collectfast
-# ------------------------------------------------------------------------------
-# https://github.com/antonagestam/collectfast#installation
-INSTALLED_APPS = ["collectfast"] + INSTALLED_APPS  # noqa F405
-AWS_PRELOAD_METADATA = True
+# https://anymail.readthedocs.io/en/stable/installation/#installing-anymail
+INSTALLED_APPS += ["anymail"]  # noqa F405
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
+# https://anymail.readthedocs.io/en/stable/installation/#anymail-settings-reference
+# https://anymail.readthedocs.io/en/stable/esps
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+ANYMAIL = {}
+
 
 # LOGGING
 # ------------------------------------------------------------------------------
@@ -131,9 +120,7 @@ AWS_PRELOAD_METADATA = True
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "filters": {
-        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"}
-    },
+    "filters": {"require_debug_false": {"()": "django.utils.log.RequireDebugFalse"}},
     "formatters": {
         "verbose": {
             "format": "%(levelname)s %(asctime)s %(module)s "
@@ -169,3 +156,7 @@ LOGGING = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")

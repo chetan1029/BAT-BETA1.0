@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% load static %}
-{% block title %}Permission Denied{% endblock %}
-{% block amazonsidebar %}{% endblock %}
+
+{% block title %}Forbidden (403){% endblock %}
+
 {% block content %}
-<h1>Permission Denied</h1>
-<p>You don't have permission for the requested action. Please contact admin to provide the required permission.</p>
-<img src="https://cdn.dribbble.com/users/605899/screenshots/4806791/animation_by_nikitin891.gif" />
+<h1>Forbidden (403)</h1>
+
+<p>CSRF verification failed. Request aborted.</p>
 {% endblock content %}

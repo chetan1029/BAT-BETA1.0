@@ -16,19 +16,3 @@ class phone_validator(RegexValidator):
         format: '+46722222222'. Up to 15 digits allowed."
         self.code = "Phone validator"
         super().__init__(*args, **kwargs)
-
-
-class name_validator(RegexValidator):
-    """Simple common name validator."""
-
-    def __init__(self, *args, **kwargs):
-        """Override RegexValidator properties."""
-        self.regex = "^[-a-zA-Z0-9.+;,() ]+$"
-        self.message = "Name should contain only alphanumeric charactors."
-        self.code = "Name validator"
-        super().__init__(*args, **kwargs)
-
-
-def byte_length(s):
-    """Calculate byte from given string."""
-    return len(s.encode("utf-8"))

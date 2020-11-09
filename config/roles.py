@@ -2,128 +2,111 @@
 from rolepermissions.roles import AbstractUserRole
 
 
-class SupplyChainManager(AbstractUserRole):
-    """Supply chain manager permissions."""
+class CompanyAdmin(AbstractUserRole):
+    """Company Admin permissions."""
 
     available_permissions = {
-        "view_supply_chain_dashboard": True,
-        "edit_supply_chain_dashboard": True,
-        "view_product_catalog": True,
-        "add_product": True,
-        "edit_product": True,
-        "delete_product": True,
-        "view_vendor": True,
-        "add_vendor": True,
-        "edit_vendor": True,
-        "delete_vendor": True,
+        "update_company_profile": True,
+        "view_staff_member": True,
+        "add_staff_member": True,
+        "change_staff_member": True,
+        "delete_staff_member": True,
         "view_payment_terms": True,
         "add_payment_terms": True,
+        "change_payment_terms": True,
         "delete_payment_terms": True,
-        "view_certification": True,
-        "add_certification": True,
-        "delete_certification": True,
-        "view_vendor_contacts": True,
-        "add_vendor_contacts": True,
-        "edit_vendor_contacts": True,
-        "delete_vendor_contacts": True,
-        "view_vendor_bank_info": True,
-        "add_vendor_bank_info": True,
-        "delete_vendor_bank_info": True,
-        "view_vendor_contract": True,
-        "add_vendor_contract": True,
-        "delete_vendor_contract": True,
-        "view_vendor_price_list": True,
-        "add_vendor_price_list": True,
-        "view_vendor_mold": True,
-        "add_vendor_mold": True,
-        "delete_vendor_mold": True,
-        "view_me": True,
-        "add_me": True,
-        "delete_me": True,
-        "view_order": True,
-        "edit_order": True,
-        "delete_order": True,
-        "generate_order": True,
-        "confirm_po": True,
-        "upload_pi": True,
-        "close_order": True,
-        "view_order_payment": True,
-        "add_order_payment": True,
-        "edit_order_payment": True,
-        "delete_order_payment": True,
-        "view_shipment": True,
-        "add_shipment": True,
-        "edit_shipment": True,
-        "delete_shipment": True,
+        "view_membership_plan": True,
+        "add_membership_plan": True,
+        "change_membership_plan": True,
+        "delete_membership_plan": True,
+        "view_company_banks": True,
+        "add_company_banks": True,
+        "change_company_banks": True,
+        "delete_company_banks": True,
+        "view_company_locations": True,
+        "add_company_locations": True,
+        "change_company_locations": True,
+        "delete_company_locations": True,
+        "view_packing_box": True,
+        "add_packing_box": True,
+        "change_packing_box": True,
+        "delete_packing_box": True,
+        "view_taxes": True,
+        "add_taxes": True,
+        "change_taxes": True,
+        "delete_taxes": True,
+        "view_hscode": True,
+        "add_hscode": True,
+        "change_hscode": True,
+        "delete_hscode": True,
+        "view_product": True,
+        "add_product": True,
+        "change_product": True,
+        "delete_product": True,
     }
 
 
-class SalesManager(AbstractUserRole):
-    """Sales manager permissions."""
-
-    available_permissions = {"sales": True, "payments": True}
-
-
-class InventoryManager(AbstractUserRole):
-    """Inventory Manager permissions."""
-
-    available_permissions = {"inventorize": True}
-
-
-class PpcManager(AbstractUserRole):
-    """PPC Manager permissions."""
-
-    available_permissions = {"ppc": True}
-
-
-class OptimisationManager(AbstractUserRole):
-    """Optimisation Manager permissions."""
+class SupplyChainManager(AbstractUserRole):
+    """Supply Chain Manager permissions."""
 
     available_permissions = {
-        "view_optimisation_dashboard": True,
-        "edit_optimisation_dashboard": True,
-        "view_clr_catalog": True,
-        "view_optimisation": True,
-        "upload_clr_catalog": True,
-        "copy_optimisation": True,
-        "clone_optimisation": True,
-        "edit_optimisation": True,
-        "delete_optimisation": True,
-        "share_optimisation": True,
-        "submit_to_amazon": True,
-        "manage_clr_reports": True,
-        "my_contributions": True,
+        "view_staff_member": True,
+        "add_staff_member": True,
+        "change_staff_member": True,
+        "archived_staff_member": False,
+        "restore_staff_member": False,
+        "view_payment_terms": True,
+        "add_payment_terms": True,
+        "change_payment_terms": True,
+        "archived_payment_terms": True,
+        "restore_payment_terms": True,
+        "view_membership_plan": True,
+        "add_membership_plan": True,
+        "change_membership_plan": True,
+        "view_company_banks": True,
+        "add_company_banks": True,
+        "change_company_banks": True,
+        "archived_company_banks": True,
+        "restore_company_banks": True,
+        "view_company_locations": True,
+        "add_company_locations": True,
+        "change_company_locations": True,
+        "archived_company_locations": True,
+        "restore_company_locations": True,
+        "view_packing_box": True,
+        "add_packing_box": True,
+        "change_packing_box": True,
+        "archived_packing_box": True,
+        "restore_packing_box": True,
+        "view_taxes": True,
+        "add_taxes": True,
+        "change_taxes": True,
+        "archived_taxes": True,
+        "restore_taxes": True,
+        "view_hscode": True,
+        "add_hscode": True,
+        "change_hscode": True,
+        "archived_hscode": True,
+        "restore_hscode": True,
+        "view_product": True,
+        "add_product": True,
+        "change_product": True,
+        "archived_product": True,
+        "restore_product": True,
     }
 
 
-class SettingControl(AbstractUserRole):
-    """Website setting permissions."""
+class VendorAdmin(AbstractUserRole):
+    """
+    Vendor Admin permissions.
+
+    He just has access of vendors access functions.
+    """
 
     available_permissions = {
-        "category_management": True,
-        "status_management": True,
-        "catalog_management": True,
-        "vat_management": True,
-        "company_setting": True,
-        "currency_management": True,
-    }
-
-
-class UserRoleControl(AbstractUserRole):
-    """Control roles and permissions for users."""
-
-    available_permissions = {
-        "view_roles": True,
-        "edit_roles": True,
-        "delete_roles": True,
-    }
-
-
-class ThirdPartyOptimisation(AbstractUserRole):
-    """3rd Party Optimisation Manager permissions."""
-
-    available_permissions = {
-        "edit_optimisation": True,
-        "view_optimisation": True,
-        "my_contributions": True,
+        "update_company_profile": True,
+        "view_staff_member": True,
+        "add_staff_member": True,
+        "change_staff_member": True,
+        "delete_staff_member": True,
     }
