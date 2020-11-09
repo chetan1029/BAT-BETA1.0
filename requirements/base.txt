@@ -73,7 +73,7 @@ packaging==20.4
 parso==0.8.0
 pexpect==4.8.0
 pickleshare==0.7.5
-Pillow==7.2.0
+Pillow==8.0.1
 pipdeptree==1.0.0
 pluggy==0.13.1
 prompt-toolkit==3.0.7
@@ -157,13 +157,35 @@ py-moneyed==0.8.0
 django-money[exchange]==1.1
 
 # Django Measurement
-django-measurement=3.2.3 #https://github.com/coddingtonbear/django-measurement
-measurement=3.2.0
-mpmath=1.1.0
-sympy=1.6.2
+django-measurement==3.2.3 #https://github.com/coddingtonbear/django-measurement
+measurement==3.2.0
+mpmath==1.1.0
+sympy==1.6.2
 
 # Celery for scheduled task or periodic task
-celery=5.0.0
+celery==5.0.0
 
 # Model Translation to store database translations.
-django-modeltranslation=0.15.2 #https://django-modeltranslation.readthedocs.io/en/latest/installation.html
+django-modeltranslation==0.15.2 #https://django-modeltranslation.readthedocs.io/en/latest/installation.html
+
+# Django Plan and subscriptions
+# install by pip install -e git://github.com/cypreess/django-plans.git#egg=django-plans
+django-plans
+
+# Django defender
+django-defender==0.7.0 #https://github.com/jazzband/django-defender
+
+# Django Invitation
+django-invitations==1.9.3 #https://github.com/bee-keeper/django-invitations
+
+# Django Notifications
+django-notifications-hq==1.6.0 #https://github.com/django-notifications/django-notifications
+
+# Django multiselectfield
+django-multiselectfield==0.1.12
+
+# Django Taggit
+django-taggit==1.3.0 #https://github.com/jazzband/django-taggit
+
+# Django Selectable
+django-selectable==1.3.0 #https://github.com/mlavin/django-selectable
