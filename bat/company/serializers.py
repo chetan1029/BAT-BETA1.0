@@ -16,37 +16,9 @@ from bat.company.utils import get_list_of_roles, get_list_of_permissions
 from bat.company import constants
 from bat.company.utils import get_member
 from bat.setting.models import Category
+from bat.serializersFields.serializers_fields import WeightField
 
 Invitation = get_invitation_model()
-
-
-class WeightField(serializers.Field):
-
-    def to_representation(self, value):
-        ret = {"weight": value.value,
-               "unit": value.unit}
-        return ret
-
-    def to_internal_value(self, data):
-        try:
-            data = eval(data)
-            unit = data["unit"]
-            value = data["weight"]
-            kwargs = {unit: value}
-            if unit in constants.WEIGHT_UNIT_TYPE_LIST:
-                return Weight(**kwargs)
-            else:
-                raise ValidationError("%s is not a valid %s" % (data, "Unit"))
-        except Exception:
-            if data:
-                raise ValidationError(
-                    "%s is not a valid %s" % (data, "formate"))
-            else:
-                if self.required:
-                    raise ValidationError("%s is %s" % ("weight", "required"))
-                else:
-                    # TODO
-                    return data
 
 
 class GroupsListField(serializers.ListField):

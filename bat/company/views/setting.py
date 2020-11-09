@@ -3,7 +3,6 @@ from decimal import Decimal
 from rest_framework import status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 
 
@@ -26,6 +25,7 @@ from bat.company.models import (
     Company, Member, CompanyPaymentTerms, Bank, Location, PackingBox, HsCode, Tax)
 from bat.company import serializers
 from bat.company.utils import get_member
+from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 
 
 Invitation = get_invitation_model()
@@ -215,7 +215,7 @@ class InvitationCreate(viewsets.ViewSet):
 
 
 class MemberViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                    mixins.UpdateModelMixin, viewsets.GenericViewSet):
+                    mixins.UpdateModelMixin, ArchiveMixin, RestoreMixin, viewsets.GenericViewSet):
     serializer_class = serializers.MemberSerializer
     queryset = Member.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions,)
@@ -256,29 +256,29 @@ class MemberViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         serializer.validated_data.pop("user_permissions")
         serializer.save()
 
-    @action(detail=True, methods=["get"])
-    def archive(self, request, *args, **kwargs):
-        """Set the archive action."""
-        instance = self.get_object()
-        if not instance.is_active:
-            return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
-        instance.is_active = False
-        instance.save()
-        return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
+    # @action(detail=True, methods=["get"])
+    # def archive(self, request, *args, **kwargs):
+    #     """Set the archive action."""
+    #     instance = self.get_object()
+    #     if not instance.is_active:
+    #         return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
+    #     instance.is_active = False
+    #     instance.save()
+    #     return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["get"])
-    def restore(self, request, *args, **kwargs):
-        """Set the restore action."""
-        instance = self.get_object()
-        if instance.is_active:
-            return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
-        instance.is_active = True
-        instance.save()
-        return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
+    # @action(detail=True, methods=["get"])
+    # def restore(self, request, *args, **kwargs):
+    #     """Set the restore action."""
+    #     instance = self.get_object()
+    #     if instance.is_active:
+    #         return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
+    #     instance.is_active = True
+    #     instance.save()
+    #     return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
 
 
 # Company setting common viewset
-class CompanySettingBaseViewSet(viewsets.ModelViewSet):
+class CompanySettingBaseViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """List all the payment terms."""
 
     class Meta:
@@ -299,25 +299,25 @@ class CompanySettingBaseViewSet(viewsets.ModelViewSet):
             "company_pk", None), user_id=self.request.user.id)
         serializer.save(company=member.company)
 
-    @action(detail=True, methods=["get"])
-    def archive(self, request, *args, **kwargs):
-        """Set the archive action."""
-        instance = self.get_object()
-        if not instance.is_active:
-            return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
-        instance.is_active = False
-        instance.save()
-        return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
+    # @action(detail=True, methods=["get"])
+    # def archive(self, request, *args, **kwargs):
+    #     """Set the archive action."""
+    #     instance = self.get_object()
+    #     if not instance.is_active:
+    #         return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
+    #     instance.is_active = False
+    #     instance.save()
+    #     return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["get"])
-    def restore(self, request, *args, **kwargs):
-        """Set the restore action."""
-        instance = self.get_object()
-        if instance.is_active:
-            return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
-        instance.is_active = True
-        instance.save()
-        return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
+    # @action(detail=True, methods=["get"])
+    # def restore(self, request, *args, **kwargs):
+    #     """Set the restore action."""
+    #     instance = self.get_object()
+    #     if instance.is_active:
+    #         return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
+    #     instance.is_active = True
+    #     instance.save()
+    #     return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
 
 # Payment terms
 

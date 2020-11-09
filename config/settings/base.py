@@ -365,3 +365,7 @@ DEFENDER_LOCKOUT_TEMPLATE = "user/lockout.html"
 
 # Django Taggit
 TAGGIT_CASE_INSENSITIVE = True
+
+
+# Some Global Variable for app
+STATUS_PRODUCT = env.bool("STATUS_PRODUCT", "Product")

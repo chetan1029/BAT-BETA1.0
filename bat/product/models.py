@@ -5,18 +5,30 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.shortcuts import get_object_or_404
+
 
 from django_measurement.models import MeasurementField
 from measurement.measures import Weight
 from taggit.managers import TaggableManager
+from rolepermissions.checkers import has_permission
+
 
 from bat.company.models import Company
 from bat.setting.models import Status
+from bat.product.constants import *
+from bat.company.models import Member
 
-# Variables
-CM = "cm"
-IN = "in"
-LENGTH_UNIT_TYPE = ((CM, "cm"), (IN, "in"))
+
+def get_member_from_request(request):
+    """
+    get member from request bye resolving it
+    """
+    kwargs = request.resolver_match.kwargs
+    company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
+    member = get_object_or_404(
+        Member, company__id=company_pk, user=request.user.id)
+    return member
 
 
 # Create your models here.
@@ -79,10 +91,10 @@ class Product(models.Model):
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
     ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
     model_number = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Model Number")
+        max_length=200, blank=True, verbose_name=_("Model Number"), unique=True
     )
     manufacturer_part_number = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Manufacturer Part Number")
+        max_length=200, blank=True, verbose_name=_("Manufacturer Part Number"), unique=True
     )
     length = models.DecimalField(
         max_digits=5,
@@ -165,6 +177,71 @@ class Product(models.Model):
     def __str__(self):
         """Return Value."""
         return self.productparent.title
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_product")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_product")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
 
 
 class ProductOption(models.Model):
