@@ -1,40 +1,34 @@
 from decimal import Decimal
 
-from rest_framework import status, viewsets, mixins
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.filters import SearchFilter
-
-
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
-
 from django_filters.rest_framework import DjangoFilterBackend
-from rolepermissions.roles import RolesManager
+from dry_rest_permissions.generics import DRYPermissions
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
+from rest_framework import mixins, status, viewsets
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rolepermissions.checkers import has_permission
-from rolepermissions.roles import assign_role, RolesManager, clear_roles
 from rolepermissions.permissions import revoke_permission
+from rolepermissions.roles import RolesManager, assign_role, clear_roles
 
-from dry_rest_permissions.generics import DRYPermissions
-
+from bat.company import serializers
 from bat.company.models import (
-    Company,
-    Member,
-    CompanyPaymentTerms,
     Bank,
-    Location,
-    PackingBox,
+    Company,
+    CompanyPaymentTerms,
     HsCode,
+    Location,
+    Member,
+    PackingBox,
     Tax,
 )
-from bat.company import serializers
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
-
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -90,12 +84,13 @@ class CompanyViewSet(
 """
 input to content
 {
-"first_name":"fname",
-"last_name":"lname",
-"email":"fnamelname@gmail.com",
+"first_name":"chetan",
+"last_name":"singh",
+"email":"chetanbadgujar92@gmail.com",
 "job_title":"manager",
+"invitation_type":"member_invitation",
 "role":"supply_chain_manager",
-"permissions":["view_product","add_product"]
+"permissions":["view_company_banks","add_company_banks","change_company_banks","archived_company_banks","restore_company_banks"]
 }
 
 {

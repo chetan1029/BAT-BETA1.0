@@ -128,7 +128,7 @@ class InvitationDataSerializer(serializers.Serializer):
         choices=get_list_of_permissions(), required=False
     )
     invitation_type = serializers.ChoiceField(
-        ["vendor_invitation"], required=False
+        ["vendor_invitation", "member_invitation"], required=True
     )
     vendor_name = serializers.CharField(required=False)
     vendor_type = serializers.JSONField(required=False)

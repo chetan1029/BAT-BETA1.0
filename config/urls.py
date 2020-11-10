@@ -18,7 +18,7 @@ urlpatterns = [
     path("api-token-refresh/", jwt_views.refresh_jwt_token),
     path("api-token-verify/", jwt_views.verify_jwt_token),
     # rest-auth urls
-    path("auth/", include("users.rest_auth_custome_urls")),
+    path("auth/", include("bat.users.rest_auth_custome_urls")),
     # path('auth/', include('rest_auth.urls')),
     # verifay mail (provide template name) # logic for verifay email address
     path("auth/registration/", include("rest_auth.registration.urls")),

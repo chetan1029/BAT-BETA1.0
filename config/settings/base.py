@@ -5,6 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.utils.translation import ugettext_lazy as _
 
 ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # bat/
@@ -37,7 +38,10 @@ USE_L10N = True
 USE_TZ = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#locale-paths
 LOCALE_PATHS = [str(ROOT_DIR / "locale")]
-
+# Specify which language do we want for our website
+LANGUAGES = (("en", _("English")), ("sv", _("Swedish")))
+# A boolean that specifies whether to display numbers using a thousand separator.
+USE_THOUSAND_SEPARATOR = True
 # DATABASES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
@@ -98,6 +102,8 @@ THIRD_PARTY_APPS = [
     "dry_rest_permissions",
     # API documentation
     "drf_yasg2",
+    # model translation
+    "modeltranslation",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -315,7 +321,7 @@ ACCOUNT_AUTHENTICATION_METHOD = "username"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_EMAIL_REQUIRED = True
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "optional"  # "mandatory"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_ADAPTER = "bat.users.adapters.AccountAdapter"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
@@ -381,3 +387,9 @@ REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/1")
 
 # Some Global Variable for app
 STATUS_PRODUCT = env.bool("STATUS_PRODUCT", "Product")
+
+# Email Setting
+DEFAULT_FROM_EMAIL = env(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    default="bat-beta1.0 <noreply@beta.thebatonline.com>",
+)
