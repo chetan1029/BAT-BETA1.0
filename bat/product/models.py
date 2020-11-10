@@ -1,23 +1,31 @@
 """Model classes for product."""
-import os
 
-from bat.company.models import Company, HsCode, PackingBox
-from bat.setting.models import Status
 from django.contrib.postgres.fields import HStoreField
-from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
-from djmoney.models.fields import MoneyField
 from measurement.measures import Weight
+from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
 
-# Variables
-CM = "cm"
-IN = "in"
-LENGTH_UNIT_TYPE = ((CM, "cm"), (IN, "in"))
+from bat.company.models import Company, Member
+from bat.product.constants import *
+from bat.setting.models import Status
+
+
+def get_member_from_request(request):
+    """
+    get member from request bye resolving it
+    """
+    kwargs = request.resolver_match.kwargs
+    company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
+    member = get_object_or_404(
+        Member, company__id=company_pk, user=request.user.id
+    )
+    return member
 
 
 # Create your models here.
@@ -80,10 +88,13 @@ class Product(models.Model):
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
     ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
     model_number = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Model Number")
+        max_length=200, blank=True, verbose_name=_("Model Number"), unique=True
     )
     manufacturer_part_number = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Manufacturer Part Number")
+        max_length=200,
+        blank=True,
+        verbose_name=_("Manufacturer Part Number"),
+        unique=True,
     )
     length = models.DecimalField(
         max_digits=5,
@@ -167,6 +178,71 @@ class Product(models.Model):
         """Return Value."""
         return self.productparent.title
 
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_product")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_product")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
+
 
 class ProductOption(models.Model):
     """
@@ -215,119 +291,4 @@ class ProductVariationOption(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
-
-
-class ProductImage(models.Model):
-    """
-    Product Images Model.
-
-    This table will store product images that stored in AWS.
-    """
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    file = models.CharField(verbose_name=_("File upload"), max_length=500)
-    main_image = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Product Images")
-
-    def __str__(self):
-        """Return Value."""
-        return self.name
-
-
-class ProductComponent(models.Model):
-    """
-    Product Component Model.
-
-    We are using this model to connect product with its components.
-    """
-
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="productcomponent_product",
-    )
-    component = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="productcomponent_component",
-    )
-    quantity = models.PositiveIntegerField(
-        verbose_name=_("Quantity"), default=1
-    )
-    value = models.CharField(verbose_name=_("Option Value"), max_length=200)
-    is_active = models.BooleanField(default=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Product Components")
-
-    def __str__(self):
-        """Return Value."""
-        return self.product.title
-
-
-class ProductRrp(models.Model):
-    """
-    Product RRP Model.
-
-    Products with their RRP's for different countries.
-    """
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    rrp = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
-    country = CountryField()
-    is_active = models.BooleanField(default=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Product RRP's")
-
-    def __str__(self):
-        """Return Value."""
-        return self.product.title
-
-
-class ProductPackingBox(models.Model):
-    """
-    Product Packing Box Model.
-
-    Products packing boxes for shipment with quantity that can fit in the box.
-    """
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    packingbox = models.ForeignKey(PackingBox, on_delete=models.CASCADE)
-    weight = MeasurementField(
-        measurement=Weight,
-        unit_choices=(("g", "g"), ("kg", "kg"), ("oz", "oz"), ("lb", "lb")),
-        blank=True,
-        null=True,
-    )
-    units = models.PositiveIntegerField(
-        verbose_name=_("Units per box"), default=1
-    )
-    is_active = models.BooleanField(default=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Product Packing Boxes")
-
-    def __str__(self):
-        """Return Value."""
-        return self.product.title
+        return self.product.title + " - " + self.productoption.name

@@ -1,11 +1,9 @@
-"""View Classes and functions for main app."""
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
-from django.utils import timezone
-from django.utils.translation import LANGUAGE_SESSION_KEY
-from django.views.generic import TemplateView
 
+<<<<<<< HEAD
 
 class HomePage(TemplateView):
     """Home page."""
@@ -113,3 +111,6 @@ class LogoutPage(TemplateView):
     """Template name and url for logout page."""
 
     template_name = "user/logout.html"
+=======
+# Create your views here.
+>>>>>>> 242e299ce7ebe8c92c10714cfb789faf649fd693

@@ -1,23 +1,20 @@
 """
 Base settings to build other settings files upon.
 """
+from datetime import timedelta
+from pathlib import Path
 
 import environ
-from django.conf import settings
-from django.contrib.messages import constants as messages
-from django.utils.translation import ugettext_lazy as _
 
-ROOT_DIR = (
-    environ.Path(__file__) - 3
-)  # (proejctbat-beta1.0/config/settings/base.py - 3 = proejctbat-beta1.0/)
-APPS_DIR = ROOT_DIR.path("bat")
-
+ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
+# bat/
+APPS_DIR = ROOT_DIR / "bat"
 env = environ.Env()
 
 READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=True)
 if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
-    env.read_env(str(ROOT_DIR.path(".env")))
+    env.read_env(str(ROOT_DIR / ".env"))
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -29,7 +26,7 @@ DEBUG = env.bool("DJANGO_DEBUG", False)
 # In Windows, this must be set to your system time zone.
 TIME_ZONE = "UTC"
 # https://docs.djangoproject.com/en/dev/ref/settings/#language-code
-LANGUAGE_CODE = "en"
+LANGUAGE_CODE = "en-us"
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
@@ -39,11 +36,8 @@ USE_L10N = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-tz
 USE_TZ = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#locale-paths
-LOCALE_PATHS = [ROOT_DIR.path("locale")]
-# Specify which language do we want for our website
-LANGUAGES = (("en", _("English")), ("sv", _("Swedish")))
-# A boolean that specifies whether to display numbers using a thousand separator.
-USE_THOUSAND_SEPARATOR = True
+LOCALE_PATHS = [str(ROOT_DIR / "locale")]
+
 # DATABASES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
@@ -67,100 +61,72 @@ DJANGO_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.humanize",  # Handy template tags
-    # Model translation should be avove contrib.admin to work well.
-    "modeltranslation",
-    "django.contrib.admin",
+    # "django.contrib.humanize", # Handy template tags
     "django.contrib.postgres",
+    "django.contrib.admin",
+    "django.forms",
 ]
 THIRD_PARTY_APPS = [
-    # Rest Framwork
-    "corsheaders",
-    "rest_framework",
-    # Django Filter
-    "django_filters",
-    # Django Swagger for documentation
-    "rest_framework_swagger",
-    # Crispy Forms
     "crispy_forms",
-    # mptt for managing tree like strcuture for categories
-    "mptt",
-    # Sorl Thumbnail is used to create image Thumbnail
-    "sorl.thumbnail",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "corsheaders",
+    "rest_auth",
+    "rest_auth.registration",
     # Country list with flag and country code
     "django_countries",
-    # roles
-    "rolepermissions",
-    # email
-    "dbmail",
-    "django_ses",
-    # Model Histroy plugin
-    "reversion",
-    "reversion_compare",
-    # countable fields
-    "countable_field",
     # Currency and currency conversion
     "djmoney",
-    # Django plans
-    "plans",
-    "ordered_model",
-    # Django Defender
+    # Django defender
     "defender",
+    # Django Modified Preorder Tree Traversal
+    "mptt",
+    # Tagging Manager to model
+    "taggit",
     # Django Invitation
     "invitations",
+    # Django Role Permissions
+    "rolepermissions",
     # Django Notifications
     "notifications",
-    # MultiSelectField
-    "multiselectfield",
-    # Tags
-    "taggit",
-    # Django selectable
-    "selectable",
+    # Django Filter
+    "django_filters",
+    # Dry Rest Permissions
+    "dry_rest_permissions",
+    # API documentation
+    "drf_yasg2",
 ]
-
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
     "bat.core.apps.CoreConfig",
-    "bat.setting.apps.SettingConfig",
     "bat.company.apps.CompanyConfig",
+    "bat.setting.apps.SettingConfig",
     "bat.product.apps.ProductConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
-
-# Django country Setting django_countries
-COUNTRIES_FIRST = [
-    "US",
-    "GB",
-    "SE",
-    "CA",
-    "CN",
-    "DK",
-    "FI",
-    "FR",
-    "DE",
-    "IT",
-    "JP",
-    "NL",
-    "NO",
-    "ES",
-]
 # MIGRATIONS
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#migration-modules
-
+MIGRATION_MODULES = {"sites": "bat.contrib.sites.migrations"}
 
 # AUTHENTICATION
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#authentication-backends
-# change from django.contrib.auth.backends.ModelBackend to bat.users.backends.EmailOrUsernameModelBackend
-AUTHENTICATION_BACKENDS = ["bat.users.backends.EmailOrUsernameModelBackend"]
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
 AUTH_USER_MODEL = "users.User"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
-LOGIN_REDIRECT_URL = "core:dashboard"
-
+LOGIN_REDIRECT_URL = "users:redirect"
+# https://docs.djangoproject.com/en/dev/ref/settings/#login-url
+LOGIN_URL = "account_login"
 
 # PASSWORDS
 # ------------------------------------------------------------------------------
@@ -171,7 +137,6 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
     "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
-    "django.contrib.auth.hashers.BCryptPasswordHasher",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -194,13 +159,18 @@ MIDDLEWARE = [
     # Cors Middleware
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    # "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Django defender middleware for failed login.
+    "defender.middleware.FailedLoginMiddleware",
     # timezone middleware
     "bat.setting.middleware.TimezoneMiddleware",
     # Account setup middleware to forward user to complete company profile.
@@ -214,11 +184,11 @@ MIDDLEWARE = [
 # STATIC
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-root
-STATIC_ROOT = str(ROOT_DIR("staticfiles"))
+STATIC_ROOT = str(ROOT_DIR / "staticfiles")
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = "/static/"
 # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
-STATICFILES_DIRS = [str(APPS_DIR.path("static"))]
+STATICFILES_DIRS = [str(APPS_DIR / "static")]
 # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#staticfiles-finders
 STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
@@ -228,9 +198,9 @@ STATICFILES_FINDERS = [
 # MEDIA
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-root
-MEDIA_ROOT = str(APPS_DIR("project_content"))
+MEDIA_ROOT = str(APPS_DIR / "media")
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
-MEDIA_URL = "/project_content/"
+MEDIA_URL = "/media/"
 
 # TEMPLATES
 # ------------------------------------------------------------------------------
@@ -240,7 +210,7 @@ TEMPLATES = [
         # https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-TEMPLATES-BACKEND
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         # https://docs.djangoproject.com/en/dev/ref/settings/#template-dirs
-        "DIRS": [str(APPS_DIR.path("templates"))],
+        "DIRS": [str(APPS_DIR / "templates")],
         "OPTIONS": {
             # https://docs.djangoproject.com/en/dev/ref/settings/#template-loaders
             # https://docs.djangoproject.com/en/dev/ref/templates/api/#loader-types
@@ -250,11 +220,6 @@ TEMPLATES = [
             ],
             # https://docs.djangoproject.com/en/dev/ref/settings/#template-context-processors
             "context_processors": [
-                # Context processors use to make data available for global use
-                "bat.globalprop.processors.processors.vendor_categories",
-                "bat.globalprop.processors.processors.saleschannels",
-                "bat.globalprop.processors.processors.loggedin_member",
-                # Inbuild context from Django
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
@@ -263,18 +228,22 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
-                "plans.context_processors.account_status",
+                "bat.utils.context_processors.settings_context",
             ],
         },
     }
 ]
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#form-renderer
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
+
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # FIXTURES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#fixture-dirs
-FIXTURE_DIRS = (str(APPS_DIR.path("fixtures")),)
+FIXTURE_DIRS = (str(Path(APPS_DIR / "fixtures")),)
 
 # SECURITY
 # ------------------------------------------------------------------------------
@@ -290,11 +259,16 @@ X_FRAME_OPTIONS = "DENY"
 # EMAIL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
+
+# EMAIL_BACKEND = env(
+#     "DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
+# )
 EMAIL_BACKEND = env(
     "DJANGO_EMAIL_BACKEND",
-    default="django.core.mail.backends.smtp.EmailBackend",
+    default="django.core.mail.backends.console.EmailBackend",
 )
-# https://docs.djangoproject.com/en/2.2/ref/settings/#email-timeout
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-timeout
 EMAIL_TIMEOUT = 5
 
 # ADMIN
@@ -302,7 +276,7 @@ EMAIL_TIMEOUT = 5
 # Django Admin URL.
 ADMIN_URL = "admin/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = [("batadmin", "chetan@volutz.com")]
+ADMINS = [("""bat""", "chetan@volutz.com")]
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
 
@@ -331,100 +305,79 @@ LOGGING = {
 }
 
 
-# django-compressor
+# django-allauth
 # ------------------------------------------------------------------------------
-# https://django-compressor.readthedocs.io/en/latest/quickstart/#installation
-INSTALLED_APPS += ["compressor"]
-STATICFILES_FINDERS += ["compressor.finders.CompressorFinder"]
+ACCOUNT_ALLOW_REGISTRATION = env.bool(
+    "DJANGO_ACCOUNT_ALLOW_REGISTRATION", True
+)
+# https://django-allauth.readthedocs.io/en/latest/configuration.html
+ACCOUNT_AUTHENTICATION_METHOD = "username"
+# https://django-allauth.readthedocs.io/en/latest/configuration.html
+ACCOUNT_EMAIL_REQUIRED = True
+# https://django-allauth.readthedocs.io/en/latest/configuration.html
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+# https://django-allauth.readthedocs.io/en/latest/configuration.html
+ACCOUNT_ADAPTER = "bat.users.adapters.AccountAdapter"
+# https://django-allauth.readthedocs.io/en/latest/configuration.html
+SOCIALACCOUNT_ADAPTER = "bat.users.adapters.SocialAccountAdapter"
+
+# django-rest-framework
+# -------------------------------------------------------------------------------
+# django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_jwt.authentication.JSONWebTokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework.authentication.TokenAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated"
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend"
+    ],
+}
+
+# django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
+CORS_URLS_REGEX = r"^/api/.*$"
 # Your stuff...
 # ------------------------------------------------------------------------------
 
-MESSAGE_TAGS = {
-    messages.DEBUG: "info",
-    messages.INFO: "info",
-    messages.SUCCESS: "success",
-    messages.WARNING: "warning",
-    messages.ERROR: "danger",
+# rest-auth
+SITE_ID = 1
+REST_USE_JWT = True
+
+REST_AUTH_REGISTER_SERIALIZERS = {
+    "REGISTER_SERIALIZER": "bat.users.serializers.RestAuthRegisterSerializer"
+}
+REST_AUTH_SERIALIZERS = {
+    "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer"
 }
 
+# jwt
+JWT_AUTH = {"JWT_EXPIRATION_DELTA": timedelta(seconds=3600)}
 
-# roles
+# Django Invitation
+ACCOUNT_ADAPTER = "invitations.models.InvitationsAdapter"
+
+# Django Role Permissions
 ROLEPERMISSIONS_MODULE = "config.roles"
-# Filehandle
-FILE_UPLOAD_HANDLERS = (
-    "django_excel.ExcelMemoryFileUploadHandler",
-    "django_excel.TemporaryExcelFileUploadHandler",
-)
 
-
-# Add reversion models to admin interface:
-ADD_REVERSION_ADMIN = True
-# AMAZON PPC
-AMAZON_PPC_AUTH_ENDPOINT = env(
-    "AMAZON_PPC_AUTH_ENDPOINT", default="https://www.amazon.com/ap/oa"
-)
-AMAZON_PPC_TOKEN_ENDPOINT = env(
-    "AMAZON_PPC_TOKEN_ENDPOINT", default="https://api.amazon.com/auth/o2/token"
-)
-AMAZON_PPC_AUTH_SCOPE = env(
-    "AMAZON_PPC_AUTH_SCOPE", default="cpc_advertising:campaign_management"
-)
-AMAZON_PPC_CLIENT_ID = env("AMAZON_PPC_CLIENT_ID")
-AMAZON_PPC_CLIENT_SECRET = env("AMAZON_PPC_CLIENT_SECRET")
-AMAZON_PPC_PROFILE_ID = env(
-    "AMAZON_PPC_PROFILE_ID", default="2719691478200925"
-)
-AMAZON_PPC_REGION = env(
-    "AMAZON_PPC_REGION", default="advertising-api-test.amazon.com"
-)
-
-# Keyword rank page limit
-KEYWORD_RANK_PAGE_LIMIT = env("KEYWORD_RANK_PAGE_LIMIT")
-
-# enable REDIS_HOST if we are using same machine as Django
-REDIS_URL = env("REDIS_URL")
-
-# Django Plan Attributes
-PLANS_CURRENCY = "USD"
-DEFAULT_FROM_EMAIL = "chetan@volutz.com"
-PLANS_INVOICE_ISSUER = {
-    "issuer_name": "Bonum Mane AB",
-    "issuer_street": "Libro ringväg 51",
-    "issuer_zipcode": "752 28",
-    "issuer_city": "Uppsala",
-    "issuer_country": "SE",  # Must be a country code with 2 characters
-    "issuer_tax_number": "SE559009135001",
-}
-PLANS_TAXATION_POLICY = "plans.taxation.eu.EUTaxationPolicy"
-PLANS_TAX_COUNTRY = "SE"
+# Dajngo Invitation
+# INVITATIONS_SIGNUP_REDIRECT = "accounts:signup"
+INVITATIONS_GONE_ON_ACCEPT_ERROR = False
+INVITATIONS_INVITATION_MODEL = "users.InvitationDetail"
 
 # django-defender
 DEFENDER_LOGIN_FAILURE_LIMIT = 3
 DEFENDER_DISABLE_IP_LOCKOUT = True
 DEFENDER_LOCKOUT_TEMPLATE = "user/lockout.html"
 
-# Dajngo Invitation
-INVITATIONS_SIGNUP_REDIRECT = "accounts:signup"
-INVITATIONS_GONE_ON_ACCEPT_ERROR = False
-INVITATIONS_INVITATION_MODEL = "users.InvitationDetail"
-
-# Django Notifications
-DJANGO_NOTIFICATIONS_CONFIG = {"USE_JSONFIELD": True}
-
 # Django Taggit
 TAGGIT_CASE_INSENSITIVE = True
 
+# Redis
+REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/1")
+
 # Some Global Variable for app
 STATUS_PRODUCT = env.bool("STATUS_PRODUCT", "Product")
-
-# Whitelist URL that frontend can be server on
-CORS_ORIGIN_WHITELIST = env.list(
-    "DJANGO_ALLOWED_HOSTS", default=["beta.thebatonline.com"]
-)
-
-# Rest Framework
-REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
-    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
-}

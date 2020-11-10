@@ -2,7 +2,6 @@
 import logging
 
 import pytz
-
 from django.utils import timezone
 
 
@@ -17,9 +16,10 @@ class TimezoneMiddleware:
         """Call is called every new request django make."""
         logger = logging.getLogger(__name__)
         logger.warning("---TimeZone Setup---")
-        tzname = request.session.get("user_timezone")
-        if tzname:
-            timezone.activate(pytz.timezone(tzname))
+        if not request.user.is_anonymous:
+            tzname = request.user.timezone
+            if tzname:
+                timezone.activate(pytz.timezone(tzname))
         else:
             timezone.deactivate()
         return self.get_response(request)

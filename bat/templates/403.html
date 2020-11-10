@@ -1,23 +1,9 @@
 {% extends "base.html" %}
-{% load static %}
-{% block title %}Permission Denied{% endblock %}
-{% block amazonsidebar %}{% endblock %}
+
+{% block title %}Forbidden (403){% endblock %}
+
 {% block content %}
-<main>
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-12">
-        <div class="card mb-4">
-            <div class="card-body">
-              <div class="jumbotron">
-                  <h1 class="display-4 text-warning">Permission Denied</h1>
-                  <p class="lead">You don't have permission for the requested action. Please contact admin to provide the required permission.</p>
-                  <a class="btn btn-primary btn-lg" href="{% url 'core:dashboard' %}" role="button">Go back to home</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-  </div>
-</main>
+<h1>Forbidden (403)</h1>
+
+<p>CSRF verification failed. Request aborted.</p>
 {% endblock content %}

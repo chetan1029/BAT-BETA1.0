@@ -1,27 +1,23 @@
-"""Model classes for user."""
-
 import datetime
 import os
 
 import pytz
-
-from bat.globalprop.validator import validator
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import HStoreField
 from django.contrib.sites.models import Site
-from django.db import models
+from django.db.models import CharField, DateTimeField, EmailField, ImageField, JSONField
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from invitations import signals
 from invitations.adapters import get_invitations_adapter
 from invitations.app_settings import app_settings
 from invitations.base_invitation import AbstractBaseInvitation
 from rolepermissions.roles import get_user_roles
 
-# Create your models here.
+from bat.globalprop.validator import validator
 
 
 def profilepic_name(instance, filename):
@@ -37,25 +33,25 @@ class User(AbstractUser):
     To add additional profile pic and other info.
     """
 
-    profile_picture = models.ImageField(
+    profile_picture = ImageField(
         upload_to=profilepic_name,
         blank=True,
         verbose_name=_("Profile Picture"),
     )
     phone_validator = validator.phone_validator()
-    phone_number = models.CharField(
+    phone_number = CharField(
         validators=[phone_validator],
         max_length=17,
         blank=True,
         verbose_name=_("Phone Number"),
     )
-    language = models.CharField(
+    language = CharField(
         max_length=50,
         verbose_name=_("Language"),
         choices=settings.LANGUAGES,
         default=settings.LANGUAGE_CODE,
     )
-    timezone = models.CharField(
+    timezone = CharField(
         max_length=50,
         verbose_name=_("Time Zone"),
         choices=[(x, x) for x in pytz.common_timezones],
@@ -81,6 +77,15 @@ class User(AbstractUser):
         else:
             return False
 
+    def get_absolute_url(self):
+        """Get url for user's detail view.
+
+        Returns:
+            str: URL for user detail.
+
+        """
+        return reverse("users:detail", kwargs={"username": self.username})
+
 
 class InvitationDetail(AbstractBaseInvitation):
     """
@@ -91,13 +96,11 @@ class InvitationDetail(AbstractBaseInvitation):
     detail and allot them respective values.
     """
 
-    email = models.EmailField(verbose_name=_("e-mail address"), max_length=200)
-    created = models.DateTimeField(
-        verbose_name=_("created"), default=timezone.now
-    )
-    user_detail = models.JSONField(null=True, blank=True)
-    company_detail = models.JSONField(null=True, blank=True)
-    user_roles = models.JSONField(null=True, blank=True)
+    email = EmailField(verbose_name=_("e-mail address"), max_length=200)
+    created = DateTimeField(verbose_name=_("created"), default=timezone.now)
+    user_detail = JSONField(null=True, blank=True)
+    company_detail = JSONField(null=True, blank=True)
+    user_roles = JSONField(null=True, blank=True)
     extra_data = HStoreField(null=True, blank=True)
 
     @classmethod
@@ -113,6 +116,7 @@ class InvitationDetail(AbstractBaseInvitation):
     ):
         """Create Models."""
         key = get_random_string(64).lower()
+
         instance = cls._default_manager.create(
             email=email,
             key=key,
@@ -163,4 +167,4 @@ class InvitationDetail(AbstractBaseInvitation):
 
     def __str__(self):
         """Return Value."""
-        return "Invite: {0}".format(self.email)
+        return "Invite: {0}".format(self.email) + str(self.id)
