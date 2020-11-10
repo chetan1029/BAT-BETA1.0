@@ -1,7 +1,7 @@
 import pytest
 from django.test import RequestFactory
 
-from bat.users.api.views import UserViewSet
+from bat.users.views import UserViewSet
 from bat.users.models import User
 
 pytestmark = pytest.mark.django_db

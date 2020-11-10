@@ -366,6 +366,8 @@ DEFENDER_LOCKOUT_TEMPLATE = "user/lockout.html"
 # Django Taggit
 TAGGIT_CASE_INSENSITIVE = True
 
+# Redis
+REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/1")
 
 # Some Global Variable for app
 STATUS_PRODUCT = env.bool("STATUS_PRODUCT", "Product")
