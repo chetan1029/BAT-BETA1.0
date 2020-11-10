@@ -208,13 +208,7 @@
           </a>
         </li>
         {% endif %}
-        {% if loggedin_member|can:'view_payment_terms' %}
-        <li class="{% if active_menu.menu2 == 'payment-terms' %}active{% endif %}">
-          <a href="{% url 'company:settingspaymentterms_list' %}">
-            <i class="simple-icon-wallet"></i> {% translate "Payment Terms" %}
-          </a>
-        </li>
-        {% endif %}
+        
         {% if loggedin_member|can:'view_membership_plan' %}
         <li class="{% if active_menu.menu2 == 'membership' %}active{% endif %}">
           <a href="{% url 'company:membership' %}">
