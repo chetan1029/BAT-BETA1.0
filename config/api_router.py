@@ -2,19 +2,19 @@ from django.urls import include, path
 
 from rest_framework import permissions
 
-from drf_yasg2.views import get_schema_view
+from bat.docs_utils import get_schema_view
 from drf_yasg2 import openapi
 
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Snippets API",
+        title="Bat Beta API",
         default_version='v1',
-        description="Test description",
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
+        description="Bat - Business Automation",
+        terms_of_service="https://thebatonline.com/terms",
+        contact=openapi.Contact(email="chetan@volutz.com"),
     ),
+    schemes=['HTTPS', 'HTTP'],
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
@@ -23,8 +23,8 @@ schema_view = get_schema_view(
 app_name = "api"
 
 urlpatterns = [
-    path('doc/', schema_view.with_ui('swagger',
-                                     cache_timeout=0), name='schema-swagger-ui'),
+    path('docs/', schema_view.with_ui('swagger',
+                                      cache_timeout=0), name='schema-swagger-ui'),
     path("", include("bat.users.urls", namespace="users")),
     path("", include("bat.core.urls", namespace="core")),
     path("", include("bat.company.urls", namespace="company")),
