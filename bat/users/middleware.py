@@ -1,9 +1,10 @@
 """Midlleware to use for global use mostly related to User settings."""
 import logging
 
-from bat.company.models import Member
 from django.shortcuts import redirect
 from django.utils.deprecation import MiddlewareMixin
+
+from bat.company.models import Member
 
 
 class AccountSetupMiddleware(MiddlewareMixin):
@@ -27,6 +28,7 @@ class MemberProfileMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         """Call is called every new request django make."""
+<<<<<<< HEAD
         if (
             request.user.is_authenticated
             and not request.user.is_superuser
@@ -44,3 +46,23 @@ class MemberProfileMiddleware(MiddlewareMixin):
                         pass
             except KeyError:
                 return redirect("accounts:company_login")
+=======
+        # if (
+        #     request.user.is_authenticated
+        #     and not request.user.is_superuser
+        #     and request.user.extra_data["step_detail"] != "user signup"
+        #     and (request.path_info != "/accounts/company-login/")
+        # ):
+        #     try:
+        #         if request.session.get("member_id", False):
+        #             member_id = request.session.get("member_id")
+        #             request.member = Member.objects.get(pk=member_id)
+        #             pass
+        #         else:
+        #             if request.user.is_memberprofile():
+        #                 return redirect("accounts:company_login")
+        #             else:
+        #                 pass
+        #     except KeyError:
+        #         return redirect("accounts:company_login")
+>>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673

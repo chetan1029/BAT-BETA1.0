@@ -1,8 +1,6 @@
 """File to receive signals from model or actions."""
 import logging
 
-from bat.company.models import Company, CompanyType, Member
-from bat.users.models import InvitationDetail
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -12,6 +10,9 @@ from notifications.signals import notify
 from rolepermissions.permissions import revoke_permission
 from rolepermissions.roles import RolesManager, assign_role
 
+from bat.company.models import Company, CompanyType, Member
+from bat.users.models import InvitationDetail
+
 logger = logging.getLogger(__name__)
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -20,7 +21,7 @@ User = get_user_model()
 @receiver(post_save, sender=User)
 def process_invitations(sender, instance, **kwargs):
     """We will fetch all the invitations for user after signup."""
-    invitations = InvitationDetail.objects.filter(
+    invitations = Invitation.objects.filter(
         email=instance.email, accepted=True
     )
     if invitations.exists():
@@ -30,7 +31,8 @@ def process_invitations(sender, instance, **kwargs):
             company_detail = invitation.company_detail
             company_id = company_detail["company_id"]
             user_roles = invitation.user_roles
-            roles = user_roles["roles"]
+            role = user_roles["role"]
+
             perms = user_roles["perms"]
 
             if invitation.extra_data["type"] == "Vendor Invitation":
@@ -41,11 +43,11 @@ def process_invitations(sender, instance, **kwargs):
                 companytype = CompanyType(
                     partner=vendor,
                     company_id=company_id,
-                    category_id=vendor_type,
+                    category_id=vendor_type.get("id", None),
                 )
                 companytype.save()
 
-                member, create = Member.objects.get_or_create(
+                member, _c = Member.objects.get_or_create(
                     job_title=job_title,
                     user=instance,
                     company=vendor,
@@ -55,7 +57,7 @@ def process_invitations(sender, instance, **kwargs):
                     invitation_accepted=True,
                 )
             else:
-                member, create = Member.objects.get_or_create(
+                member, _c = Member.objects.get_or_create(
                     job_title=job_title,
                     user=instance,
                     company_id=company_id,
@@ -65,13 +67,12 @@ def process_invitations(sender, instance, **kwargs):
                     invitation_accepted=True,
                 )
 
-            for role in roles:
-                assign_role(member, role)
-                role_obj = RolesManager.retrieve_role(role)
-                # remove unneccesary permissions
-                for perm in role_obj.permission_names_list():
-                    if perm not in perms:
-                        revoke_permission(member, perm)
+            assign_role(member, role)
+            role_obj = RolesManager.retrieve_role(role)
+            # remove unneccesary permissions
+            for perm in role_obj.permission_names_list():
+                if perm not in perms:
+                    revoke_permission(member, perm)
 
             notify.send(
                 instance,

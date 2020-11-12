@@ -1,35 +1,63 @@
-"""URL Patterns for the project."""
-import notifications.urls
+from allauth.account.views import confirm_email
 from django.conf import settings
-from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from django.views import defaults as default_views
-from django.views.decorators.csrf import csrf_exempt
-from django_ses.views import handle_bounce
-from rest_framework_swagger.views import get_swagger_view
+from django.views.generic import TemplateView
+from rest_auth.registration.views import VerifyEmailView
+# rest-auth
+from rest_auth.views import PasswordResetConfirmView
+from rest_framework.authtoken.views import obtain_auth_token
+from rest_framework_jwt import views as jwt_views
 
 admin.autodiscover()
 urlpatterns = [
+    # jwt
+    path("api-token-auth/", jwt_views.obtain_jwt_token),
+    path("api-token-refresh/", jwt_views.refresh_jwt_token),
+    path("api-token-verify/", jwt_views.verify_jwt_token),
+    # rest-auth urls
+    path("auth/", include("bat.users.rest_auth_custome_urls")),
+    # path('auth/', include('rest_auth.urls')),
+    # verifay mail (provide template name) # logic for verifay email address
+    path("auth/registration/", include("rest_auth.registration.urls")),
+    path(
+        "password/reset/confirm/<uidb64>/<token>/",
+        PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path(
+        "registration/account-confirm-email/<key>",
+        confirm_email,
+        name="account_confirm_email",
+    ),  # redirect to verify-email and POST key
+    path(
+        "verify-email/", VerifyEmailView.as_view(), name="verify_email"
+    ),  # POST value of key
+    # pages
+    path(
+        "", TemplateView.as_view(template_name="pages/home.html"), name="home"
+    ),
+    path(
+        "about/",
+        TemplateView.as_view(template_name="pages/about.html"),
+        name="about",
+    ),
     # Django Admin, use {% url 'admin:index' %}
-    path(settings.ADMIN_URL, admin.site.urls),
-    path("admin/django-ses/", include("django_ses.urls")),
-    # email
-    path("ses/bounce/", csrf_exempt(handle_bounce)),
-    # Dajngo Defender admin
+    path("admin/", admin.site.urls),
+    # defender admin
     path("admin/defender/", include("defender.urls")),
+    # User management
+    # path("users/", include("bat.users.urls", namespace="users")),
+    path("accounts/", include("allauth.urls")),
     # Django Invitation
     path("invitations/", include("invitations.urls", namespace="invitations")),
-    # Django notifications
-    path(
-        "inbox/notifications/",
-        include(notifications.urls, namespace="notifications"),
-    ),
-    path("selectable/", include("selectable.urls")),
-    path("taggit_autosuggest/", include("taggit_autosuggest.urls")),
+    # API base url
+    path("api/", include("config.api_router")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+<<<<<<< HEAD
 schema_view = get_swagger_view(title="BAT API")
 
 urlpatterns += [path("docs", schema_view)]
@@ -44,6 +72,13 @@ urlpatterns += i18n_patterns(
     # https://docs.djangoproject.com/en/dev/topics/i18n/translation/#language-prefix-in-url-patterns
     prefix_default_language=False,
 )
+=======
+# API URLS
+urlpatterns += [
+    # DRF auth token
+    path("auth-token/", obtain_auth_token)
+]
+>>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673
 
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit
