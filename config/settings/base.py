@@ -101,9 +101,6 @@ THIRD_PARTY_APPS = [
     "countable_field",
     # Currency and currency conversion
     "djmoney",
-    # Django plans
-    "plans",
-    "ordered_model",
     # Django Defender
     "defender",
     # Django Invitation
@@ -263,7 +260,6 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
-                "plans.context_processors.account_status",
             ],
         },
     }
@@ -384,19 +380,6 @@ KEYWORD_RANK_PAGE_LIMIT = env("KEYWORD_RANK_PAGE_LIMIT")
 # enable REDIS_HOST if we are using same machine as Django
 REDIS_URL = env("REDIS_URL")
 
-# Django Plan Attributes
-PLANS_CURRENCY = "USD"
-DEFAULT_FROM_EMAIL = "chetan@volutz.com"
-PLANS_INVOICE_ISSUER = {
-    "issuer_name": "Bonum Mane AB",
-    "issuer_street": "Libro ringväg 51",
-    "issuer_zipcode": "752 28",
-    "issuer_city": "Uppsala",
-    "issuer_country": "SE",  # Must be a country code with 2 characters
-    "issuer_tax_number": "SE559009135001",
-}
-PLANS_TAXATION_POLICY = "plans.taxation.eu.EUTaxationPolicy"
-PLANS_TAX_COUNTRY = "SE"
 
 # django-defender
 DEFENDER_LOGIN_FAILURE_LIMIT = 3

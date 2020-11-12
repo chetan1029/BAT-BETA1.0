@@ -36,7 +36,6 @@ urlpatterns += [path("docs", schema_view)]
 
 urlpatterns += i18n_patterns(
     # App Url Patterns
-    path("plan/", include("plans.urls")),
     path("accounts/", include("bat.users.urls", namespace="accounts")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("company/", include("bat.company.urls", namespace="company")),
