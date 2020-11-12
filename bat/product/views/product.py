@@ -12,8 +12,8 @@ from bat.product.models import Product
 from bat.setting.utils import get_status
 
 
-class ProductViewSet(viewsets.ModelViewSet):
-    """Operations on ProductParent."""
+class ProductVariationViewSet(viewsets.ModelViewSet):
+    """Operations on ProductVariation."""
 
     serializer_class = serializers.ProductSerializer
     queryset = Product.objects.all()
@@ -22,8 +22,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_fields = ["is_active"]
     search_fields = ["title"]
 
-    archive_message = _("Product is archived")
-    restore_message = _("Product is restored")
+    archive_message = _("Product variation  is archived")
+    restore_message = _("Product variation is restored")
 
     def filter_queryset(self, queryset):
         return queryset.filter(
@@ -32,28 +32,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
+        # TODO
         serializer.save()
-        # member = get_member(company_id=self.kwargs.get(
-        #     "company_pk", None), user_id=self.request.user.id)
-        # tags = serializer.validated_data.get("tags")
-        # serializer.validated_data.pop("tags")
-        # if serializer.validated_data.get("is_component", False):
-        #     # TODO  set status as get_status("Product", "Inactive")
-        #     status = get_status("Product", "Inactive")
-        # else:
-        #     # TODO what is status if not is_component?
-        #     status = get_status(settings.STATUS_PRODUCT)
-
-        # obj = serializer.save(company=member.company,
-        #                       status=status)
-        # obj.tags.set(*tags)
-        pass
 
     def perform_update(self, serializer):
+        # TODO
         serializer.save()
-        """ update ProductParent with given tags """
-        # tags = serializer.validated_data.get("tags")
-        # serializer.validated_data.pop("tags")
-        # obj = serializer.save()
-        # obj.tags.set(*tags)
-        pass

@@ -4,6 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from bat.product.models import ProductParent, Product
 from bat.serializersFields.serializers_fields import WeightField
+from bat.setting.serializers import StatusSerializer
 
 
 class TagField(serializers.Field):
@@ -25,13 +26,17 @@ class TagField(serializers.Field):
 
 class ProductParentSerializer(serializers.ModelSerializer):
     tags = TagField(required=False)
+    status = StatusSerializer()
 
     class Meta:
         model = ProductParent
-        fields = "__all__"
+        fields = ("id", "company", "is_component", "title", "type", "series",
+                  "hscode", "sku", "bullet_points", "description",
+                  "tags", "is_active", "status", "extra_data")
+        read_only_fields = ("id", "is_active", "extra_data", "company")
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductVariationSerializer(serializers.ModelSerializer):
     weight = WeightField(required=True)
 
     class Meta:
@@ -42,4 +47,18 @@ class ProductSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "is_active", "extra_data", "productparent")
 
     def validate(self, data):
+        # TODO
         return super().validate(data)
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    tags = TagField(required=False)
+    status = StatusSerializer()
+    veriations = ProductVariationSerializer(many=True)
+
+    class Meta:
+        model = ProductParent
+        fields = ("id", "company", "is_component", "title", "type", "series",
+                  "hscode", "sku", "bullet_points", "description",
+                  "tags", "is_active", "status", "extra_data", "veriations")
+        read_only_fields = ("id", "is_active", "extra_data", "company")
