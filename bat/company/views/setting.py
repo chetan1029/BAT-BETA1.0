@@ -131,9 +131,7 @@ class DeleteMixin:
 
 
 # Create your views here.
-class AccountSetupView(
-    LoginRequiredMixin, SuccessMessageMixin, RevisionMixin, CreateView
-):
+class AccountSetupView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     """Create Account Setup."""
 
     form_class = AccountSetupForm
@@ -159,8 +157,8 @@ class AccountSetupView(
             extra_data=extra_data,
         )
         # we have a signal that will allot that role to this user.
-        self.request.user.extra_data["step"] = 2
-        self.request.user.extra_data["step_detail"] = "account setup"
+        # self.request.user.extra_data["step"] = 2
+        # self.request.user.extra_data["step_detail"] = "account setup"
         self.request.user.save()
         return super().form_valid(form)
 
