@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth.models import Group, Permission
 from django.utils.translation import ugettext_lazy as _
 from invitations.utils import get_invitation_model
@@ -221,8 +223,26 @@ class CompanyPaymentTermsSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
             "remaining",
+            "company",
             "title",
         )
+
+    def validate(self, data):
+        """Validate if total percetange is more than 100%."""
+        deposit = data["deposit"]
+        on_delivery = data["on_delivery"]
+        receiving = data["receiving"]
+        if deposit and on_delivery and receiving:
+            total = (
+                Decimal(deposit) + Decimal(on_delivery) + Decimal(receiving)
+            )
+            if total > 100:
+                raise serializers.ValidationError(
+                    _(
+                        "Total amount can't be more than 100%. Please check again."
+                    )
+                )
+        return super().validate(data)
 
 
 class BankSerializer(serializers.ModelSerializer):
@@ -296,9 +316,9 @@ class PackingBoxSerializer(serializers.ModelSerializer):
             "length",
             "width",
             "depth",
-            "cbm",
             "length_unit",
             "weight",
+            "cbm",
             "is_active",
             "extra_data",
         )
@@ -307,6 +327,7 @@ class PackingBoxSerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
             "company",
+            "cbm",
             "create_date",
             "update_date",
         )

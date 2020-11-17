@@ -1,17 +1,13 @@
-
-from rest_framework.serializers import Field
-from rest_framework.exceptions import ValidationError
-
 from measurement.measures import Weight
+from rest_framework.exceptions import ValidationError
+from rest_framework.serializers import Field
 
 from bat.company import constants
 
 
 class WeightField(Field):
-
     def to_representation(self, value):
-        ret = {"weight": value.value,
-               "unit": value.unit}
+        ret = {"weight": value.value, "unit": value.unit}
         return ret
 
     def to_internal_value(self, data):
@@ -27,7 +23,8 @@ class WeightField(Field):
         except Exception:
             if data:
                 raise ValidationError(
-                    "%s is not a valid %s" % (data, "formate"))
+                    "%s is not a valid %s" % (data, "format")
+                )
             else:
                 if self.required:
                     raise ValidationError("%s is %s" % ("weight", "required"))

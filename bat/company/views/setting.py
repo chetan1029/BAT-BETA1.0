@@ -27,7 +27,7 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_member
+from bat.company.utils import get_cbm, get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 
 Invitation = get_invitation_model()
@@ -50,58 +50,9 @@ class CompanyViewSet(
         context["user_id"] = self.request.user.id
         return context
 
-<<<<<<< HEAD
-
-class DeleteMixin:
-    """
-    Mixing to use while deleting data.
-
-    I found some time we have to use same set of delete method for many CBV so
-    I decided to make a mixin and pass that mixin to all delete views.
-    """
-
-    def delete(self, request, *args, **kwargs):
-        """Delete method to define error messages."""
-        obj = self.get_object()
-        get_success_url = self.get_success_url()
-        get_error_url = self.get_error_url()
-        try:
-            try:
-                if self.request.is_archived:
-                    obj.is_active = False
-                    obj.save()
-                elif self.request.is_restored:
-                    obj.is_active = True
-                    obj.save()
-                else:
-                    obj.delete()
-            except AttributeError:
-                obj.delete()
-            messages.success(self.request, self.success_message % obj.__dict__)
-            return HttpResponseRedirect(get_success_url)
-        except ProtectedError:
-            messages.warning(self.request, self.protected_error % obj.__dict__)
-            return HttpResponseRedirect(get_error_url)
-
-
-# Create your views here.
-class AccountSetupView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
-    """Create Account Setup."""
-
-    form_class = AccountSetupForm
-    model = Company
-    success_message = "Account setup was updated successfully"
-    template_name = "company/company/account_setup.html"
-
-    def form_valid(self, form):
-        """If form is valid update title."""
-        self.object = form.save(commit=False)
-        self.object.save()
-=======
     def perform_create(self, serializer):
         company = serializer.save()
         request = self.request
->>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673
 
         extra_data = {}
         extra_data["user_role"] = "company_admin"
@@ -115,39 +66,6 @@ class AccountSetupView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
             invitation_accepted=True,
             extra_data=extra_data,
         )
-<<<<<<< HEAD
-        # we have a signal that will allot that role to this user.
-        # self.request.user.extra_data["step"] = 2
-        # self.request.user.extra_data["step_detail"] = "account setup"
-        self.request.user.save()
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        """Forward to url after deleting Product successfully."""
-        return reverse_lazy("core:dashboard")
-
-
-class CompanyProfileView(
-    LoginRequiredMixin,
-    CompanySettingMenuMixin,
-    SuccessMessageMixin,
-    RevisionMixin,
-    UpdateView,
-):
-    """Create Account Setup."""
-
-    form_class = CompanyUpdateForm
-    model = Company
-    success_url = reverse_lazy("company:company_profile")
-    success_message = "Company Detail was updated successfully"
-    template_name = "company/company/company_form.html"
-
-    def form_valid(self, form):
-        """Set Langauge of the submited form and set it as current."""
-        return super().form_valid(form)
-
-    def get_object(self):
-=======
         if create:
             # fetch user role from the User and assign after signup.
             assign_role(member, member.extra_data["user_role"])
@@ -189,7 +107,6 @@ input to content
 
 class InvitationCreate(viewsets.ViewSet):
     def create(self, request, company_pk):
->>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673
         """
         create and seng invivation to given email address
         """
@@ -563,6 +480,40 @@ class PackingBoxViewSet(CompanySettingBaseViewSet):
 
     archive_message = _("Packing box is archived")
     restore_message = _("Packing box is restored")
+
+    def perform_create(self, serializer):
+        """
+        Append extra data in validated data.
+        """
+        data = serializer.validated_data
+        cbm = get_cbm(
+            data.get("length"),
+            data.get("width"),
+            data.get("depth"),
+            data.get("length_unit"),
+        )
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        serializer.save(company=member.company, cbm=cbm)
+
+    def perform_update(self, serializer):
+        """
+        Append extra data in validated data.
+        """
+        data = serializer.validated_data
+        cbm = get_cbm(
+            data.get("length"),
+            data.get("width"),
+            data.get("depth"),
+            data.get("length_unit"),
+        )
+        serializer.save(cbm=cbm)
+
+
+# For weight use
+# {'weight': 1.0, 'unit': 'kg'}
 
 
 # HsCode

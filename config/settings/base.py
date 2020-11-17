@@ -84,11 +84,7 @@ THIRD_PARTY_APPS = [
     "django_countries",
     # Currency and currency conversion
     "djmoney",
-<<<<<<< HEAD
-    # Django Defender
-=======
     # Django defender
->>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673
     "defender",
     # Django Modified Preorder Tree Traversal
     "mptt",
@@ -238,10 +234,7 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
-<<<<<<< HEAD
-=======
                 "bat.utils.context_processors.settings_context",
->>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673
             ],
         },
     }
@@ -376,19 +369,10 @@ ACCOUNT_ADAPTER = "invitations.models.InvitationsAdapter"
 # Django Role Permissions
 ROLEPERMISSIONS_MODULE = "config.roles"
 
-<<<<<<< HEAD
-# Keyword rank page limit
-KEYWORD_RANK_PAGE_LIMIT = env("KEYWORD_RANK_PAGE_LIMIT")
-
-# enable REDIS_HOST if we are using same machine as Django
-REDIS_URL = env("REDIS_URL")
-
-=======
 # Dajngo Invitation
 # INVITATIONS_SIGNUP_REDIRECT = "accounts:signup"
 INVITATIONS_GONE_ON_ACCEPT_ERROR = False
 INVITATIONS_INVITATION_MODEL = "users.InvitationDetail"
->>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673
 
 # django-defender
 DEFENDER_LOGIN_FAILURE_LIMIT = 3

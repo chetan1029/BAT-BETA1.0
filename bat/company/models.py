@@ -3,31 +3,27 @@ import logging
 import os
 
 import pytz
-
+from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from django.shortcuts import get_object_or_404
-
 from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
-from measurement.measures import Weight
-from defender.models import AccessAttempt
-
 from djmoney.settings import CURRENCY_CHOICES
+from measurement.measures import Weight
 from multiselectfield import MultiSelectField
-from rolepermissions.roles import get_user_roles
 from rolepermissions.checkers import has_permission
+from rolepermissions.roles import get_user_roles
 
+from bat.company.constants import *
 from bat.globalprop.validator import validator
 from bat.setting.models import Category
-from bat.company.constants import *
-
 
 User = get_user_model()
 logger = logging.getLogger(__name__)

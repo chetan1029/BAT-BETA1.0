@@ -14,6 +14,8 @@ class CompanyAdmin(AbstractUserRole):
         "view_payment_terms": True,
         "add_payment_terms": True,
         "change_payment_terms": True,
+        "archived_payment_terms": True,
+        "restore_payment_terms": True,
         "delete_payment_terms": True,
         "view_membership_plan": True,
         "add_membership_plan": True,

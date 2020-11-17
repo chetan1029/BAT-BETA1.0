@@ -57,28 +57,11 @@ urlpatterns = [
     path("api/", include("config.api_router")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-<<<<<<< HEAD
-schema_view = get_swagger_view(title="BAT API")
-
-urlpatterns += [path("docs", schema_view)]
-
-urlpatterns += i18n_patterns(
-    # App Url Patterns
-    path("accounts/", include("bat.users.urls", namespace="accounts")),
-    path("accounts/", include("django.contrib.auth.urls")),
-    path("company/", include("bat.company.urls", namespace="company")),
-    path("product/", include("bat.product.urls", namespace="product")),
-    path("", include("bat.core.urls", namespace="core")),
-    # https://docs.djangoproject.com/en/dev/topics/i18n/translation/#language-prefix-in-url-patterns
-    prefix_default_language=False,
-)
-=======
 # API URLS
 urlpatterns += [
     # DRF auth token
     path("auth-token/", obtain_auth_token)
 ]
->>>>>>> f3ffbc296169e60c2fd950ff2f64fe6ee1dba673
 
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit
