@@ -1031,3 +1031,43 @@ class Tax(models.Model):
     def has_object_restore_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_taxes")
+
+
+class CompanyContract(models.Model):
+    """
+    Company Contract.
+
+    Agreement contract between two companies signed by their members. including
+    company -> vendor, company -> saleschannel, company -> logistics etc.
+    """
+
+    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200, verbose_name=_("Contract Title"))
+    file = models.CharField(max_length=500, verbose_name=_("Contract File"))
+    note = models.TextField(blank=True)
+    partner_member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name="partner_member"
+    )
+    company_member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name="company_member"
+    )
+    paymentterms = models.ForeignKey(
+        CompanyPaymentTerms, on_delete=models.CASCADE
+    )
+    is_active = models.BooleanField(default=True)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Taxes")
+
+    def get_absolute_url(self):
+        """Set url of the page after adding/editing/deleting object."""
+        return reverse("company:settingstax_list")
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.from_country) + "-" + str(self.to_country)

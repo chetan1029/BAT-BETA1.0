@@ -10,8 +10,9 @@ from django_measurement.models import MeasurementField
 from measurement.measures import Weight
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
-
-from bat.company.models import Company, Member
+from djmoney.models.fields import MoneyField
+from django_countries.fields import CountryField
+from bat.company.models import Company, Member, PackingBox
 from bat.product.constants import *
 from bat.setting.models import Status
 
@@ -357,3 +358,118 @@ class ProductVariationOption(models.Model):
     def __str__(self):
         """Return Value."""
         return self.product.title + " - " + self.productoption.name
+
+
+class ProductImage(models.Model):
+    """
+    Product Images Model.
+
+    This table will store product images that stored in AWS.
+    """
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    file = models.CharField(verbose_name=_("File upload"), max_length=500)
+    main_image = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Product Images")
+
+    def __str__(self):
+        """Return Value."""
+        return self.name
+
+
+class ProductComponent(models.Model):
+    """
+    Product Component Model.
+
+    We are using this model to connect product with its components.
+    """
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="productcomponent_product",
+    )
+    component = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="productcomponent_component",
+    )
+    quantity = models.PositiveIntegerField(
+        verbose_name=_("Quantity"), default=1
+    )
+    value = models.CharField(verbose_name=_("Option Value"), max_length=200)
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Product Components")
+
+    def __str__(self):
+        """Return Value."""
+        return self.product.title
+
+
+class ProductRrp(models.Model):
+    """
+    Product RRP Model.
+
+    Products with their RRP's for different countries.
+    """
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    rrp = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    country = CountryField()
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Product RRP's")
+
+    def __str__(self):
+        """Return Value."""
+        return self.product.title
+
+
+class ProductPackingBox(models.Model):
+    """
+    Product Packing Box Model.
+
+    Products packing boxes for shipment with quantity that can fit in the box.
+    """
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    packingbox = models.ForeignKey(PackingBox, on_delete=models.CASCADE)
+    weight = MeasurementField(
+        measurement=Weight,
+        unit_choices=(("g", "g"), ("kg", "kg"), ("oz", "oz"), ("lb", "lb")),
+        blank=True,
+        null=True,
+    )
+    units = models.PositiveIntegerField(
+        verbose_name=_("Units per box"), default=1
+    )
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Product Packing Boxes")
+
+    def __str__(self):
+        """Return Value."""
+        return self.product.title
