@@ -27,7 +27,7 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_member
+from bat.company.utils import get_cbm, get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 
 Invitation = get_invitation_model()
@@ -480,6 +480,40 @@ class PackingBoxViewSet(CompanySettingBaseViewSet):
 
     archive_message = _("Packing box is archived")
     restore_message = _("Packing box is restored")
+
+    def perform_create(self, serializer):
+        """
+        Append extra data in validated data.
+        """
+        data = serializer.validated_data
+        cbm = get_cbm(
+            data.get("length"),
+            data.get("width"),
+            data.get("depth"),
+            data.get("length_unit"),
+        )
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        serializer.save(company=member.company, cbm=cbm)
+
+    def perform_update(self, serializer):
+        """
+        Append extra data in validated data.
+        """
+        data = serializer.validated_data
+        cbm = get_cbm(
+            data.get("length"),
+            data.get("width"),
+            data.get("depth"),
+            data.get("length_unit"),
+        )
+        serializer.save(cbm=cbm)
+
+
+# For weight use
+# {'weight': 1.0, 'unit': 'kg'}
 
 
 # HsCode

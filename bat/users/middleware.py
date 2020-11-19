@@ -28,6 +28,7 @@ class MemberProfileMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         """Call is called every new request django make."""
+
         # if (
         #     request.user.is_authenticated
         #     and not request.user.is_superuser
