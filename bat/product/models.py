@@ -6,6 +6,9 @@ from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+
+from rest_framework.exceptions import ValidationError
+
 from django_measurement.models import MeasurementField
 from measurement.measures import Weight
 from rolepermissions.checkers import has_permission
@@ -26,6 +29,35 @@ def get_member_from_request(request):
         Member, company__id=company_pk, user=request.user.id
     )
     return member
+
+
+class UniqueWithinCompanyMixin:
+    def save(self, **kwargs):
+        self.clean()
+        return super().save(**kwargs)
+
+    def clean(self):
+        errors = []
+        company = self.get_company
+        for field_name in self.unique_within_company:
+            f = self._meta.get_field(field_name)
+            lookup_value = getattr(self, f.attname)
+            kwargs = {field_name: lookup_value}
+            if self.id:
+                if (self.__class__.objects.filter(productparent__company=company, **kwargs)
+                    .exclude(pk=self.id)
+                        .exists()):
+                    detail = {field_name: self.velidation_within_company_messages.get(
+                        field_name, None)}
+                    errors.append(detail)
+            else:
+                if (self.__class__.objects.filter(productparent__company=company, **kwargs)
+                        .exists()):
+                    detail = {field_name: self.velidation_within_company_messages.get(
+                        field_name, None)}
+                    errors.append(detail)
+        if errors:
+            raise ValidationError(errors)
 
 
 # Create your models here.
@@ -52,7 +84,8 @@ class ProductParent(models.Model):
     hscode = models.CharField(
         max_length=200, blank=True, verbose_name=_("Product HsCode")
     )
-    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
+    sku = models.CharField(verbose_name=_(
+        "SKU"), max_length=200, blank=True)
     bullet_points = models.TextField(blank=True)
     description = models.TextField(blank=True)
     tags = TaggableManager(blank=True)
@@ -61,6 +94,8 @@ class ProductParent(models.Model):
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+
+    unique_within_company = []
 
     class Meta:
         """Meta Class."""
@@ -73,7 +108,7 @@ class ProductParent(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.title
+        return self.title + " " + str(self.id)
 
     @staticmethod
     def has_read_permission(request):
@@ -141,25 +176,27 @@ class ProductParent(models.Model):
         return has_permission(member, "restore_product")
 
 
-class Product(models.Model):
+class Product(UniqueWithinCompanyMixin, models.Model):
     """
     Product Model.
 
     We are using this model to store detail for both product and components.
     """
 
-    productparent = models.ForeignKey(ProductParent, on_delete=models.CASCADE)
+    productparent = models.ForeignKey(
+        ProductParent, on_delete=models.CASCADE, related_name="products")
     title = models.CharField(verbose_name=_("Title"), max_length=500)
-    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
-    ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
+    sku = models.CharField(verbose_name=_(
+        "SKU"), max_length=200, blank=True)
+    ean = models.CharField(verbose_name=_(
+        "EAN"), max_length=200, blank=True)
     model_number = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Model Number"), unique=True
+        max_length=200, blank=True, verbose_name=_("Model Number")
     )
     manufacturer_part_number = models.CharField(
         max_length=200,
         blank=True,
         verbose_name=_("Manufacturer Part Number"),
-        unique=True,
     )
     length = models.DecimalField(
         max_digits=5,
@@ -200,50 +237,30 @@ class Product(models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
+    unique_within_company = ["sku", "ean",
+                             "model_number", "manufacturer_part_number"]
+    velidation_within_company_messages = {"ean": _("Ean should be unique")}
+
     class Meta:
         """Meta Class."""
-
         verbose_name_plural = _("Products")
+
+    @property
+    def get_company(self):
+        """
+        return related company
+        """
+        return self.productparent.company
 
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
 
-    def validate_unique(self, exclude=None):
-        """Set unique Validation."""
-        super(Product, self).validate_unique(exclude=exclude)
-        errors = []
-        if not self.id:
-            if self.__class__.objects.filter(
-                model_number=self.model_number
-            ).exists():
-                errors.append(
-                    ValidationError(
-                        _(
-                            "Component %(name)s with same model number already exists"
-                        ),
-                        params={"name": self.title},
-                    )
-                )
-            if self.__class__.objects.filter(
-                manufacturer_part_number=self.manufacturer_part_number
-            ).exists():
-                errors.append(
-                    ValidationError(
-                        _(
-                            "Component %(name)s with same manufacturer part number already exists"
-                        ),
-                        params={"name": self.title},
-                    )
-                )
-            if errors:
-                raise ValidationError(errors)
-
     def __str__(self):
         """Return Value."""
         return self.productparent.title
 
-    @staticmethod
+    @ staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
@@ -252,7 +269,7 @@ class Product(models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
-    @staticmethod
+    @ staticmethod
     def has_list_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
@@ -261,7 +278,7 @@ class Product(models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
-    @staticmethod
+    @ staticmethod
     def has_create_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "add_product")
@@ -270,7 +287,7 @@ class Product(models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "add_product")
 
-    @staticmethod
+    @ staticmethod
     def has_destroy_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "delete_product")
@@ -279,7 +296,7 @@ class Product(models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "delete_product")
 
-    @staticmethod
+    @ staticmethod
     def has_update_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "change_product")
@@ -290,7 +307,7 @@ class Product(models.Model):
             return False
         return has_permission(member, "change_product")
 
-    @staticmethod
+    @ staticmethod
     def has_archive_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "archived_product")
@@ -299,7 +316,7 @@ class Product(models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "archived_product")
 
-    @staticmethod
+    @ staticmethod
     def has_restore_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_product")

@@ -1,3 +1,5 @@
+from itertools import groupby
+
 from rest_framework import serializers
 
 from django.utils.translation import ugettext_lazy as _
@@ -54,11 +56,39 @@ class ProductVariationSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     tags = TagField(required=False)
     status = StatusSerializer()
-    veriations = ProductVariationSerializer(many=True)
+    products = ProductVariationSerializer(
+        many=True, read_only=False)
 
     class Meta:
         model = ProductParent
         fields = ("id", "company", "is_component", "title", "type", "series",
                   "hscode", "sku", "bullet_points", "description",
-                  "tags", "is_active", "status", "extra_data", "veriations")
+                  "tags", "is_active", "status", "extra_data", "products")
         read_only_fields = ("id", "is_active", "extra_data", "company")
+
+    def validate(self, data):
+        # TODO
+        print("\n\n\n data :", data)
+        products = data.get("products", None)
+        # define a fuction for key
+
+        def _model_number_func(k):
+            return k['model_number']
+
+        def _manufacturer_part_number_func(k):
+            return k['manufacturer_part_number']
+        if products:
+            group_by_model_number = groupby(products, _model_number_func)
+            if len(list(group_by_model_number)) != len(products):
+                msg = _("model_number should be unique.")
+                raise serializers.ValidationError(
+                    {"products": {"model_number": msg}})
+
+            group_by_manufacturer_part_number = groupby(
+                products, _manufacturer_part_number_func)
+            if len(list(group_by_manufacturer_part_number)) != len(products):
+                msg = _("manufacturer_part_number should be unique.")
+                raise serializers.ValidationError(
+                    {"products": {"manufacturer_part_number": msg}})
+
+        return super().validate(data)

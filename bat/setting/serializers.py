@@ -5,7 +5,7 @@ from bat.setting.models import Status
 
 class StatusSerializer(serializers.ModelSerializer):
     """Serializer for Status."""
-
+    
     class Meta:
         """Define field that we wanna show in the Json."""
 
