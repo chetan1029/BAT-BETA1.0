@@ -39,29 +39,29 @@ class UniqueWithinCompanyMixin:
 
     def clean(self):
         errors = []
-        # company = self.get_company
-        # company_path = self.get_company_path
-        # for field_name in self.unique_within_company:
-        #     f = self._meta.get_field(field_name)
-        #     lookup_value = getattr(self, f.attname)
-        #     if lookup_value:
-        #         kwargs = {company_path: company, field_name: lookup_value}
-        #         if self.id:
-        #             if (self.__class__.objects.filter(**kwargs)
-        #                 .exclude(pk=self.id)
-        #                     .exists()):
-        #                 detail = {field_name: self.velidation_within_company_messages.get(
-        #                     field_name, None)}
-        #                 errors.append(detail)
-        #         else:
-        #             if (self.__class__.objects.filter(**kwargs)
-        #                     .exists()):
-        #                 detail = {field_name: self.velidation_within_company_messages.get(
-        #                     field_name, None)}
-        #                 errors.append(detail)
-        # e = self.extra_clean()
-        # if len(e) > 0:
-        #     errors.extend(e)
+        company = self.get_company
+        company_path = self.get_company_path
+        for field_name in self.unique_within_company:
+            f = self._meta.get_field(field_name)
+            lookup_value = getattr(self, f.attname)
+            if lookup_value:
+                kwargs = {company_path: company, field_name: lookup_value}
+                if self.id:
+                    if (self.__class__.objects.filter(**kwargs)
+                        .exclude(pk=self.id)
+                            .exists()):
+                        detail = {field_name: self.velidation_within_company_messages.get(
+                            field_name, None)}
+                        errors.append(detail)
+                else:
+                    if (self.__class__.objects.filter(**kwargs)
+                            .exists()):
+                        detail = {field_name: self.velidation_within_company_messages.get(
+                            field_name, None)}
+                        errors.append(detail)
+        e = self.extra_clean()
+        if len(e) > 0:
+            errors.extend(e)
         if errors:
             raise ValidationError(errors)
 
