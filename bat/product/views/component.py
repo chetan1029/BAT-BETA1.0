@@ -85,6 +85,8 @@ class ProductViewSet(mixins.RetrieveModelMixin,
                 hscode, _c = HsCode.objects.get_or_create(
                     hscode=hscode, company=member.company
                 )
+            images = serializer.validated_data.get("images", None)
+            print("\n \n \n images : ", images)
             tags = serializer.validated_data.get("tags", None)
             serializer.validated_data.pop("tags", None)
             products = serializer.validated_data.get("products", None)

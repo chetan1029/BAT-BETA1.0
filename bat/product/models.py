@@ -1,11 +1,15 @@
 """Model classes for product."""
 
+import os
+
 from django.contrib.postgres.fields import HStoreField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 from rest_framework.exceptions import ValidationError
 
@@ -41,32 +45,59 @@ class UniqueWithinCompanyMixin:
         errors = []
         company = self.get_company
         company_path = self.get_company_path
-        for field_name in self.unique_within_company:
-            f = self._meta.get_field(field_name)
-            lookup_value = getattr(self, f.attname)
-            if lookup_value:
-                kwargs = {company_path: company, field_name: lookup_value}
-                if self.id:
-                    if (self.__class__.objects.filter(**kwargs)
-                        .exclude(pk=self.id)
-                            .exists()):
-                        detail = {field_name: self.velidation_within_company_messages.get(
-                            field_name, None)}
-                        errors.append(detail)
-                else:
-                    if (self.__class__.objects.filter(**kwargs)
-                            .exists()):
-                        detail = {field_name: self.velidation_within_company_messages.get(
-                            field_name, None)}
-                        errors.append(detail)
-        e = self.extra_clean()
-        if len(e) > 0:
-            errors.extend(e)
+        # for field_name in self.unique_within_company:
+        #     f = self._meta.get_field(field_name)
+        #     lookup_value = getattr(self, f.attname)
+        #     if lookup_value:
+        #         kwargs = {company_path: company, field_name: lookup_value}
+        #         if self.id:
+        #             if (self.__class__.objects.filter(**kwargs)
+        #                 .exclude(pk=self.id)
+        #                     .exists()):
+        #                 detail = {field_name: self.velidation_within_company_messages.get(
+        #                     field_name, None)}
+        #                 errors.append(detail)
+        #         else:
+        #             if (self.__class__.objects.filter(**kwargs)
+        #                     .exists()):
+        #                 detail = {field_name: self.velidation_within_company_messages.get(
+        #                     field_name, None)}
+        #                 errors.append(detail)
+        # e = self.extra_clean()
+        # if len(e) > 0:
+        #     errors.extend(e)
         if errors:
             raise ValidationError(errors)
 
 
+def image_name(instance, filename):
+    """Change name of image."""
+    name, extension = os.path.splitext(filename)
+    return "images/{0}_{1}.{2}".format(str(name), str(timezone.now), extension)
+
+
+class Image(models.Model):
+    """
+    This table will store images that stored in AWS.
+    """
+    image = models.ImageField(upload_to=image_name,
+                              blank=True,
+                              verbose_name=_("Image"))
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    main_image = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        """Return Value."""
+        return self.image.name
+
 # Create your models here.
+
+
 class ProductParent(UniqueWithinCompanyMixin, models.Model):
     """
     Product Parent Model.
@@ -77,6 +108,7 @@ class ProductParent(UniqueWithinCompanyMixin, models.Model):
     """
 
     company = models.ForeignKey(Company, on_delete=models.PROTECT)
+    images = GenericRelation(Image)
     is_component = models.BooleanField(
         default=False, verbose_name=_("Is Component")
     )
@@ -214,6 +246,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
 
     productparent = models.ForeignKey(
         ProductParent, on_delete=models.CASCADE, related_name="products")
+    images = GenericRelation(Image)
     title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name=_(
         "SKU"), max_length=200, blank=True)
@@ -432,28 +465,28 @@ class ProductVariationOption(models.Model):
         return self.product.title + " - " + self.productoption.name
 
 
-class ProductImage(models.Model):
-    """
-    Product Images Model.
+# class ProductImage(models.Model):
+#     """
+#     Product Images Model.
 
-    This table will store product images that stored in AWS.
-    """
+#     This table will store product images that stored in AWS.
+#     """
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    file = models.CharField(verbose_name=_("File upload"), max_length=500)
-    main_image = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+#     file = models.CharField(verbose_name=_("File upload"), max_length=500)
+    # main_image = models.BooleanField(default=False)
+    # is_active = models.BooleanField(default=True)
+    # create_date = models.DateTimeField(default=timezone.now)
+    # update_date = models.DateTimeField(default=timezone.now)
 
-    class Meta:
-        """Meta Class."""
+#     class Meta:
+#         """Meta Class."""
 
-        verbose_name_plural = _("Product Images")
+#         verbose_name_plural = _("Product Images")
 
-    def __str__(self):
-        """Return Value."""
-        return self.name
+    # def __str__(self):
+    #     """Return Value."""
+    #     return self.name
 
 
 class ProductComponent(models.Model):
