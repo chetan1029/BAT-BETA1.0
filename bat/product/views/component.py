@@ -11,6 +11,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
 
 from bat.company.utils import get_member
+from bat.company.models import HsCode
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 from bat.product import serializers
 from bat.product.models import ProductParent, Product, ProductOption, ProductVariationOption
@@ -51,7 +52,7 @@ class ProductParentViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
         obj.tags.set(*tags)
 
 
-class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     """Operations on ProductParent."""
 
     serializer_class = serializers.ProductSerializer
@@ -68,12 +69,18 @@ class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.CreateModelMixin, viewse
         '''
         save product parent with all children products and related objects.
         '''
+
         member = get_member(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
         # try:
         with transaction.atomic():
+            hscode = serializer.validated_data.get("hscode", None)
+            if hscode:
+                hscode, _c = HsCode.objects.get_or_create(
+                    hscode=hscode, company=member.company
+                )
             tags = serializer.validated_data.get("tags", None)
             serializer.validated_data.pop("tags", None)
             products = serializer.validated_data.get("products", None)
