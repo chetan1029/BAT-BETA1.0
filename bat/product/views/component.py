@@ -13,7 +13,7 @@ from dry_rest_permissions.generics import DRYPermissions
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 from bat.product import serializers
-from bat.product.models import ProductParent, Product
+from bat.product.models import ProductParent, Product, ProductOption, ProductVariationOption
 from bat.setting.utils import get_status
 
 
@@ -51,7 +51,7 @@ class ProductParentViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
         obj.tags.set(*tags)
 
 
-class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     """Operations on ProductParent."""
 
     serializer_class = serializers.ProductSerializer
@@ -65,25 +65,47 @@ class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.ListModelMixin, mixins.C
     restore_message = _("Product parent is restored")
 
     def perform_create(self, serializer):
-        print("\n \n \n \n serializer.validated_data :",
-              serializer.validated_data)
+        '''
+        save product parent with all children products and related objects.
+        '''
         member = get_member(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        tags = serializer.validated_data.get("tags")
-        products = serializer.validated_data.get("products", None)
-        print("\n \n \n products....:", products)
-        serializer.validated_data.pop("tags")
-        serializer.validated_data.pop("products")
         # try:
         with transaction.atomic():
+            tags = serializer.validated_data.get("tags", None)
+            serializer.validated_data.pop("tags", None)
+            products = serializer.validated_data.get("products", None)
+            serializer.validated_data.pop("products")
             status = get_status("Product", "Active")
-            obj = serializer.save(company=member.company, status=status)
-            # set tags
-            obj.tags.set(*tags)
+            product_parent = serializer.save(
+                company=member.company, status=status)
+            if tags:
+                # set tags
+                product_parent.tags.set(*tags)
             # save variations
-            for product in products:
-                Product.objects.create(productparent=obj, **product)
+            for product in products or []:
+                product_variation_options = product.get(
+                    "product_variation_options", None)
+                product.pop("product_variation_options", None)
+                new_product = Product.objects.create(
+                    productparent=product_parent, **product)
+                # save options
+                for variation_option in product_variation_options or []:
+                    name = variation_option.get(
+                        "productoption", None).get("name", None)
+                    value = variation_option.get(
+                        "productoption", None).get("value", None)
+                    if name and value:
+                        productoption, _c = ProductOption.objects.get_or_create(
+                            name=name,
+                            value=value,
+                            productparent=product_parent,
+                        )
+                        ProductVariationOption.objects.create(
+                            product=new_product,
+                            productoption=productoption,
+                        )
         # except IntegrityError:
         #     raise IntegrityError

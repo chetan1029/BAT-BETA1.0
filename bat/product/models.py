@@ -39,30 +39,35 @@ class UniqueWithinCompanyMixin:
 
     def clean(self):
         errors = []
-        company = self.get_company
-        for field_name in self.unique_within_company:
-            f = self._meta.get_field(field_name)
-            lookup_value = getattr(self, f.attname)
-            kwargs = {field_name: lookup_value}
-            if self.id:
-                if (self.__class__.objects.filter(productparent__company=company, **kwargs)
-                    .exclude(pk=self.id)
-                        .exists()):
-                    detail = {field_name: self.velidation_within_company_messages.get(
-                        field_name, None)}
-                    errors.append(detail)
-            else:
-                if (self.__class__.objects.filter(productparent__company=company, **kwargs)
-                        .exists()):
-                    detail = {field_name: self.velidation_within_company_messages.get(
-                        field_name, None)}
-                    errors.append(detail)
+        # company = self.get_company
+        # company_path = self.get_company_path
+        # for field_name in self.unique_within_company:
+        #     f = self._meta.get_field(field_name)
+        #     lookup_value = getattr(self, f.attname)
+        #     if lookup_value:
+        #         kwargs = {company_path: company, field_name: lookup_value}
+        #         if self.id:
+        #             if (self.__class__.objects.filter(**kwargs)
+        #                 .exclude(pk=self.id)
+        #                     .exists()):
+        #                 detail = {field_name: self.velidation_within_company_messages.get(
+        #                     field_name, None)}
+        #                 errors.append(detail)
+        #         else:
+        #             if (self.__class__.objects.filter(**kwargs)
+        #                     .exists()):
+        #                 detail = {field_name: self.velidation_within_company_messages.get(
+        #                     field_name, None)}
+        #                 errors.append(detail)
+        # e = self.extra_clean()
+        # if len(e) > 0:
+        #     errors.extend(e)
         if errors:
             raise ValidationError(errors)
 
 
 # Create your models here.
-class ProductParent(models.Model):
+class ProductParent(UniqueWithinCompanyMixin, models.Model):
     """
     Product Parent Model.
 
@@ -96,12 +101,35 @@ class ProductParent(models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
-    unique_within_company = []
+    # UniqueWithinCompanyMixin data
+    unique_within_company = ["sku"]
+    velidation_within_company_messages = {
+        "sku": _("Product Parent with same sku already exists."),
+    }
 
     class Meta:
         """Meta Class."""
-
         verbose_name_plural = _("Products Parent")
+
+    @property
+    def get_company(self):
+        """
+        return related company
+        """
+        return self.company
+
+    @property
+    def get_company_path(self):
+        """
+        return related company
+        """
+        return "company"
+
+    def extra_clean(self):
+        '''
+        retuen list of model specific velidation errors or empty list
+        '''
+        return []
 
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
@@ -238,9 +266,15 @@ class Product(UniqueWithinCompanyMixin, models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
+    # UniqueWithinCompanyMixin data
     unique_within_company = ["sku", "ean",
                              "model_number", "manufacturer_part_number"]
-    velidation_within_company_messages = {"ean": _("Ean should be unique")}
+    velidation_within_company_messages = {
+        "ean": _("Product with same ean already exists."),
+        "sku": _("Product with same sku already exists."),
+        "model_number": _("Product with same model_number already exists."),
+        "manufacturer_part_number": _("Product with same manufacturer_part_number already exists.")
+    }
 
     class Meta:
         """Meta Class."""
@@ -252,6 +286,24 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         return related company
         """
         return self.productparent.company
+
+    @property
+    def get_company_path(self):
+        """
+        return related company
+        """
+        return "productparent__company"
+
+    def extra_clean(self):
+        '''
+        retuen list of model specific velidation errors or empty list
+        '''
+        errors = []
+        if self.sku:
+            if (ProductParent.objects.filter(company=self.get_company, sku=self.sku).exists()):
+                detail = {"sku": "Product Parent with this sku is exists."}
+                errors.append(detail)
+        return errors
 
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
@@ -335,7 +387,8 @@ class ProductOption(models.Model):
     etc.
     """
 
-    productparent = models.ForeignKey(ProductParent, on_delete=models.CASCADE)
+    productparent = models.ForeignKey(
+        ProductParent, on_delete=models.CASCADE, related_name="product_options")
     name = models.CharField(verbose_name=_("Option Name"), max_length=200)
     value = models.CharField(verbose_name=_("Option Value"), max_length=200)
 
@@ -350,7 +403,7 @@ class ProductOption(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return self.name + " - " + self.value
 
 
 class ProductVariationOption(models.Model):
@@ -360,8 +413,10 @@ class ProductVariationOption(models.Model):
     This table will connect product with their options like size, color etc.
     """
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    productoption = models.ForeignKey(ProductOption, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="product_variation_options")
+    productoption = models.ForeignKey(
+        ProductOption, on_delete=models.CASCADE, related_name="product_options")
 
     class Meta:
         """Meta Class."""

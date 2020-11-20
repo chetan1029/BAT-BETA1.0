@@ -16,7 +16,7 @@ product_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 product_router.register(
-    "product", ProductViewSet, basename="company-product"
+    "products", ProductViewSet, basename="company-product"
 )
 
 
