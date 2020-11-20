@@ -13,7 +13,6 @@ class ArchiveMixin:
             return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
         instance.is_active = False
         instance.save()
-        
         return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
 
 

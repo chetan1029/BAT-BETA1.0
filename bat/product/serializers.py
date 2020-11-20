@@ -26,18 +26,6 @@ class TagField(serializers.Field):
         return data.split(",")
 
 
-class ProductParentSerializer(serializers.ModelSerializer):
-    tags = TagField(required=False)
-    status = StatusSerializer()
-
-    class Meta:
-        model = ProductParent
-        fields = ("id", "company", "is_component", "title", "type", "series",
-                  "hscode", "sku", "bullet_points", "description",
-                  "tags", "is_active", "status", "extra_data")
-        read_only_fields = ("id", "is_active", "extra_data", "company",)
-
-
 class ProductOptionSerializer(serializers.ModelSerializer):
 
     class Meta:

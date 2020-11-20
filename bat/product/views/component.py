@@ -2,6 +2,8 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.db import IntegrityError, transaction
 
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -18,58 +20,60 @@ from bat.product.models import ProductParent, Product, ProductOption, ProductVar
 from bat.setting.utils import get_status
 
 
-class ProductParentViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
-    """Operations on ProductParent."""
-
-    serializer_class = serializers.ProductParentSerializer
-    queryset = ProductParent.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions,)
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["is_active"]
-    search_fields = ["title"]
-
-    archive_message = _("Product parent is archived")
-    restore_message = _("Product parent is restored")
-
-    def perform_create(self, serializer):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        tags = serializer.validated_data.get("tags")
-        serializer.validated_data.pop("tags")
-        status = get_status("Product", "Active")
-        # TODO hscode
-        obj = serializer.save(company=member.company, status=status)
-        obj.tags.set(*tags)
-
-    def perform_update(self, serializer):
-        """ update ProductParent with given tags """
-        tags = serializer.validated_data.get("tags")
-        serializer.validated_data.pop("tags")
-        status = get_status("Product", "Active")
-        obj = serializer.save(status=status)
-        obj.tags.set(*tags)
-
-
-class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class ProductViewSet(mixins.RetrieveModelMixin,
+                     mixins.ListModelMixin,
+                     mixins.CreateModelMixin,
+                     viewsets.GenericViewSet):
     """Operations on ProductParent."""
 
     serializer_class = serializers.ProductSerializer
     queryset = ProductParent.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions,)
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["is_active"]
+    filterset_fields = ["is_active", "is_component"]
     search_fields = ["title"]
 
     archive_message = _("Product parent is archived")
     restore_message = _("Product parent is restored")
 
+    @action(detail=True, methods=["get"])
+    def archive(self, request, *args, **kwargs):
+        """Set the archive action."""
+        product_parent = self.get_object()
+        if not product_parent.is_active:
+            return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with transaction.atomic():
+                product_parent.is_active = False
+                product_parent.save()
+                for product in product_parent.products.all():
+                    product.is_active = False
+                    product.save()
+            return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
+        except IntegrityError:
+            return Response({"message": "Can't archive"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    @action(detail=True, methods=["get"])
+    def restore(self, request, *args, **kwargs):
+        """Set the restore action."""
+        product_parent = self.get_object()
+        if product_parent.is_active:
+            return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with transaction.atomic():
+                product_parent.is_active = True
+                product_parent.save()
+                for product in product_parent.products.all():
+                    product.is_active = True
+                    product.save()
+            return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
+        except IntegrityError:
+            return Response({"message": "Can't restore"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
     def perform_create(self, serializer):
         '''
         save product parent with all children products and related objects.
         '''
-
         member = get_member(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
@@ -85,9 +89,9 @@ class ProductViewSet(ArchiveMixin, RestoreMixin, mixins.ListModelMixin, mixins.C
             serializer.validated_data.pop("tags", None)
             products = serializer.validated_data.get("products", None)
             serializer.validated_data.pop("products")
-            status = get_status("Product", "Active")
+            product_status = get_status("Product", "Active")
             product_parent = serializer.save(
-                company=member.company, status=status)
+                company=member.company, status=product_status)
             if tags:
                 # set tags
                 product_parent.tags.set(*tags)
