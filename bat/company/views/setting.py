@@ -289,25 +289,6 @@ class MemberViewSet(
         serializer.validated_data.pop("user_permissions")
         serializer.save()
 
-    # @action(detail=True, methods=["get"])
-    # def archive(self, request, *args, **kwargs):
-    #     """Set the archive action."""
-    #     instance = self.get_object()
-    #     if not instance.is_active:
-    #         return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = False
-    #     instance.save()
-    #     return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
-
-    # @action(detail=True, methods=["get"])
-    # def restore(self, request, *args, **kwargs):
-    #     """Set the restore action."""
-    #     instance = self.get_object()
-    #     if instance.is_active:
-    #         return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = True
-    #     instance.save()
-    #     return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
 
 
 # Company setting common viewset
@@ -336,26 +317,6 @@ class CompanySettingBaseViewSet(
             user_id=self.request.user.id,
         )
         serializer.save(company=member.company)
-
-    # @action(detail=True, methods=["get"])
-    # def archive(self, request, *args, **kwargs):
-    #     """Set the archive action."""
-    #     instance = self.get_object()
-    #     if not instance.is_active:
-    #         return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = False
-    #     instance.save()
-    #     return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
-
-    # @action(detail=True, methods=["get"])
-    # def restore(self, request, *args, **kwargs):
-    #     """Set the restore action."""
-    #     instance = self.get_object()
-    #     if instance.is_active:
-    #         return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = True
-    #     instance.save()
-    #     return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
 
 
 # Payment terms

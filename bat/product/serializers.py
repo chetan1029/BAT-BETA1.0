@@ -26,6 +26,9 @@ class TagField(serializers.Field):
         return data.split(",")
 
 
+
+
+
 class ImageSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -58,14 +61,15 @@ class ProductVariationSerializer(serializers.ModelSerializer):
     weight = WeightField(required=False)
     product_variation_options = ProductVariationOptionSerializer(
         many=True, read_only=False, required=False)
-    images = ImageSerializer(many=True, read_only=False, required=False)
+    images = ImageSerializer(many=True, read_only=True, required=False)
 
     class Meta:
         model = Product
         fields = ("id", "productparent", "title", "sku", "ean", "model_number",
                   "manufacturer_part_number", "length", "width", "depth",
-                  "length_unit", "weight", "is_active", "extra_data", "product_variation_options", "images")
-        read_only_fields = ("id", "is_active", "extra_data", "productparent",)
+                  "length_unit", "weight", "is_active", "extra_data", "product_variation_options", "images",)
+        read_only_fields = ("id", "is_active", "extra_data",
+                            "productparent", "images",)
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -76,14 +80,15 @@ class ProductSerializer(serializers.ModelSerializer):
     status = StatusSerializer()
     products = ProductVariationSerializer(
         many=True, read_only=False)
-    images = ImageSerializer(many=True, read_only=False, required=False)
+    images = ImageSerializer(many=True, read_only=True, required=False)
 
     class Meta:
         model = ProductParent
         fields = ("id", "company", "is_component", "title", "type", "series",
                   "hscode", "sku", "bullet_points", "description",
                   "tags", "is_active", "status", "extra_data", "products", "images")
-        read_only_fields = ("id", "is_active", "extra_data", "company",)
+        read_only_fields = ("id", "is_active", "extra_data",
+                            "company", "images",)
 
     def validate(self, attrs):
         products = attrs.get("products", [])
