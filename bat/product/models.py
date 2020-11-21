@@ -80,6 +80,7 @@ class Image(models.Model):
     """
     This table will store images that stored in AWS.
     """
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
     image = models.ImageField(upload_to=image_name,
                               blank=True,
                               verbose_name=_("Image"))

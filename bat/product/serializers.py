@@ -26,16 +26,14 @@ class TagField(serializers.Field):
         return data.split(",")
 
 
-
-
-
 class ImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Image
         fields = ("id", "image", "content_type",
-                  "object_id", "main_image", "is_active",)
-        read_only_fields = ("id", "content_type", "object_id", "is_active",)
+                  "object_id", "main_image", "is_active", "company")
+        read_only_fields = ("id", "content_type",
+                            "object_id", "is_active", "company")
 
 
 class ProductOptionSerializer(serializers.ModelSerializer):

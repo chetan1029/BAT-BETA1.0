@@ -1,9 +1,8 @@
 
 from rest_framework import serializers
 
-from django.utils.translation import ugettext_lazy as _
-
-from bat.product.models import Image, ProductParent, Product
+from bat.product.models import Image
+from bat.company.serializers import CompanySerializer
 
 
 class ImageListSerializer(serializers.ListSerializer):
@@ -17,9 +16,10 @@ class ImageListSerializer(serializers.ListSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Image
         fields = ("id", "image", "content_type",
-                  "object_id", "main_image", "is_active",)
+                  "object_id", "main_image", "is_active", "company")
         read_only_fields = ("id", "is_active",)
         list_serializer_class = ImageListSerializer
