@@ -290,7 +290,6 @@ class MemberViewSet(
         serializer.save()
 
 
-
 # Company setting common viewset
 class CompanySettingBaseViewSet(
     ArchiveMixin, RestoreMixin, viewsets.ModelViewSet
@@ -341,21 +340,21 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
         """
         data = serializer.validated_data
         remaining = Decimal(100) - (
-            Decimal(data.get("deposit") or 0)
-            + Decimal(data.get("on_delivery") or 0)
-            + Decimal(data.get("receiving") or 0)
+            Decimal(data.get("deposit", 0))
+            + Decimal(data.get("on_delivery", 0))
+            + Decimal(data.get("receiving", 0))
         )
         title = (
             "PAY"
-            + str(data.get("deposit") or 0)
+            + str(data.get("deposit", 0))
             + "-"
-            + str(data.get("on_delivery") or 0)
+            + str(data.get("on_delivery", 0))
             + "-"
-            + str(data.get("receiving") or 0)
+            + str(data.get("receiving", 0))
             + "-"
             + str(remaining)
             + "-"
-            + str(data.get("payment_days") or 0)
+            + str(data.get("payment_days", 0))
             + "Days"
         )
         member = get_member(
@@ -372,21 +371,21 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
         """
         data = serializer.validated_data
         remaining = Decimal(100) - (
-            Decimal(data.get("deposit") or 0)
-            + Decimal(data.get("on_delivery") or 0)
-            + Decimal(data.get("receiving") or 0)
+            Decimal(data.get("deposit", 0))
+            + Decimal(data.get("on_delivery", 0))
+            + Decimal(data.get("receiving", 0))
         )
         title = (
             "PAY"
-            + str(data.get("deposit") or 0)
+            + str(data.get("deposit", 0))
             + "-"
-            + str(data.get("on_delivery") or 0)
+            + str(data.get("on_delivery", 0))
             + "-"
-            + str(data.get("receiving") or 0)
+            + str(data.get("receiving", 0))
             + "-"
             + str(remaining)
             + "-"
-            + str(data.get("payment_days") or 0)
+            + str(data.get("payment_days", 0))
             + "Days"
         )
         serializer.save(remaining=remaining, title=title)

@@ -6,7 +6,9 @@ from bat.company.serializers import CompanySerializer
 
 
 class ImageListSerializer(serializers.ListSerializer):
-    update_lookup_field = 'id'
+    """
+    Serializer to accept list of Image objects.
+    """
 
     def create(self, validated_data):
         images_objects = [Image(**item)
@@ -16,7 +18,9 @@ class ImageListSerializer(serializers.ListSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
-
+    """
+    Serializer to support list of Image objects.
+    """
     class Meta:
         model = Image
         fields = ("id", "image", "content_type",

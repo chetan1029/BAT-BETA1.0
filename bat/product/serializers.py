@@ -27,7 +27,6 @@ class TagField(serializers.Field):
 
 
 class ImageSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Image
         fields = ("id", "image", "content_type",
