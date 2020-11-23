@@ -6,12 +6,13 @@ from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
+from djmoney.models.fields import MoneyField
 from measurement.measures import Weight
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
-from djmoney.models.fields import MoneyField
-from django_countries.fields import CountryField
+
 from bat.company.models import Company, Member, PackingBox
 from bat.product.constants import *
 from bat.setting.models import Status
@@ -154,13 +155,10 @@ class Product(models.Model):
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
     ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
     model_number = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Model Number"), unique=True
+        max_length=200, blank=True, verbose_name=_("Model Number")
     )
     manufacturer_part_number = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name=_("Manufacturer Part Number"),
-        unique=True,
+        max_length=200, blank=True, verbose_name=_("Manufacturer Part Number")
     )
     length = models.DecimalField(
         max_digits=5,

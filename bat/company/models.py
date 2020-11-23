@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
+from djmoney.models.fields import MoneyField
 from djmoney.settings import CURRENCY_CHOICES
 from measurement.measures import Weight
 from multiselectfield import MultiSelectField
@@ -23,7 +24,8 @@ from rolepermissions.roles import get_user_roles
 
 from bat.company.constants import *
 from bat.globalprop.validator import validator
-from bat.setting.models import Category
+from bat.product.models import Product
+from bat.setting.models import Category, Status
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -175,10 +177,6 @@ class Company(Address):
         """Meta Class."""
 
         verbose_name_plural = _("Companies")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
 
     def __str__(self):
         """Return Value."""
@@ -1039,6 +1037,11 @@ class CompanyContract(models.Model):
 
     Agreement contract between two companies signed by their members. including
     company -> vendor, company -> saleschannel, company -> logistics etc.
+    It can be multiple step contracts that first intiated by the company
+    followed by vendor to make some updates and sign the generated file and
+    upload it again for approval from the company.
+    We also have to use a plugin to generate PDF contract file when contract is
+    intiated and updated.
     """
 
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
@@ -1054,6 +1057,45 @@ class CompanyContract(models.Model):
     paymentterms = models.ForeignKey(
         CompanyPaymentTerms, on_delete=models.CASCADE
     )
+    is_active = models.BooleanField(default=False)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    # We will add status Contract as parent then add other status for draft and approved etc then make it active.
+    extra_data = HStoreField(null=True, blank=True)
+    # this is a golbal contract that have golbal data field but we are going to have some custom fields
+    # like inventory rotations, margins etc for the sales channels that we will save in extra_data.
+    # Extra field for Sales Channel contracts :
+    # (inventory_rotation, rotation_percentage, retail_margin, distributor_margin, air_freight, sea_freight, air_misc, sea_misc)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Contracts")
+
+    def __str__(self):
+        """Return Value."""
+        return (
+            str(self.company_member.company.name)
+            + "-"
+            + str(self.partner_member.company.name)
+        )
+
+
+class CompanyCredential(models.Model):
+    """
+    Company Credential.
+
+    We are going to use this option for the API Credentials for Amazon and
+    shopify like stores.
+    """
+
+    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    region = models.CharField(max_length=300, blank=True)
+    seller_id = models.CharField(max_length=300, blank=True)
+    auth_token = models.CharField(max_length=300, blank=True)
+    access_key = models.CharField(max_length=300, blank=True)
+    secret_key = models.CharField(max_length=300, blank=True)
     is_active = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -1062,12 +1104,638 @@ class CompanyContract(models.Model):
     class Meta:
         """Meta Class."""
 
-        verbose_name_plural = _("Company Taxes")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingstax_list")
+        verbose_name_plural = _("Company Credentials")
 
     def __str__(self):
         """Return Value."""
-        return str(self.from_country) + "-" + str(self.to_country)
+        return str(self.region)
+
+
+class ComponentMe(models.Model):
+    """
+    Component Manufacturer Expectation.
+
+    Component manufacturer expectation for the components.
+    """
+
+    version = models.DecimalField()
+    revision_history = models.TextField(blank=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=False)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component MEs")
+
+    def __str__(self):
+        """Return Value."""
+        return self.product.title
+
+
+class ComponentMeFile(models.Model):
+    """
+    Component Manufacturer Expectation Files.
+
+    Component manufacturer expectation file for the components.
+    """
+
+    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
+    type = models.CharField(max_length=100)
+    # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
+    version = models.DecimalField()
+    revision_history = models.TextField(blank=True)
+    file = models.CharField(max_length=500, verbose_name=_("ME File"))
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    # We will add status Contract as parent then add other status for draft and approved etc then make it active.
+    is_active = models.BooleanField(default=False)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component ME Files")
+
+    def __str__(self):
+        """Return Value."""
+        return self.type
+
+
+class ComponentGoldenSample(models.Model):
+    """
+    Component Golden Sample.
+
+    Component Golden sample will be for the final component ME and sign by both
+    company and vendor before finalize.
+    """
+
+    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
+    batch_id = models.CharField(max_length=100)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    is_active = models.BooleanField(default=False)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component Golden Samples")
+
+    def __str__(self):
+        """Return Value."""
+        return self.batch_id
+
+
+class ComponentGoldenSampleFiles(models.Model):
+    """
+    Component Golden Sample Files.
+
+    Component Golden sample files.
+    """
+
+    componentgoldensample = models.ForeignKey(
+        ComponentGoldenSample, on_delete=models.CASCADE
+    )
+    file = models.CharField(max_length=500)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component Golden Sample Files")
+
+    def __str__(self):
+        """Return Value."""
+        return self.componentgoldensample.batch_id
+
+
+class ComponentPrice(models.Model):
+    """
+    Component Golden Sample.
+
+    Component Golden sample will be for the final component ME and sign by both
+    company and vendor before finalize.
+    """
+
+    componentgoldensample = models.ForeignKey(
+        ComponentGoldenSample, on_delete=models.CASCADE
+    )
+    price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=False)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component Golden Samples")
+
+    def __str__(self):
+        """Return Value."""
+        return self.batch_id
+
+
+class CompanyProduct(models.Model):
+    """
+    COmpany Product Model.
+
+    We will use this model to save all the products related to company like
+    vendor and sales channel products.
+    """
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    title = models.CharField(verbose_name=_("Title"), max_length=500)
+    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
+    ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
+    asin = models.CharField(verbose_name=_("ASIN"), max_length=200, blank=True)
+    model_number = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Model Number")
+    )
+    manufacturer_part_number = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Manufacturer Part Number")
+    )
+    price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    is_active = models.BooleanField(default=True)
+    extra_data = HStoreField(null=True, blank=True)
+    # we add image urls, parent_id, variation_type and parentage etc
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component Products")
+
+    def __str__(self):
+        """Return Value."""
+        return self.title
+
+
+class CompanyOrder(models.Model):
+    """
+    Company order Model.
+
+    Order place for vendors and by sales channel will be display here.
+    """
+
+    batch_id = models.CharField(max_length=100)
+    order_date = models.DateTimeField(default=timezone.now)
+    delivery_date = models.DateTimeField(blank=True, null=True)
+    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    buyer_member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name="buyer_member"
+    )
+    seller_member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name="seller_member"
+    )
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, verbose_name="Select Status"
+    )
+    sub_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    vat_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    tax_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    total_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    return_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    deposit_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    quantity = models.PositiveIntegerField(blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    # we will add is_reverse_charged, is_return, refer_order_id(if return) etc
+    # to extra_data
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component Orders")
+
+    def __str__(self):
+        """Return Value."""
+        return self.batch_id
+
+
+class CompanyOrderProduct(models.Model):
+    """
+    Company order product Model.
+
+    Order place for vendors and by sales channel will be display here.
+    """
+
+    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    companyproduct = models.ForeignKey(
+        CompanyProduct, on_delete=models.CASCADE
+    )
+    quantity = models.PositiveIntegerField()
+    shipped_quantity = models.PositiveIntegerField(default=0)
+    remaining_quantity = models.PositiveIntegerField(default=0)
+    price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    companypaymentterms = models.ForeignKey(
+        CompanyPaymentTerms, on_delete=models.CASCADE
+    )
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Component Order Products")
+
+    def __str__(self):
+        """Return Value."""
+        return self.batch_id
+
+
+class CompanyOrderFile(models.Model):
+    """
+    Company Order Files.
+
+    Company Order file for the orders.
+    """
+
+    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    type = models.CharField(max_length=100)
+    # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
+    file = models.CharField(max_length=500, verbose_name=_("Order File"))
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    # We will add status Contract as parent then add other status for draft and approved etc then make it active.
+    note = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=False)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Files")
+
+    def __str__(self):
+        """Return Value."""
+        return self.type
+
+
+class CompanyOrderDelivery(models.Model):
+    """
+    Company Order Delivery.
+
+    Company Order Delivery for the orders.
+    """
+
+    batch_id = models.CharField(max_length=100)
+    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    delivery_date = models.DateTimeField(default=timezone.now)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Delivery")
+
+    def __str__(self):
+        """Return Value."""
+        return self.batch_id
+
+
+class CompanyOrderDeliveryProduct(models.Model):
+    """
+    Company Order Delivery Products.
+
+    Company Order Delivery Products for the orders.
+    """
+
+    companyorderdelivery = models.ForeignKey(
+        CompanyOrderDelivery, on_delete=models.CASCADE
+    )
+    companyorderproduct = models.ForeignKey(
+        CompanyOrderProduct, on_delete=models.CASCADE
+    )
+    quantity = models.PositiveIntegerField()
+    amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Delivery Products")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyorderdelivery.batch_id
+
+
+class CompanyOrderDeliveryTestReport(models.Model):
+    """
+    Company Order Delivery Test Report.
+
+    Company Order Delivery test report by the inspector member.
+    """
+
+    companyorderdelivery = models.ForeignKey(
+        CompanyOrderDelivery, on_delete=models.CASCADE
+    )
+    inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
+    file = models.CharField(max_length=500, verbose_name=_("Test Report File"))
+    note = models.TextField(blank=True, null=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Delivery Test reports")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyorderdelivery.batch_id
+
+
+class CompanyOrderPayment(models.Model):
+    """
+    Company Order Payment.
+
+    Company Order Payment that we will save via Order delivery.
+    """
+
+    companyorderdelivery = models.ForeignKey(
+        CompanyOrderDelivery, on_delete=models.CASCADE
+    )
+    type = models.CharField(max_length=100)
+    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
+    invoice_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    paid_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD", default=0
+    )
+    adjustment_type = models.CharField(max_length=100, black=True)
+    adjustment_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0
+    )
+    adjustment_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD", default=0
+    )
+    payment_date = models.DateTimeField(blank=True, null=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Payments")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyorderdelivery.batch_id
+
+
+class CompanyOrderPaymentPaid(models.Model):
+    """
+    Company Order Payment Paid.
+
+    Company Order Payment paid that we will save via Order delivery.
+    """
+
+    companyorderpayment = models.ForeignKey(
+        CompanyOrderPayment, on_delete=models.CASCADE
+    )
+    payment_id = models.CharField(max_length=200, blank=True)
+    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
+    invoice_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD"
+    )
+    paid_amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD", default=0
+    )
+    pi_file = models.CharField(max_length=200, blank=True)
+    receipt_file = models.CharField(max_length=200, blank=True)
+    payment_date = models.DateTimeField(blank=True, null=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Payments")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyorderpayment.companyorderdelivery.batch_id
+
+
+class CompanyOrderCase(models.Model):
+    """
+    Company Order Case.
+
+    Company Order Case to report any defected or lost units by vendors.
+    """
+
+    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    file = models.CharField(max_length=500, verbose_name=_("Test Report File"))
+    note = models.TextField(blank=True, null=True)
+    importance = models.CharField(
+        max_length=50,
+        choices=IMPORTANCE_CHOICES,
+        verbose_name=_("Importance"),
+        default=BASIC,
+    )
+    units_affected = models.PositiveIntegerField()
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Cases")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyorder.batch_id
+
+
+class CompanyOrderInspection(models.Model):
+    """
+    Company Order Inspection.
+
+    An Inspector can do inspect on order and report it on the main order.
+    """
+
+    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
+    inspection_date = models.DateTimeField(default=timezone.now)
+    note = models.TextField(blank=True, null=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Inspection")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyorder.batch_id
+
+
+class CompanyOrderInspectionFile(models.Model):
+    """
+    Company Order Inspection File.
+
+    Inspection Files.
+    """
+
+    companyorderinspection = models.ForeignKey(
+        CompanyOrderInspection, on_delete=models.CASCADE
+    )
+    title = models.CharField(max_length=200, blank=True)
+    inspection_date = models.DateTimeField(default=timezone.now)
+    file = models.CharField(max_length=500, verbose_name=_("Inspection File"))
+    is_active = models.BooleanField(default=False)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Order Inspection Files")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyorderinspection.companyorder.batch_id
+
+
+class CompanyInventory(models.Model):
+    """
+    Company Inventory.
+
+    Inventory tracking for vendors, sales channel and online plus warehouses.
+    """
+
+    companyproduct = models.ForeignKey(
+        CompanyProduct, on_delete=models.CASCADE
+    )
+    date = models.DateField(default=timezone.now)
+    quantity = models.IntegerField(default=0)
+    weeks_of_supply = models.IntegerField(default=0)
+    ytd_quantity_sold = models.IntegerField(default=0)
+    week_average_quantity = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=False)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Inventory")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyproduct.title
+
+
+class CompanyInventoryDetail(models.Model):
+    """
+    Company Inventory Detail.
+
+    Detail about inventory like available, in stock, picked up etc.
+    """
+
+    companyinventory = models.ForeignKey(
+        CompanyInventory, on_delete=models.CASCADE
+    )
+    type = models.CharField(max_length=100)
+    # Suggestion for the type will be In stock, Picked up, In transit, Ready to ship,
+    # Shipped, Trasnfer, Lost , Damaged, Total.
+    quantity = models.IntegerField(default=0)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Inventory Details")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyinventory.companyproduct.title
+
+
+class CompanyInventoryPrediction(models.Model):
+    """
+    Company Inventory Predicationa.
+
+    Inventory Predication for products and components. we will use this model
+    to crunch numbers and store data directly. so no need to create forms like
+    add/edit etc
+    """
+
+    companyproduct = models.ForeignKey(
+        CompanyProduct, on_delete=models.CASCADE
+    )
+    week = models.PositiveIntegerField()
+    date_range = models.DateRangeField()
+    year = models.PositiveIntegerField()
+    instock = models.PositiveIntegerField(default=0)
+    quantity_required = models.PositiveIntegerField(default=0)
+    adjusted_quantity = models.PositiveIntegerField(default=0)
+    total_quantity_required = models.PositiveIntegerField(default=0)
+    incoming_quantity = models.PositiveIntegerField(default=0)
+    outgoing_quantity = models.PositiveIntegerField(default=0)
+    weeks_of_supply = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=False)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Inventory")
+
+    def __str__(self):
+        """Return Value."""
+        return self.companyproduct.title
