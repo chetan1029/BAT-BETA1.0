@@ -361,7 +361,7 @@ REST_AUTH_SERIALIZERS = {
 }
 
 # jwt
-JWT_AUTH = {"JWT_EXPIRATION_DELTA": timedelta(seconds=3600)}
+JWT_AUTH = {"JWT_EXPIRATION_DELTA": timedelta(seconds=36000)}
 
 # Django Invitation
 ACCOUNT_ADAPTER = "invitations.models.InvitationsAdapter"

@@ -1,20 +1,22 @@
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
-from dry_rest_permissions.generics import DRYPermissions
-from invitations.utils import get_invitation_model
-from notifications.signals import notify
+
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 from rolepermissions.checkers import has_permission
 from rolepermissions.permissions import revoke_permission
 from rolepermissions.roles import RolesManager, assign_role, clear_roles
+from dry_rest_permissions.generics import DRYPermissions
+from invitations.utils import get_invitation_model
+from notifications.signals import notify
+
 
 from bat.company import serializers
 from bat.company.models import (
@@ -240,8 +242,15 @@ class InvitationCreate(viewsets.ViewSet):
         )
 
 
-# Member
+# class SetCompanyAndUserInContexMixin(viewsets.GenericViewSet):
 
+#     def get_serializer_context(self):
+#         context = super().get_serializer_context()
+#         context["user_id"] = self.request.user.id
+#         return context
+
+
+# Member
 
 class MemberViewSet(
     mixins.ListModelMixin,
@@ -315,11 +324,11 @@ class CompanySettingBaseViewSet(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
+        serializer.validated_data.pop("force_create", None)
         serializer.save(company=member.company)
 
 
 # Payment terms
-
 
 class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
     """Operations on payment terms."""
@@ -338,58 +347,13 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
         """
         Append extra data in validated data.
         """
-        data = serializer.validated_data
-        remaining = Decimal(100) - (
-            Decimal(data.get("deposit", 0))
-            + Decimal(data.get("on_delivery", 0))
-            + Decimal(data.get("receiving", 0))
-        )
-        title = (
-            "PAY"
-            + str(data.get("deposit", 0))
-            + "-"
-            + str(data.get("on_delivery", 0))
-            + "-"
-            + str(data.get("receiving", 0))
-            + "-"
-            + str(remaining)
-            + "-"
-            + str(data.get("payment_days", 0))
-            + "Days"
-        )
         member = get_member(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
         serializer.save(
-            company=member.company, remaining=remaining, title=title
+            company=member.company
         )
-
-    def perform_update(self, serializer):
-        """
-        Append extra data in validated data.
-        """
-        data = serializer.validated_data
-        remaining = Decimal(100) - (
-            Decimal(data.get("deposit", 0))
-            + Decimal(data.get("on_delivery", 0))
-            + Decimal(data.get("receiving", 0))
-        )
-        title = (
-            "PAY"
-            + str(data.get("deposit", 0))
-            + "-"
-            + str(data.get("on_delivery", 0))
-            + "-"
-            + str(data.get("receiving", 0))
-            + "-"
-            + str(remaining)
-            + "-"
-            + str(data.get("payment_days", 0))
-            + "Days"
-        )
-        serializer.save(remaining=remaining, title=title)
-
 
 # Bank
 

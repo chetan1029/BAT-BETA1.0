@@ -335,6 +335,20 @@ class Member(MemberPermissionsMixin):
         ).order_by("-attempt_time")[:10]
         return access_attempts
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return (
@@ -451,6 +465,20 @@ class CompanyPaymentTerms(models.Model):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("company:settingspaymentterms_list")
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.title
@@ -555,6 +583,20 @@ class Bank(Address):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("company:settingsbank_detail", kwargs={"pk": self.pk})
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.name
@@ -647,6 +689,20 @@ class Location(Address):
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("company:settingslocation_list")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""
@@ -763,6 +819,20 @@ class PackingBox(models.Model):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("company:settingspackingbox_list")
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.name
@@ -861,6 +931,20 @@ class HsCode(models.Model):
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("company:settingshscode_list")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""
@@ -962,6 +1046,20 @@ class Tax(models.Model):
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("company:settingstax_list")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""
@@ -1067,6 +1165,20 @@ class CompanyContract(models.Model):
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         return reverse("company:settingstax_list")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""

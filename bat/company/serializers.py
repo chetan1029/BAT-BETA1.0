@@ -2,11 +2,13 @@ from decimal import Decimal
 
 from django.contrib.auth.models import Group, Permission
 from django.utils.translation import ugettext_lazy as _
-from invitations.utils import get_invitation_model
-from measurement.measures import Weight
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
+from invitations.utils import get_invitation_model
 from rolepermissions.roles import get_user_roles
+from djmoney.settings import CURRENCY_CHOICES
 
 from bat.company import constants
 from bat.company.models import (
@@ -20,8 +22,9 @@ from bat.company.models import (
     Tax,
 )
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
-from bat.serializersFields.serializers_fields import WeightField
+from bat.serializersFields.serializers_fields import WeightField, CountrySerializerField
 from bat.setting.models import Category
+
 
 Invitation = get_invitation_model()
 
@@ -58,11 +61,18 @@ class PermissionListField(serializers.ListField):
 
 class CompanySerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
+    country = CountrySerializerField()
 
     class Meta:
         model = Company
         fields = (
             "id",
+            "address1",
+            "address2",
+            "zip",
+            "city",
+            "region",
+            "country",
             "name",
             "abbreviation",
             "email",
@@ -134,11 +144,6 @@ class InvitationDataSerializer(serializers.Serializer):
     )
     vendor_name = serializers.CharField(required=False)
     vendor_type = serializers.JSONField(required=False)
-
-    # def __init__(self, *args, **kwargs):
-    #     print("\n \n", self.fields,
-    #           " : self.fields")
-    #     super().__init__(self, *args, **kwargs)
 
     def validate(self, data):
         """
@@ -229,25 +234,66 @@ class CompanyPaymentTermsSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validate if total percetange is more than 100%."""
-        deposit = data.get("deposit", 0)
-        on_delivery = data.get("on_delivery", 0)
-        receiving = data.get("receiving", 0)
+        deposit = Decimal(data.get("deposit", 0))
+        on_delivery = Decimal(data.get("on_delivery", 0))
+        receiving = Decimal(data.get("receiving", 0))
 
-        if deposit and on_delivery and receiving:
-            total = (
-                Decimal(deposit) + Decimal(on_delivery) + Decimal(receiving)
-            )
-            if total > 100:
-                raise serializers.ValidationError(
-                    _(
-                        "Total amount can't be more than 100%. Please check again."
-                    )
+        total = (
+            deposit + on_delivery + receiving
+        )
+        if total > 100:
+            raise serializers.ValidationError(
+                _(
+                    "Total amount can't be more than 100%. Please check again."
                 )
+            )
+        remaining = Decimal(100) - total
+        title = (
+            "PAY"
+            + str(deposit)
+            + "-"
+            + str(on_delivery)
+            + "-"
+            + str(receiving)
+            + "-"
+            + str(remaining)
+            + "-"
+            + str(data.get("payment_days", 0))
+            + "Days"
+        )
+        data["remaining"] = remaining
+        data["title"] = title
         return super().validate(data)
 
 
-class BankSerializer(serializers.ModelSerializer):
+class ReversionSerializerMixin(serializers.ModelSerializer):
+
+    force_create = serializers.BooleanField(default=False)
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret.pop("force_create")
+        return ret
+
+    def validate(self, data):
+        force_create = data.pop("force_create", False)
+        data = super().validate(data)
+        if not force_create:
+            kwargs = self.context["request"].resolver_match.kwargs
+            founded_data = self.find_similar_objects(
+                user=self.context["request"].user, company_id=kwargs.get("company_pk", None), data=data)
+            print("\n\n\n founded_data : ", founded_data)
+            if founded_data.exists():
+                raise serializers.ValidationError({"detail": _(
+                    "Item with same data exixts."
+                ), "existing_items": list(founded_data.values_list("id", flat=True))})
+        return data
+
+
+class BankSerializer(ReversionSerializerMixin):
     """Serializer for bank."""
+    country = CountrySerializerField()
+    currency = serializers.MultipleChoiceField(choices=CURRENCY_CHOICES)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -255,13 +301,21 @@ class BankSerializer(serializers.ModelSerializer):
         model = Bank
         fields = (
             "id",
+            "company",
             "name",
+            "benificary",
             "account_number",
             "iban",
             "swift_code",
+            "address1",
+            "address2",
+            "zip",
+            "city",
+            "region",
+            "country",
             "currency",
             "is_active",
-            "extra_data",
+            "force_create",
         )
         read_only_fields = (
             "id",
@@ -272,9 +326,34 @@ class BankSerializer(serializers.ModelSerializer):
             "update_date",
         )
 
+    def find_similar_objects(self, user=None, company_id=None, data=None):
+        """
+        find similer objects based on passed data
+        """
+        ModelClass = self.Meta.model
+        print("\n\n\n\n data", data)
+        query_data = {}
+        query_data["name"] = data.get("name", None)
+        query_data["benificary"] = data.get("benificary", None)
+        query_data["account_number"] = data.get("account_number", None)
+        query_data["iban"] = data.get("iban", None)
+        query_data["swift_code"] = data.get("swift_code", None)
+        address1 = data.get("address1", None)
+        address2 = data.get("address2", None)
+        zip = data.get("zip", None)
+        region = data.get("region", None)
+        country = data.get("country", None)
+        currency = data.get("currency", None)
+        print("currency", list(currency))
+        if currency:
+            query_data["currency__contains"] = list(data.get("currency", None))
+        return ModelClass.objects.filter(
+            is_active=False, company__id=company_id, **query_data)
+
 
 class LocationSerializer(serializers.ModelSerializer):
     """Serializer for location."""
+    country = CountrySerializerField()
 
     class Meta:
         """Define field that we wanna show in the Json."""

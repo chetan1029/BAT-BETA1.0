@@ -1,9 +1,9 @@
 """Model classes for product."""
 
 import os
+import uuid
 
 from django.contrib.postgres.fields import HStoreField
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -19,6 +19,7 @@ from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
 from djmoney.models.fields import MoneyField
 from django_countries.fields import CountryField
+
 from bat.company.models import Company, Member, PackingBox
 from bat.product.constants import *
 from bat.setting.models import Status
@@ -79,7 +80,7 @@ class UniqueWithinCompanyMixin:
 def image_name(instance, filename):
     """Change name of image."""
     name, extension = os.path.splitext(filename)
-    return "images/{0}_{1}.{2}".format(str(name), str(timezone.now), extension)
+    return "images/{0}_{1}/{2}_{3}{4}".format(instance.content_type.app_label, instance.content_type.model, str(name), uuid.uuid4(), extension)
 
 
 class Image(models.Model):
@@ -98,11 +99,27 @@ class Image(models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
+    # def delete(self, *args, **kwargs):
+    #     print("\n\n inside delete \n\n ")
+    #     super(Image, self).delete(*args, **kwargs)
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.image.name
-
-# Create your models here.
 
 
 class ProductParent(UniqueWithinCompanyMixin, models.Model):
@@ -173,6 +190,28 @@ class ProductParent(UniqueWithinCompanyMixin, models.Model):
     def get_absolute_url(self):
         """Set url of the page after adding/editing/deleting object."""
         # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+        for image in self.images.all():
+            image.archive()
+        for product in self.products.all():
+            product.archive()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+        for image in self.images.all():
+            image.restore()
+        for product in self.products.all():
+            product.restore()
 
     def __str__(self):
         """Return Value."""
@@ -349,6 +388,24 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         """Set url of the page after adding/editing/deleting object."""
         # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+        for image in self.images.all():
+            image.archive()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+        for image in self.images.all():
+            image.restore()
+
     def __str__(self):
         """Return Value."""
         return self.productparent.title
@@ -470,30 +527,6 @@ class ProductVariationOption(models.Model):
     def __str__(self):
         """Return Value."""
         return self.product.title + " - " + self.productoption.name
-
-
-# class ProductImage(models.Model):
-#     """
-#     Product Images Model.
-
-#     This table will store product images that stored in AWS.
-#     """
-
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     file = models.CharField(verbose_name=_("File upload"), max_length=500)
-    # main_image = models.BooleanField(default=False)
-    # is_active = models.BooleanField(default=True)
-    # create_date = models.DateTimeField(default=timezone.now)
-    # update_date = models.DateTimeField(default=timezone.now)
-
-#     class Meta:
-#         """Meta Class."""
-
-#         verbose_name_plural = _("Product Images")
-
-    # def __str__(self):
-    #     """Return Value."""
-    #     return self.name
 
 
 class ProductComponent(models.Model):

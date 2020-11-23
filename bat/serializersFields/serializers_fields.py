@@ -1,6 +1,8 @@
-from measurement.measures import Weight
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import Field
+from rest_framework.serializers import Field, ChoiceField
+
+from django_countries import countries
+from measurement.measures import Weight
 
 from bat.company import constants
 
@@ -35,3 +37,15 @@ class WeightField(Field):
                 else:
                     # TODO
                     return data
+
+
+class CountrySerializerField(ChoiceField):
+    def __init__(self, **kwargs):
+        choices = list(countries)
+        super().__init__(choices=choices, **kwargs)
+
+    def to_representation(self, value):
+        """
+        give code and name of Country.
+        """
+        return value.code + " - " + value.name
