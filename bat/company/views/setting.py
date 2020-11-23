@@ -289,26 +289,6 @@ class MemberViewSet(
         serializer.validated_data.pop("user_permissions")
         serializer.save()
 
-    # @action(detail=True, methods=["get"])
-    # def archive(self, request, *args, **kwargs):
-    #     """Set the archive action."""
-    #     instance = self.get_object()
-    #     if not instance.is_active:
-    #         return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = False
-    #     instance.save()
-    #     return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
-
-    # @action(detail=True, methods=["get"])
-    # def restore(self, request, *args, **kwargs):
-    #     """Set the restore action."""
-    #     instance = self.get_object()
-    #     if instance.is_active:
-    #         return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = True
-    #     instance.save()
-    #     return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
-
 
 # Company setting common viewset
 class CompanySettingBaseViewSet(
@@ -337,26 +317,6 @@ class CompanySettingBaseViewSet(
         )
         serializer.save(company=member.company)
 
-    # @action(detail=True, methods=["get"])
-    # def archive(self, request, *args, **kwargs):
-    #     """Set the archive action."""
-    #     instance = self.get_object()
-    #     if not instance.is_active:
-    #         return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = False
-    #     instance.save()
-    #     return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
-
-    # @action(detail=True, methods=["get"])
-    # def restore(self, request, *args, **kwargs):
-    #     """Set the restore action."""
-    #     instance = self.get_object()
-    #     if instance.is_active:
-    #         return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
-    #     instance.is_active = True
-    #     instance.save()
-    #     return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
-
 
 # Payment terms
 
@@ -380,21 +340,21 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
         """
         data = serializer.validated_data
         remaining = Decimal(100) - (
-            Decimal(data.get("deposit") or 0)
-            + Decimal(data.get("on_delivery") or 0)
-            + Decimal(data.get("receiving") or 0)
+            Decimal(data.get("deposit", 0))
+            + Decimal(data.get("on_delivery", 0))
+            + Decimal(data.get("receiving", 0))
         )
         title = (
             "PAY"
-            + str(data.get("deposit") or 0)
+            + str(data.get("deposit", 0))
             + "-"
-            + str(data.get("on_delivery") or 0)
+            + str(data.get("on_delivery", 0))
             + "-"
-            + str(data.get("receiving") or 0)
+            + str(data.get("receiving", 0))
             + "-"
             + str(remaining)
             + "-"
-            + str(data.get("payment_days") or 0)
+            + str(data.get("payment_days", 0))
             + "Days"
         )
         member = get_member(
@@ -411,21 +371,21 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
         """
         data = serializer.validated_data
         remaining = Decimal(100) - (
-            Decimal(data.get("deposit") or 0)
-            + Decimal(data.get("on_delivery") or 0)
-            + Decimal(data.get("receiving") or 0)
+            Decimal(data.get("deposit", 0))
+            + Decimal(data.get("on_delivery", 0))
+            + Decimal(data.get("receiving", 0))
         )
         title = (
             "PAY"
-            + str(data.get("deposit") or 0)
+            + str(data.get("deposit", 0))
             + "-"
-            + str(data.get("on_delivery") or 0)
+            + str(data.get("on_delivery", 0))
             + "-"
-            + str(data.get("receiving") or 0)
+            + str(data.get("receiving", 0))
             + "-"
             + str(remaining)
             + "-"
-            + str(data.get("payment_days") or 0)
+            + str(data.get("payment_days", 0))
             + "Days"
         )
         serializer.save(remaining=remaining, title=title)

@@ -229,9 +229,10 @@ class CompanyPaymentTermsSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validate if total percetange is more than 100%."""
-        deposit = data["deposit"]
-        on_delivery = data["on_delivery"]
-        receiving = data["receiving"]
+        deposit = data.get("deposit", 0)
+        on_delivery = data.get("on_delivery", 0)
+        receiving = data.get("receiving", 0)
+
         if deposit and on_delivery and receiving:
             total = (
                 Decimal(deposit) + Decimal(on_delivery) + Decimal(receiving)
