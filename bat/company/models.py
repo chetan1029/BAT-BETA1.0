@@ -24,11 +24,13 @@ from rolepermissions.roles import get_user_roles
 
 from bat.company.constants import *
 from bat.globalprop.validator import validator
-from bat.product.models import Product
 from bat.setting.models import Category, Status
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+STATUS_DRAFT = 4
 
 
 def get_member_from_request(request):
@@ -1058,7 +1060,9 @@ class CompanyContract(models.Model):
         CompanyPaymentTerms, on_delete=models.CASCADE
     )
     is_active = models.BooleanField(default=False)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     # We will add status Contract as parent then add other status for draft and approved etc then make it active.
     extra_data = HStoreField(null=True, blank=True)
     # this is a golbal contract that have golbal data field but we are going to have some custom fields
@@ -1118,7 +1122,9 @@ class ComponentMe(models.Model):
     Component manufacturer expectation for the components.
     """
 
-    version = models.DecimalField()
+    from bat.product.models import Product
+
+    version = models.DecimalField(max_digits=5, decimal_places=1)
     revision_history = models.TextField(blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
@@ -1146,10 +1152,12 @@ class ComponentMeFile(models.Model):
     componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
     type = models.CharField(max_length=100)
     # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
-    version = models.DecimalField()
+    version = models.DecimalField(max_digits=5, decimal_places=1)
     revision_history = models.TextField(blank=True)
     file = models.CharField(max_length=500, verbose_name=_("ME File"))
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     # We will add status Contract as parent then add other status for draft and approved etc then make it active.
     is_active = models.BooleanField(default=False)
     create_date = models.DateTimeField(default=timezone.now)
@@ -1175,7 +1183,9 @@ class ComponentGoldenSample(models.Model):
 
     componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
     batch_id = models.CharField(max_length=100)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     is_active = models.BooleanField(default=False)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1248,6 +1258,8 @@ class CompanyProduct(models.Model):
     vendor and sales channel products.
     """
 
+    from bat.product.models import Product
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
     title = models.CharField(verbose_name=_("Title"), max_length=500)
@@ -1295,7 +1307,10 @@ class CompanyOrder(models.Model):
         Member, on_delete=models.CASCADE, related_name="seller_member"
     )
     status = models.ForeignKey(
-        Status, on_delete=models.PROTECT, verbose_name="Select Status"
+        Status,
+        on_delete=models.PROTECT,
+        verbose_name="Select Status",
+        default=STATUS_DRAFT,
     )
     sub_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD"
@@ -1317,7 +1332,6 @@ class CompanyOrder(models.Model):
     )
     quantity = models.PositiveIntegerField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
     extra_data = HStoreField(null=True, blank=True)
     # we will add is_reverse_charged, is_return, refer_order_id(if return) etc
     # to extra_data
@@ -1380,7 +1394,9 @@ class CompanyOrderFile(models.Model):
     type = models.CharField(max_length=100)
     # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
     file = models.CharField(max_length=500, verbose_name=_("Order File"))
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     # We will add status Contract as parent then add other status for draft and approved etc then make it active.
     note = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=False)
@@ -1411,7 +1427,9 @@ class CompanyOrderDelivery(models.Model):
         max_digits=14, decimal_places=2, default_currency="USD"
     )
     delivery_date = models.DateTimeField(default=timezone.now)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1469,7 +1487,9 @@ class CompanyOrderDeliveryTestReport(models.Model):
     inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
     file = models.CharField(max_length=500, verbose_name=_("Test Report File"))
     note = models.TextField(blank=True, null=True)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1505,7 +1525,7 @@ class CompanyOrderPayment(models.Model):
     paid_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD", default=0
     )
-    adjustment_type = models.CharField(max_length=100, black=True)
+    adjustment_type = models.CharField(max_length=100, blank=True)
     adjustment_percentage = models.DecimalField(
         max_digits=5, decimal_places=2, default=0
     )
@@ -1513,7 +1533,9 @@ class CompanyOrderPayment(models.Model):
         max_digits=14, decimal_places=2, default_currency="USD", default=0
     )
     payment_date = models.DateTimeField(blank=True, null=True)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1549,7 +1571,9 @@ class CompanyOrderPaymentPaid(models.Model):
     pi_file = models.CharField(max_length=200, blank=True)
     receipt_file = models.CharField(max_length=200, blank=True)
     payment_date = models.DateTimeField(blank=True, null=True)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1581,7 +1605,9 @@ class CompanyOrderCase(models.Model):
         default=BASIC,
     )
     units_affected = models.PositiveIntegerField()
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1607,7 +1633,9 @@ class CompanyOrderInspection(models.Model):
     inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
     inspection_date = models.DateTimeField(default=timezone.now)
     note = models.TextField(blank=True, null=True)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1717,7 +1745,8 @@ class CompanyInventoryPrediction(models.Model):
         CompanyProduct, on_delete=models.CASCADE
     )
     week = models.PositiveIntegerField()
-    date_range = models.DateRangeField()
+    date_start = models.DateField()
+    date_end = models.DateField()
     year = models.PositiveIntegerField()
     instock = models.PositiveIntegerField(default=0)
     quantity_required = models.PositiveIntegerField(default=0)
