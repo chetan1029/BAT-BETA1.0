@@ -20,8 +20,6 @@ from measurement.measures import Weight
 from rest_framework.exceptions import ValidationError
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
-from djmoney.models.fields import MoneyField
-from django_countries.fields import CountryField
 
 from bat.company.models import Company, Member, PackingBox
 from bat.product.constants import *
@@ -90,7 +88,13 @@ class UniqueWithinCompanyMixin:
 def image_name(instance, filename):
     """Change name of image."""
     name, extension = os.path.splitext(filename)
-    return "images/{0}_{1}/{2}_{3}{4}".format(instance.content_type.app_label, instance.content_type.model, str(name), uuid.uuid4(), extension)
+    return "images/{0}_{1}/{2}_{3}{4}".format(
+        instance.content_type.app_label,
+        instance.content_type.model,
+        str(name),
+        uuid.uuid4(),
+        extension,
+    )
 
 
 class Image(models.Model):
@@ -132,12 +136,6 @@ class Image(models.Model):
         """Return Value."""
         return self.image.name
 
-<<<<<<< HEAD
-=======
-
-# Create your models here.
-
->>>>>>> 8769a6850ef439041f1ec8ac17e49b71cd26debb
 
 class ProductParent(UniqueWithinCompanyMixin, models.Model):
     """
@@ -557,33 +555,6 @@ class ProductVariationOption(models.Model):
         return self.product.title + " - " + self.productoption.name
 
 
-<<<<<<< HEAD
-=======
-# class ProductImage(models.Model):
-#     """
-#     Product Images Model.
-
-#     This table will store product images that stored in AWS.
-#     """
-
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     file = models.CharField(verbose_name=_("File upload"), max_length=500)
-# main_image = models.BooleanField(default=False)
-# is_active = models.BooleanField(default=True)
-# create_date = models.DateTimeField(default=timezone.now)
-# update_date = models.DateTimeField(default=timezone.now)
-
-#     class Meta:
-#         """Meta Class."""
-
-#         verbose_name_plural = _("Product Images")
-
-# def __str__(self):
-#     """Return Value."""
-#     return self.name
-
-
->>>>>>> 8769a6850ef439041f1ec8ac17e49b71cd26debb
 class ProductComponent(models.Model):
     """
     Product Component Model.
