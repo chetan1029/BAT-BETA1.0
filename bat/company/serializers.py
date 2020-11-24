@@ -226,13 +226,10 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
     def validate(self, data):
         force_create = data.pop("force_create", False)
         data = super().validate(data)
-        print("\n\n data : ", data)
         if not force_create:
             kwargs = self.context["request"].resolver_match.kwargs
-            print("\n\n kwargs : ", kwargs)
             founded_data = self.find_similar_objects(
                 user=self.context["request"].user, company_id=kwargs.get("company_pk", None), data=data)
-            print("\n\n\n founded_data : ", founded_data)
             if founded_data.exists():
                 raise serializers.ValidationError({"detail": _(
                     "Item with same data exixts."

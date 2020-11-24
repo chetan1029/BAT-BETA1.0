@@ -125,7 +125,6 @@ class InvitationCreate(viewsets.ViewSet):
             )
         context = {}
         context["company_id"] = company.id
-        print("request.data.............:", request.data)
         serializer = serializers.InvitationDataSerializer(
             data=request.data, context=context
         )
