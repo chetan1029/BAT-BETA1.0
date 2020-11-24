@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import Field, ChoiceField
 
@@ -15,9 +17,9 @@ class WeightField(Field):
     def to_internal_value(self, data):
         print("\n\n\n data: ", type(data))
         try:
-            if not isinstance(data, dict):
-                raise Exception
-            # data = eval(data)
+            # if not isinstance(data, dict):
+            #     raise Exception
+            data = eval(data)
             print("\n\n\n data: ", data)
             unit = data["unit"]
             value = data["weight"]

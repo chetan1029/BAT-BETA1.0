@@ -57,13 +57,14 @@ def has_permissions(object=None, permissions=[]):
 def get_cbm(length, width, depth, unit):
     """Convert measurement into CBM."""
     if length and width and depth and unit:
+        cbm = Decimal(0.0)
         if unit == "cm":
             cbm = round(
                 (
                     (Decimal(length) * Decimal(width) * Decimal(depth))
                     / 1000000
                 ),
-                3,
+                2,
             )
         elif unit == "in":
             cbm = round(
@@ -78,7 +79,19 @@ def get_cbm(length, width, depth, unit):
                     )
                     / 1000000
                 ),
-                3,
+                2,
+            )
+
+        elif unit == "m":
+            cbm = round(
+                (
+
+                    Decimal(length)
+                    * Decimal(width)
+                    * Decimal(depth)
+
+                ),
+                2,
             )
         return cbm
 

@@ -409,31 +409,11 @@ class PackingBoxViewSet(CompanySettingBaseViewSet):
         """
         Append extra data in validated data.
         """
-        data = serializer.validated_data
-        cbm = get_cbm(
-            data.get("length"),
-            data.get("width"),
-            data.get("depth"),
-            data.get("length_unit"),
-        )
         member = get_member(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        serializer.save(company=member.company, cbm=cbm)
-
-    def perform_update(self, serializer):
-        """
-        Append extra data in validated data.
-        """
-        data = serializer.validated_data
-        cbm = get_cbm(
-            data.get("length"),
-            data.get("width"),
-            data.get("depth"),
-            data.get("length_unit"),
-        )
-        serializer.save(cbm=cbm)
+        serializer.save(company=member.company)
 
 
 # For weight use
