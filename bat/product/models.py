@@ -3,18 +3,21 @@
 import os
 import uuid
 
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
-from django.contrib.contenttypes.models import ContentType
-
-from rest_framework.exceptions import ValidationError
-
+from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
+from djmoney.models.fields import MoneyField
 from measurement.measures import Weight
+from rest_framework.exceptions import ValidationError
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
 from djmoney.models.fields import MoneyField
@@ -58,17 +61,24 @@ class UniqueWithinCompanyMixin:
             if lookup_value:
                 kwargs = {company_path: company, field_name: lookup_value}
                 if self.id:
-                    if (self.__class__.objects.filter(**kwargs)
+                    if (
+                        self.__class__.objects.filter(**kwargs)
                         .exclude(pk=self.id)
-                            .exists()):
-                        detail = {field_name: self.velidation_within_company_messages.get(
-                            field_name, None)}
+                        .exists()
+                    ):
+                        detail = {
+                            field_name: self.velidation_within_company_messages.get(
+                                field_name, None
+                            )
+                        }
                         errors.append(detail)
                 else:
-                    if (self.__class__.objects.filter(**kwargs)
-                            .exists()):
-                        detail = {field_name: self.velidation_within_company_messages.get(
-                            field_name, None)}
+                    if self.__class__.objects.filter(**kwargs).exists():
+                        detail = {
+                            field_name: self.velidation_within_company_messages.get(
+                                field_name, None
+                            )
+                        }
                         errors.append(detail)
         e = self.extra_clean()
         if len(e) > 0:
@@ -87,13 +97,14 @@ class Image(models.Model):
     """
     This table will store images that stored in AWS.
     """
+
     company = models.ForeignKey(Company, on_delete=models.PROTECT)
-    image = models.ImageField(upload_to=image_name,
-                              blank=True,
-                              verbose_name=_("Image"))
+    image = models.ImageField(
+        upload_to=image_name, blank=True, verbose_name=_("Image")
+    )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_object = GenericForeignKey("content_type", "object_id")
     main_image = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -121,6 +132,12 @@ class Image(models.Model):
         """Return Value."""
         return self.image.name
 
+<<<<<<< HEAD
+=======
+
+# Create your models here.
+
+>>>>>>> 8769a6850ef439041f1ec8ac17e49b71cd26debb
 
 class ProductParent(UniqueWithinCompanyMixin, models.Model):
     """
@@ -146,8 +163,7 @@ class ProductParent(UniqueWithinCompanyMixin, models.Model):
     hscode = models.CharField(
         max_length=200, blank=True, verbose_name=_("Product HsCode")
     )
-    sku = models.CharField(verbose_name=_(
-        "SKU"), max_length=200, blank=True)
+    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
     bullet_points = models.TextField(blank=True)
     description = models.TextField(blank=True)
     tags = TaggableManager(blank=True)
@@ -160,11 +176,12 @@ class ProductParent(UniqueWithinCompanyMixin, models.Model):
     # UniqueWithinCompanyMixin data
     unique_within_company = ["sku"]
     velidation_within_company_messages = {
-        "sku": _("Product Parent with same sku already exists."),
+        "sku": _("Product Parent with same sku already exists.")
     }
 
     class Meta:
         """Meta Class."""
+
         verbose_name_plural = _("Products Parent")
 
     @property
@@ -182,9 +199,9 @@ class ProductParent(UniqueWithinCompanyMixin, models.Model):
         return "company"
 
     def extra_clean(self):
-        '''
+        """
         retuen list of model specific velidation errors or empty list
-        '''
+        """
         return []
 
     def get_absolute_url(self):
@@ -291,20 +308,17 @@ class Product(UniqueWithinCompanyMixin, models.Model):
     """
 
     productparent = models.ForeignKey(
-        ProductParent, on_delete=models.CASCADE, related_name="products")
+        ProductParent, on_delete=models.CASCADE, related_name="products"
+    )
     images = GenericRelation(Image)
     title = models.CharField(verbose_name=_("Title"), max_length=500)
-    sku = models.CharField(verbose_name=_(
-        "SKU"), max_length=200, blank=True)
-    ean = models.CharField(verbose_name=_(
-        "EAN"), max_length=200, blank=True)
+    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
+    ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
     model_number = models.CharField(
         max_length=200, blank=True, verbose_name=_("Model Number")
     )
     manufacturer_part_number = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name=_("Manufacturer Part Number"),
+        max_length=200, blank=True, verbose_name=_("Manufacturer Part Number")
     )
     length = models.DecimalField(
         max_digits=5,
@@ -346,17 +360,24 @@ class Product(UniqueWithinCompanyMixin, models.Model):
     update_date = models.DateTimeField(default=timezone.now)
 
     # UniqueWithinCompanyMixin data
-    unique_within_company = ["sku", "ean",
-                             "model_number", "manufacturer_part_number"]
+    unique_within_company = [
+        "sku",
+        "ean",
+        "model_number",
+        "manufacturer_part_number",
+    ]
     velidation_within_company_messages = {
         "ean": _("Product with same ean already exists."),
         "sku": _("Product with same sku already exists."),
         "model_number": _("Product with same model_number already exists."),
-        "manufacturer_part_number": _("Product with same manufacturer_part_number already exists.")
+        "manufacturer_part_number": _(
+            "Product with same manufacturer_part_number already exists."
+        ),
     }
 
     class Meta:
         """Meta Class."""
+
         verbose_name_plural = _("Products")
 
     @property
@@ -374,12 +395,14 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         return "productparent__company"
 
     def extra_clean(self):
-        '''
+        """
         retuen list of model specific velidation errors or empty list
-        '''
+        """
         errors = []
         if self.sku:
-            if (ProductParent.objects.filter(company=self.get_company, sku=self.sku).exists()):
+            if ProductParent.objects.filter(
+                company=self.get_company, sku=self.sku
+            ).exists():
                 detail = {"sku": "Product Parent with this sku is exists."}
                 errors.append(detail)
         return errors
@@ -410,7 +433,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         """Return Value."""
         return self.productparent.title
 
-    @ staticmethod
+    @staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
@@ -419,7 +442,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
-    @ staticmethod
+    @staticmethod
     def has_list_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
@@ -428,7 +451,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
-    @ staticmethod
+    @staticmethod
     def has_create_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "add_product")
@@ -437,7 +460,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "add_product")
 
-    @ staticmethod
+    @staticmethod
     def has_destroy_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "delete_product")
@@ -446,7 +469,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "delete_product")
 
-    @ staticmethod
+    @staticmethod
     def has_update_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "change_product")
@@ -457,7 +480,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
             return False
         return has_permission(member, "change_product")
 
-    @ staticmethod
+    @staticmethod
     def has_archive_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "archived_product")
@@ -466,7 +489,7 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         member = get_member_from_request(request)
         return has_permission(member, "archived_product")
 
-    @ staticmethod
+    @staticmethod
     def has_restore_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_product")
@@ -485,7 +508,8 @@ class ProductOption(models.Model):
     """
 
     productparent = models.ForeignKey(
-        ProductParent, on_delete=models.CASCADE, related_name="product_options")
+        ProductParent, on_delete=models.CASCADE, related_name="product_options"
+    )
     name = models.CharField(verbose_name=_("Option Name"), max_length=200)
     value = models.CharField(verbose_name=_("Option Value"), max_length=200)
 
@@ -511,9 +535,13 @@ class ProductVariationOption(models.Model):
     """
 
     product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="product_variation_options")
+        Product,
+        on_delete=models.CASCADE,
+        related_name="product_variation_options",
+    )
     productoption = models.ForeignKey(
-        ProductOption, on_delete=models.CASCADE, related_name="product_options")
+        ProductOption, on_delete=models.CASCADE, related_name="product_options"
+    )
 
     class Meta:
         """Meta Class."""
@@ -529,6 +557,33 @@ class ProductVariationOption(models.Model):
         return self.product.title + " - " + self.productoption.name
 
 
+<<<<<<< HEAD
+=======
+# class ProductImage(models.Model):
+#     """
+#     Product Images Model.
+
+#     This table will store product images that stored in AWS.
+#     """
+
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+#     file = models.CharField(verbose_name=_("File upload"), max_length=500)
+# main_image = models.BooleanField(default=False)
+# is_active = models.BooleanField(default=True)
+# create_date = models.DateTimeField(default=timezone.now)
+# update_date = models.DateTimeField(default=timezone.now)
+
+#     class Meta:
+#         """Meta Class."""
+
+#         verbose_name_plural = _("Product Images")
+
+# def __str__(self):
+#     """Return Value."""
+#     return self.name
+
+
+>>>>>>> 8769a6850ef439041f1ec8ac17e49b71cd26debb
 class ProductComponent(models.Model):
     """
     Product Component Model.
