@@ -48,4 +48,6 @@ class CountrySerializerField(ChoiceField):
         """
         give code and name of Country.
         """
+        if isinstance(value, str):
+            return value
         return value.code + " - " + value.name
