@@ -221,7 +221,7 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         """
         ModelClass = self.Meta.model
         return ModelClass.objects.filter(
-            is_active=False, company__id=company_id, **data)
+            is_active=True, company__id=company_id, **data)
 
     def validate(self, data):
         force_create = data.pop("force_create", False)
@@ -240,7 +240,7 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         return data
 
 
-class CompanyPaymentTermsSerializer(serializers.ModelSerializer):
+class CompanyPaymentTermsSerializer(ReversionSerializerMixin):
     """Serializer for payment terms."""
 
     class Meta:
@@ -257,6 +257,7 @@ class CompanyPaymentTermsSerializer(serializers.ModelSerializer):
             "payment_days",
             "is_active",
             "extra_data",
+            "force_create",
         )
         read_only_fields = (
             "id",
