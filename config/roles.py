@@ -97,6 +97,13 @@ class SupplyChainManager(AbstractUserRole):
         "change_product": True,
         "archived_product": True,
         "restore_product": True,
+        "view_contract": True,
+        "add_contract": True,
+        "change_contract": True,
+        "delete_contract": True,
+        "archived_contract": True,
+        "restore_contract": True,
+        
     }
 
 

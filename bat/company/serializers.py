@@ -19,6 +19,7 @@ from bat.company.models import (
     Member,
     PackingBox,
     Tax,
+    CompanyType,
 )
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.serializersFields.serializers_fields import WeightField, CountrySerializerField
@@ -509,3 +510,4 @@ class TaxSerializer(ReversionSerializerMixin):
             "create_date",
             "update_date",
         )
+

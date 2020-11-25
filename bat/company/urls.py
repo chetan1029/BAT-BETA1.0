@@ -13,6 +13,7 @@ from bat.company.views.setting import (
     TaxBoxViewSet,
 )
 
+
 router = routers.SimpleRouter()
 router.register("companies", CompanyViewSet)
 
@@ -62,6 +63,9 @@ hscode_router.register("hscodes", HsCodeBoxViewSet, basename="company-hscode")
 
 tax_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
 tax_router.register("taxs", TaxBoxViewSet, basename="company-tax")
+
+
+
 
 app_name = "company"
 urlpatterns = router.urls

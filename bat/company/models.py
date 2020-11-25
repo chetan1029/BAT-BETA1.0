@@ -222,7 +222,7 @@ class CompanyType(models.Model):
         Company, on_delete=models.PROTECT, related_name="companytype_company"
     )
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, related_name="companytype_company"
+        Category, on_delete=models.PROTECT, related_name="companytype_category"
     )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
