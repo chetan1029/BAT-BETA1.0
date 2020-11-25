@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from bat.product import serializers
 from bat.product.models import (
     Product, ProductComponent, ProductRrp, ProductPackingBox)
+from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 
 
 class ProductVariationViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -43,14 +44,17 @@ class ProductMetadatMxin(viewsets.ModelViewSet):
         )
 
 
-class ProductComponentViewSet(ProductMetadatMxin):
+class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     """Operations on ProductComponent."""
 
     serializer_class = serializers.ProductComponentSerializer
     queryset = ProductComponent.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
+    permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+
+    archive_message = _("Product component  is archived")
+    restore_message = _("Product component is restored")
 
 
 class ProductRrpViewSet(ProductMetadatMxin):
@@ -63,11 +67,14 @@ class ProductRrpViewSet(ProductMetadatMxin):
     filterset_fields = ["is_active"]
 
 
-class ProductPackingBoxViewSet(ProductMetadatMxin):
+class ProductPackingBoxViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     """Operations on ProductPackingBox."""
 
     serializer_class = serializers.ProductPackingBoxSerializer
     queryset = ProductPackingBox.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
+    permission_classes = (IsAuthenticated, DRYPermissions,)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+
+    archive_message = _("Product packing box  is archived")
+    restore_message = _("Product packing box is restored")

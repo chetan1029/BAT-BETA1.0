@@ -157,7 +157,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductComponentSerializer(serializers.ModelSerializer):
-    # TODO what about archived and draft products ?
     class Meta:
         model = ProductComponent
         fields = (
@@ -219,10 +218,6 @@ class ProductComponentSerializer(serializers.ModelSerializer):
 
 
 class ProductRrpSerializer(serializers.ModelSerializer):
-    # TODO what about archived and draft products ?
-    # --- No we don't have any archived or draft here so don't worry about it.
-    # TODO should use unique together validation to avoid duplication ?
-    # --- Yes use product,country as unique together field. so if user try to add with same product,country tell them to update already existing field.
     country = CountrySerializerField()
     rrp = MoneyField(max_digits=14, decimal_places=2)
 
@@ -267,12 +262,6 @@ class ProductRrpSerializer(serializers.ModelSerializer):
 
 
 class ProductPackingBoxSerializer(serializers.ModelSerializer):
-    # TODO what about archived and draft products ?
-    # --- Yes we are going to have archived/restore function here.
-    # TODO should use unique together validation to avoid duplication ?
-    # --- no don't use this. we don't have any unique together here.
-    # TODO components can also have packing box ?
-    # -- No only product can have the packing box not component.
     weight = WeightField()
 
     class Meta:

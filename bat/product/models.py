@@ -119,36 +119,36 @@ class UniqueWithinCompanyMixin:
         Validate field value should be unique within company environment in a model.
         """
         errors = []
-        # company = self.get_company
-        # company_path = self.get_company_path
-        # for field_name in self.unique_within_company:
-        #     f = self._meta.get_field(field_name)
-        #     lookup_value = getattr(self, f.attname)
-        #     if lookup_value:
-        #         kwargs = {company_path: company, field_name: lookup_value}
-        #         if self.id:
-        #             if (
-        #                 self.__class__.objects.filter(**kwargs)
-        #                 .exclude(pk=self.id)
-        #                 .exists()
-        #             ):
-        #                 detail = {
-        #                     field_name: self.velidation_within_company_messages.get(
-        #                         field_name, None
-        #                     )
-        #                 }
-        #                 errors.append(detail)
-        #         else:
-        #             if self.__class__.objects.filter(**kwargs).exists():
-        #                 detail = {
-        #                     field_name: self.velidation_within_company_messages.get(
-        #                         field_name, None
-        #                     )
-        #                 }
-        #                 errors.append(detail)
-        # e = self.extra_clean()
-        # if len(e) > 0:
-        #     errors.extend(e)
+        company = self.get_company
+        company_path = self.get_company_path
+        for field_name in self.unique_within_company:
+            f = self._meta.get_field(field_name)
+            lookup_value = getattr(self, f.attname)
+            if lookup_value:
+                kwargs = {company_path: company, field_name: lookup_value}
+                if self.id:
+                    if (
+                        self.__class__.objects.filter(**kwargs)
+                        .exclude(pk=self.id)
+                        .exists()
+                    ):
+                        detail = {
+                            field_name: self.velidation_within_company_messages.get(
+                                field_name, None
+                            )
+                        }
+                        errors.append(detail)
+                else:
+                    if self.__class__.objects.filter(**kwargs).exists():
+                        detail = {
+                            field_name: self.velidation_within_company_messages.get(
+                                field_name, None
+                            )
+                        }
+                        errors.append(detail)
+        e = self.extra_clean()
+        if len(e) > 0:
+            errors.extend(e)
         if errors:
             raise ValidationError(errors)
 
@@ -504,7 +504,6 @@ class ProductVariationOption(models.Model):
 
         verbose_name_plural = _("Product Options")
 
-
     def __str__(self):
         """Return Value."""
         return self.product.title + " - " + self.productoption.name
@@ -583,6 +582,7 @@ class ProductRrp(ProductpermissionsModelmixin, models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Product RRP's")
+        unique_together = ['product', 'country']
 
     def archive(self):
         """
@@ -631,6 +631,20 @@ class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Product Packing Boxes")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""
