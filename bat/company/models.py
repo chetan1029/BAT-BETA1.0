@@ -233,10 +233,6 @@ class CompanyType(models.Model):
 
         verbose_name_plural = _("Company Types")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
     def __str__(self):
         """Return Value."""
         return self.company.name
@@ -313,10 +309,6 @@ class Member(MemberPermissionsMixin):
         """Meta Class."""
 
         verbose_name_plural = _("Members")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:member_detail", kwargs={"pk": self.pk})
 
     def get_member_roles(self):
         """Get Member for the company from roles and permisions."""
@@ -461,10 +453,6 @@ class CompanyPaymentTerms(models.Model):
 
         verbose_name_plural = _("PaymentTerms")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingspaymentterms_list")
-
     def archive(self):
         """
         archive model instance
@@ -579,10 +567,6 @@ class Bank(Address):
 
         verbose_name_plural = _("Banks")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingsbank_detail", kwargs={"pk": self.pk})
-
     def archive(self):
         """
         archive model instance
@@ -685,10 +669,6 @@ class Location(Address):
         """Meta Class."""
 
         verbose_name_plural = _("Locations")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingslocation_list")
 
     def archive(self):
         """
@@ -815,10 +795,6 @@ class PackingBox(models.Model):
 
         verbose_name_plural = _("Packing Boxes")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingspackingbox_list")
-
     def archive(self):
         """
         archive model instance
@@ -927,10 +903,6 @@ class HsCode(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Company HSCodes")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingshscode_list")
 
     def archive(self):
         """
@@ -1042,10 +1014,6 @@ class Tax(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Company Taxes")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingstax_list")
 
     def archive(self):
         """

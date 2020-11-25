@@ -119,36 +119,36 @@ class UniqueWithinCompanyMixin:
         Validate field value should be unique within company environment in a model.
         """
         errors = []
-        company = self.get_company
-        company_path = self.get_company_path
-        for field_name in self.unique_within_company:
-            f = self._meta.get_field(field_name)
-            lookup_value = getattr(self, f.attname)
-            if lookup_value:
-                kwargs = {company_path: company, field_name: lookup_value}
-                if self.id:
-                    if (
-                        self.__class__.objects.filter(**kwargs)
-                        .exclude(pk=self.id)
-                        .exists()
-                    ):
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-                else:
-                    if self.__class__.objects.filter(**kwargs).exists():
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-        e = self.extra_clean()
-        if len(e) > 0:
-            errors.extend(e)
+        # company = self.get_company
+        # company_path = self.get_company_path
+        # for field_name in self.unique_within_company:
+        #     f = self._meta.get_field(field_name)
+        #     lookup_value = getattr(self, f.attname)
+        #     if lookup_value:
+        #         kwargs = {company_path: company, field_name: lookup_value}
+        #         if self.id:
+        #             if (
+        #                 self.__class__.objects.filter(**kwargs)
+        #                 .exclude(pk=self.id)
+        #                 .exists()
+        #             ):
+        #                 detail = {
+        #                     field_name: self.velidation_within_company_messages.get(
+        #                         field_name, None
+        #                     )
+        #                 }
+        #                 errors.append(detail)
+        #         else:
+        #             if self.__class__.objects.filter(**kwargs).exists():
+        #                 detail = {
+        #                     field_name: self.velidation_within_company_messages.get(
+        #                         field_name, None
+        #                     )
+        #                 }
+        #                 errors.append(detail)
+        # e = self.extra_clean()
+        # if len(e) > 0:
+        #     errors.extend(e)
         if errors:
             raise ValidationError(errors)
 
@@ -251,6 +251,13 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
         verbose_name_plural = _("Products Parent")
 
     @property
+    def get_status_name(self):
+        """
+        return status name
+        """
+        return self.status.name
+
+    @property
     def get_company(self):
         """
         return related company
@@ -269,10 +276,6 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
         retuen list of model specific velidation errors or empty list
         """
         return []
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
 
     def archive(self):
         """
@@ -299,6 +302,15 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
     def __str__(self):
         """Return Value."""
         return self.title + " - " + str(self.id)
+
+    @staticmethod
+    def has_active_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "active_product")
+
+    def has_object_active_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "active_product")
 
 
 class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
@@ -408,10 +420,6 @@ class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Mod
                 errors.append(detail)
         return errors
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
     def archive(self):
         """
         archive model instance
@@ -470,10 +478,6 @@ class ProductOption(models.Model):
 
         verbose_name_plural = _("Product Options")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
     def __str__(self):
         """Return Value."""
         return self.name + " - " + self.value
@@ -500,9 +504,6 @@ class ProductVariationOption(models.Model):
 
         verbose_name_plural = _("Product Options")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
 
     def __str__(self):
         """Return Value."""

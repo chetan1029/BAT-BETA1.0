@@ -43,6 +43,7 @@ class CompanyAdmin(AbstractUserRole):
         "delete_hscode": True,
         "view_product": True,
         "add_product": True,
+        "active_product": True,
         "change_product": True,
         "delete_product": True,
     }
@@ -92,6 +93,7 @@ class SupplyChainManager(AbstractUserRole):
         "restore_hscode": True,
         "view_product": True,
         "add_product": True,
+        "active_product": True,
         "change_product": True,
         "archived_product": True,
         "restore_product": True,
