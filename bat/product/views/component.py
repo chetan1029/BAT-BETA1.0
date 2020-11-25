@@ -58,7 +58,8 @@ class ProductViewSet(ArchiveMixin,
                 serializer.validated_data.pop("tags", None)
                 products = serializer.validated_data.get("products", None)
                 serializer.validated_data.pop("products")
-                product_status = get_status("Product", "Active")
+                product_status = get_status("Basic", "Draft")
+                # Draft, Active, Archived 
                 product_parent = serializer.save(
                     company=member.company, status=product_status)
                 if tags:

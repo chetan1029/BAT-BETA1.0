@@ -1,18 +1,19 @@
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 
 from bat.product import serializers
-from bat.product.models import Product
+from bat.product.models import (
+    Product, ProductComponent, ProductRrp, ProductPackingBox)
 
 
-class ProductVariationViewSet(viewsets.ModelViewSet):
+class ProductVariationViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Operations on ProductVariation."""
 
-    serializer_class = serializers.ProductSerializer
+    serializer_class = serializers.ProductVariationSerializer
     queryset = Product.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend, SearchFilter]
@@ -23,15 +24,50 @@ class ProductVariationViewSet(viewsets.ModelViewSet):
     restore_message = _("Product variation is restored")
 
     def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        # product_id = self.kwargs.get("product_pk", None)
         return queryset.filter(
-            productparent__company__pk=self.kwargs.get("company_pk", None),
-            productparent__is_component=False,
+            productparent__company__pk=company_id,
+            # productparent__id=product_id
         )
 
-    def perform_create(self, serializer):
-        # TODO
-        serializer.save()
 
-    def perform_update(self, serializer):
-        # TODO
-        serializer.save()
+class ProductMetadatMxin(viewsets.ModelViewSet):
+
+    def filter_queryset(self, queryset):
+        product_id = self.kwargs.get("product_pk", None)
+        company_id = self.kwargs.get("company_pk", None)
+        return queryset.filter(
+            product__productparent__id=product_id,
+            product__productparent__company__id=company_id
+        )
+
+
+class ProductComponentViewSet(ProductMetadatMxin):
+    """Operations on ProductComponent."""
+
+    serializer_class = serializers.ProductComponentSerializer
+    queryset = ProductComponent.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+
+class ProductRrpViewSet(ProductMetadatMxin):
+    """Operations on ProductRrp."""
+
+    serializer_class = serializers.ProductRrpSerializer
+    queryset = ProductRrp.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+
+class ProductPackingBoxViewSet(ProductMetadatMxin):
+    """Operations on ProductPackingBox."""
+
+    serializer_class = serializers.ProductPackingBoxSerializer
+    queryset = ProductPackingBox.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]

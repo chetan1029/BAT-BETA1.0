@@ -4,9 +4,22 @@ from rest_framework import serializers
 
 from django.utils.translation import ugettext_lazy as _
 
-from bat.product.models import ProductParent, Product, ProductOption, ProductVariationOption, Image
+from djmoney.contrib.django_rest_framework import MoneyField
+
+from bat.product.models import (
+    ProductParent,
+    Product,
+    ProductOption,
+    ProductVariationOption,
+    Image,
+    ProductComponent,
+    ProductRrp,
+    ProductPackingBox)
 from bat.serializersFields.serializers_fields import WeightField
 from bat.setting.serializers import StatusSerializer
+from bat.company.serializers import PackingBoxSerializer
+from bat.serializersFields.serializers_fields import CountrySerializerField
+from bat.globalutils.utils import set_field_errors
 
 
 class TagField(serializers.Field):
@@ -93,4 +106,122 @@ class ProductSerializer(serializers.ModelSerializer):
             msg = _("At Least one child product required.")
             raise serializers.ValidationError(
                 {"products": msg})
+        return super().validate(attrs)
+
+
+class ProductComponentSerializer(serializers.ModelSerializer):
+    # TODO what about archived and draft products ?
+    class Meta:
+        model = ProductComponent
+        fields = ("id", "product", "component",
+                  "quantity", "value", "is_active",)
+        read_only_fields = ("id", "is_active",)
+
+    def validate(self, attrs):
+        '''
+        validate that :
+            the selected product and component must relate to the current company.
+            product must not be marked as a component.
+            component must be marked as a component.
+        '''
+        kwargs = self.context["request"].resolver_match.kwargs
+        product = attrs.get("product", None)
+        component = attrs.get("component", None)
+        errors = {}
+        if product:
+            if str(product.get_company.id) != str(kwargs.get("company_pk", None)):
+                errors = set_field_errors(errors, "product", _(
+                    "Invalid product selected."))
+            if str(product.productparent.id) != str(kwargs.get("product_pk", None)):
+                errors = set_field_errors(errors, "product", _(
+                    "Selected product variation is not from current Product."))
+            if product.productparent.is_component:
+                errors = set_field_errors(errors, "product", _(
+                    "Selected product is a component."))
+        if component:
+            if str(component.get_company.id) != str(kwargs.get("company_pk", None)):
+                errors = set_field_errors(errors, "component", _(
+                    "Invalid component selected."))
+            if not component.productparent.is_component:
+                errors = set_field_errors(errors, "component", _(
+                    "Selected component is a product."))
+        if errors:
+            raise serializers.ValidationError(errors)
+        return super().validate(attrs)
+
+
+class ProductRrpSerializer(serializers.ModelSerializer):
+    # TODO what about archived and draft products ?
+    # TODO should use unique together validation to avoid duplication ?
+    country = CountrySerializerField()
+    rrp = MoneyField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        model = ProductRrp
+        fields = ("id", "product", "rrp",
+                  "country", "is_active",)
+        read_only_fields = ("id", "is_active",)
+
+    def validate(self, attrs):
+        '''
+        validate that :
+            the selected product must relate to the current company.
+            product must not be marked as a component.
+        '''
+        kwargs = self.context["request"].resolver_match.kwargs
+        product = attrs.get("product", None)
+        errors = {}
+        if product:
+            if str(product.get_company.id) != str(kwargs.get("company_pk", None)):
+                errors = set_field_errors(errors, "product", _(
+                    "Invalid product selected."))
+            if str(product.productparent.id) != str(kwargs.get("product_pk", None)):
+                errors = set_field_errors(errors, "product", _(
+                    "Selected product variation is not from current Product."))
+            if product.productparent.is_component:
+                errors = set_field_errors(errors, "product", _(
+                    "Selected product is a component."))
+        if errors:
+            raise serializers.ValidationError(errors)
+        return super().validate(attrs)
+
+
+class ProductPackingBoxSerializer(serializers.ModelSerializer):
+    # TODO what about archived and draft products ?
+    # TODO should use unique together validation to avoid duplication ?
+    # TODO components can also have packing box ?
+    weight = WeightField()
+
+    class Meta:
+        model = ProductPackingBox
+        fields = ("id", "product", "packingbox",
+                  "weight", "units", "is_active",)
+        read_only_fields = ("id", "is_active",)
+
+    def validate(self, attrs):
+        '''
+        validate that :
+            the selected product and packingbox must relate to the current company.
+            product must not be marked as a component.
+        '''
+        kwargs = self.context["request"].resolver_match.kwargs
+        product = attrs.get("product", None)
+        packingbox = attrs.get("packingbox", None)
+        errors = {}
+        if product:
+            if str(product.get_company.id) != str(kwargs.get("company_pk", None)):
+                errors = set_field_errors(errors, "product", _(
+                    "Invalid product selected."))
+            if str(product.productparent.id) != str(kwargs.get("product_pk", None)):
+                errors = set_field_errors(errors, "product", _(
+                    "Selected product variation is not from current Product."))
+            if product.productparent.is_component:
+                errors = set_field_errors(errors, "product", _(
+                    "Selected product is a component."))
+        if packingbox:
+            if str(packingbox.company.id) != str(kwargs.get("company_pk", None)):
+                errors = set_field_errors(errors, "packingbox", _(
+                    "Invalid packingbox selected."))
+        if errors:
+            raise serializers.ValidationError(errors)
         return super().validate(attrs)

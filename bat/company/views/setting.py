@@ -29,8 +29,9 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_cbm, get_member
+from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+
 
 Invitation = get_invitation_model()
 User = get_user_model()

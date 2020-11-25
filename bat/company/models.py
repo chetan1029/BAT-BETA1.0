@@ -835,7 +835,7 @@ class PackingBox(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return self.name + " - " + str(self.company.id)
 
     @staticmethod
     def has_read_permission(request):

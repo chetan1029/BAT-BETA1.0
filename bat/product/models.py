@@ -38,6 +38,74 @@ def get_member_from_request(request):
     return member
 
 
+class ProductpermissionsModelmixin:
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_product")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_product")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
+
+
 class UniqueWithinCompanyMixin:
     def save(self, **kwargs):
         """
@@ -51,36 +119,36 @@ class UniqueWithinCompanyMixin:
         Validate field value should be unique within company environment in a model.
         """
         errors = []
-        company = self.get_company
-        company_path = self.get_company_path
-        for field_name in self.unique_within_company:
-            f = self._meta.get_field(field_name)
-            lookup_value = getattr(self, f.attname)
-            if lookup_value:
-                kwargs = {company_path: company, field_name: lookup_value}
-                if self.id:
-                    if (
-                        self.__class__.objects.filter(**kwargs)
-                        .exclude(pk=self.id)
-                        .exists()
-                    ):
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-                else:
-                    if self.__class__.objects.filter(**kwargs).exists():
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-        e = self.extra_clean()
-        if len(e) > 0:
-            errors.extend(e)
+        # company = self.get_company
+        # company_path = self.get_company_path
+        # for field_name in self.unique_within_company:
+        #     f = self._meta.get_field(field_name)
+        #     lookup_value = getattr(self, f.attname)
+        #     if lookup_value:
+        #         kwargs = {company_path: company, field_name: lookup_value}
+        #         if self.id:
+        #             if (
+        #                 self.__class__.objects.filter(**kwargs)
+        #                 .exclude(pk=self.id)
+        #                 .exists()
+        #             ):
+        #                 detail = {
+        #                     field_name: self.velidation_within_company_messages.get(
+        #                         field_name, None
+        #                     )
+        #                 }
+        #                 errors.append(detail)
+        #         else:
+        #             if self.__class__.objects.filter(**kwargs).exists():
+        #                 detail = {
+        #                     field_name: self.velidation_within_company_messages.get(
+        #                         field_name, None
+        #                     )
+        #                 }
+        #                 errors.append(detail)
+        # e = self.extra_clean()
+        # if len(e) > 0:
+        #     errors.extend(e)
         if errors:
             raise ValidationError(errors)
 
@@ -137,7 +205,7 @@ class Image(models.Model):
         return self.image.name
 
 
-class ProductParent(UniqueWithinCompanyMixin, models.Model):
+class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
     """
     Product Parent Model.
 
@@ -230,75 +298,10 @@ class ProductParent(UniqueWithinCompanyMixin, models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.title + " " + str(self.id)
-
-    @staticmethod
-    def has_read_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    def has_object_read_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_list_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    def has_object_list_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_create_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_product")
-
-    def has_object_create_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_product")
-
-    @staticmethod
-    def has_destroy_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_product")
-
-    def has_object_destroy_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_product")
-
-    @staticmethod
-    def has_update_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "change_product")
-
-    def has_object_update_permission(self, request):
-        member = get_member_from_request(request)
-        if not self.is_active:
-            return False
-        return has_permission(member, "change_product")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_product")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_product")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_product")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_product")
+        return self.title + " - " + str(self.id)
 
 
-class Product(UniqueWithinCompanyMixin, models.Model):
+class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
     """
     Product Model.
 
@@ -418,6 +421,12 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         for image in self.images.all():
             image.archive()
 
+        for product_component in self.productcomponents_product.all():
+            product_component.archive()
+
+        for product_rrp in self.product_rrps.all():
+            product_rrp.archive()
+
     def restore(self):
         """
         restore model instance
@@ -427,74 +436,19 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         for image in self.images.all():
             image.restore()
 
+        for product_component in self.productcomponents_product.all():
+            product_component.restore()
+
+        for product_rrp in self.product_rrps.all():
+            product_rrp.restore()
+
     def __str__(self):
         """Return Value."""
-        return self.productparent.title
-
-    @staticmethod
-    def has_read_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    def has_object_read_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_list_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    def has_object_list_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_create_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_product")
-
-    def has_object_create_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_product")
-
-    @staticmethod
-    def has_destroy_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_product")
-
-    def has_object_destroy_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_product")
-
-    @staticmethod
-    def has_update_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "change_product")
-
-    def has_object_update_permission(self, request):
-        member = get_member_from_request(request)
-        if not self.is_active:
-            return False
-        return has_permission(member, "change_product")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_product")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_product")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_product")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_product")
+        name = self.productparent.title + " - " + \
+            str(self.productparent.id) + " - me -> " + str(self.id)
+        if self.productparent.is_component:
+            name += " - component"
+        return name
 
 
 class ProductOption(models.Model):
@@ -555,22 +509,26 @@ class ProductVariationOption(models.Model):
         return self.product.title + " - " + self.productoption.name
 
 
-class ProductComponent(models.Model):
+class ProductComponent(ProductpermissionsModelmixin, models.Model):
     """
     Product Component Model.
 
     We are using this model to connect product with its components.
+
+    product and component must relate to the same company.
+    product must not be marked as a component.
+    component must be marked as a component.
     """
 
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="productcomponent_product",
+        related_name="productcomponents_product",
     )
     component = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="productcomponent_component",
+        related_name="productcomponents_component",
     )
     quantity = models.PositiveIntegerField(
         verbose_name=_("Quantity"), default=1
@@ -585,19 +543,35 @@ class ProductComponent(models.Model):
 
         verbose_name_plural = _("Product Components")
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.product.title
 
 
-class ProductRrp(models.Model):
+class ProductRrp(ProductpermissionsModelmixin, models.Model):
     """
     Product RRP Model.
 
     Products with their RRP's for different countries.
+    product must not be marked as a component.
     """
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="product_rrps")
     rrp = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     country = CountryField()
     is_active = models.BooleanField(default=True)
@@ -609,20 +583,36 @@ class ProductRrp(models.Model):
 
         verbose_name_plural = _("Product RRP's")
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.product.title
 
 
-class ProductPackingBox(models.Model):
+class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
     """
     Product Packing Box Model.
 
     Products packing boxes for shipment with quantity that can fit in the box.
     """
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    packingbox = models.ForeignKey(PackingBox, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="product_packingboxs")
+    packingbox = models.ForeignKey(
+        PackingBox, on_delete=models.CASCADE, related_name="product_packingboxs")
     weight = MeasurementField(
         measurement=Weight,
         unit_choices=(("g", "g"), ("kg", "kg"), ("oz", "oz"), ("lb", "lb")),

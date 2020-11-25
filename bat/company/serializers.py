@@ -10,7 +10,6 @@ from invitations.utils import get_invitation_model
 from rolepermissions.roles import get_user_roles
 from djmoney.settings import CURRENCY_CHOICES
 
-from bat.company import constants
 from bat.company.models import (
     Bank,
     Company,
@@ -21,9 +20,10 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member, get_cbm
+from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.serializersFields.serializers_fields import WeightField, CountrySerializerField
 from bat.setting.models import Category
+from bat.globalutils.utils import get_cbm
 
 
 Invitation = get_invitation_model()
