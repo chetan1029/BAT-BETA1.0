@@ -28,3 +28,16 @@ IMPORTANCE_CHOICES = (
     (VERY_IMPORTANT, "Very Important"),
     (CRITICAL, "Critical"),
 )
+
+DAILY = "Daily"
+WEEKLY = "Weekly"
+MONTHLY = "Monthly"
+QUARTERLY = "Quarterly"
+YEARLY = "Yearly"
+INVENTORY_PREDICATION_TYPE = (
+    (DAILY, "Daily"),
+    (WEEKLY, "Weekly"),
+    (MONTHLY, "Monthly"),
+    (QUARTERLY, "Quarterly"),
+    (YEARLY, "Yearly"),
+)
