@@ -9,6 +9,9 @@ from rest_framework.exceptions import ValidationError
 from invitations.utils import get_invitation_model
 from rolepermissions.roles import get_user_roles
 from djmoney.settings import CURRENCY_CHOICES
+from bat.setting.utils import get_status
+from bat.product.constants import PRODUCT_STATUS_DRAFT
+
 
 from bat.company.models import (
     Bank,
@@ -20,11 +23,13 @@ from bat.company.models import (
     PackingBox,
     Tax,
     CompanyType,
+    CompanyContract
 )
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.serializersFields.serializers_fields import WeightField, CountrySerializerField
 from bat.setting.models import Category
 from bat.globalutils.utils import get_cbm
+from bat.globalutils.utils import set_field_errors
 
 
 Invitation = get_invitation_model()
@@ -511,3 +516,58 @@ class TaxSerializer(ReversionSerializerMixin):
             "update_date",
         )
 
+
+class CompanyContractSerializer(serializers.ModelSerializer):
+    """Serializer for CompanyContract."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyContract
+        fields = (
+            "id",
+            "companytype",
+            "title",
+            "file",
+            "note",
+            "partner_member",
+            "company_member",
+            "paymentterms",
+            "is_active",
+            "status",
+            "extra_data"
+        )
+        read_only_fields = (
+            "id",
+            "file",
+            "is_active",
+            "status",
+            "company_member",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companytype = attrs.get("companytype", None)
+        paymentterms = attrs.get("paymentterms", None)
+        errors = {}
+        if companytype:
+            if str(companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companytype", _("Invalid company type selected.")
+                )
+        if paymentterms:
+            if str(paymentterms.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "paymentterms", _(
+                        "Invalid payment terms selected.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        attrs["company_member"] = self.context.get("member", None)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)

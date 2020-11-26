@@ -12,9 +12,13 @@ from bat.company.views.setting import (
     PackingBoxViewSet,
     TaxBoxViewSet,
 )
+from bat.company.views.company import (CompanyContractViewSet)
 
 
 router = routers.SimpleRouter()
+
+# setting
+
 router.register("companies", CompanyViewSet)
 
 invitation_router = routers.NestedSimpleRouter(
@@ -65,7 +69,10 @@ tax_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
 tax_router.register("taxs", TaxBoxViewSet, basename="company-tax")
 
 
+# company
 
+contract_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
+contract_router.register("contracts", CompanyContractViewSet, basename="company-contract")
 
 app_name = "company"
 urlpatterns = router.urls
@@ -79,4 +86,5 @@ urlpatterns += [
     path("", include(packingbox_router.urls)),
     path("", include(hscode_router.urls)),
     path("", include(tax_router.urls)),
+    path("", include(contract_router.urls)),
 ]
