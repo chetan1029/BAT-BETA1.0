@@ -1,4 +1,10 @@
+import os
+
 from decimal import Decimal
+from weasyprint import HTML
+
+from django.core.files import File
+from django.template.loader import render_to_string
 
 
 def set_field_errors(list_of_errors, field, error_msg):
@@ -50,3 +56,26 @@ def get_cbm(length, width, depth, unit):
                 2,
             )
         return cbm
+
+
+def pdf_file_from_html(data, template_path, file_name):
+    """
+    generate pdf file from html template with given context data
+    """
+
+    with open("bat/temp/" + file_name + ".pdf", 'w') as fp:
+        pass
+    path = "pdf-templates/"
+    html_template = render_to_string(
+        path + template_path,
+        data,
+    )
+    pdf_file = HTML(
+        string=html_template
+    ).write_pdf(
+        "bat/temp/"
+        + file_name + ".pdf",
+    )
+    print("data in pdf_file_from_html :", data)
+    f = open("bat/temp/" + file_name + ".pdf", 'r')
+    return File(f)

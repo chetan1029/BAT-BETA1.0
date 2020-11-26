@@ -60,3 +60,7 @@ class CompanyContractViewSet(viewsets.ModelViewSet):
             "-create_date"
         )
         return super().filter_queryset(queryset)
+
+    def perform_create(self, serializer):
+        company_contract = serializer.save()
+        company_contract.generate_pdf_file()

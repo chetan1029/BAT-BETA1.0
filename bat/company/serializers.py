@@ -23,7 +23,8 @@ from bat.company.models import (
     PackingBox,
     Tax,
     CompanyType,
-    CompanyContract
+    CompanyContract,
+    File
 )
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.serializersFields.serializers_fields import WeightField, CountrySerializerField
@@ -517,8 +518,33 @@ class TaxSerializer(ReversionSerializerMixin):
         )
 
 
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = (
+            "id",
+            "company",
+            "title",
+            "version",
+            "file",
+            "note",
+            "content_type",
+            "object_id",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "content_type",
+            "object_id",
+            "is_active",
+            "company",
+        )
+
+
 class CompanyContractSerializer(serializers.ModelSerializer):
     """Serializer for CompanyContract."""
+
+    files = FileSerializer(many=True, required=False)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -528,7 +554,7 @@ class CompanyContractSerializer(serializers.ModelSerializer):
             "id",
             "companytype",
             "title",
-            "file",
+            "files",
             "note",
             "partner_member",
             "company_member",
@@ -539,7 +565,7 @@ class CompanyContractSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "id",
-            "file",
+            "files",
             "is_active",
             "status",
             "company_member",

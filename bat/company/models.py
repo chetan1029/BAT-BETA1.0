@@ -29,6 +29,7 @@ from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles
 
 from bat.company.constants import *
+from bat.globalutils.utils import pdf_file_from_html
 from bat.globalprop.validator import validator
 from bat.setting.models import Category, Status
 
@@ -261,7 +262,7 @@ class File(models.Model):
     This table will store files that stored in AWS.
     """
 
-    companytype = models.ForeignKey(CompanyType, on_delete=models.PROTECT)
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
     title = models.CharField(max_length=200, verbose_name=_("File Title"))
     version = models.DecimalField(
         max_digits=5,
@@ -1216,6 +1217,20 @@ class CompanyContract(models.Model):
             + str(self.partner_member.company.name)
         )
 
+    def generate_pdf_file(self):
+        """
+        docstring
+        """
+        print("in generate_pdf_file")
+        data = {"data": "I am variable"}
+        contract_file = pdf_file_from_html(data, "company/pdf_file.html",
+                                           "company_contract_" + str(self.id))
+
+        # f = File(content_object=self, company=self.company_member.company,
+        #          note=self.note, title="company_contract_" + str(self.id))
+        # f.save()
+        # f.file.save("test", contract_file)
+
     @staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
@@ -1315,7 +1330,7 @@ class ComponentMe(models.Model):
     """
     Component Manufacturer Expectation.
 
-    Component manufacturer expectation for the components.
+    Component manufacturer expectation for the .
     """
 
     from bat.product.models import Product
@@ -1361,7 +1376,7 @@ class ComponentGoldenSample(models.Model):
     company and vendor before finalize.
     """
 
-    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     batch_id = models.CharField(max_length=100)
     files = GenericRelation(File)
     note = models.TextField(blank=True)

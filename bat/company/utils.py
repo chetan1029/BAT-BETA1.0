@@ -40,3 +40,5 @@ def get_list_of_permissions():
     for role in RolesManager.get_roles():
         permissions.extend(list(role.permission_names_list()))
     return permissions
+
+
