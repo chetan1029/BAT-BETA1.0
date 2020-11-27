@@ -205,3 +205,4 @@ dry-rest-permissions==0.1.10
 drf-yasg2==1.19.4
 djangorestframework-jwt==1.11.0
 drf-nested-routers==0.92.1
+django-health-check==3.16.1

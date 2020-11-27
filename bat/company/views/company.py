@@ -45,10 +45,6 @@ class CompanyContractViewSet(viewsets.ModelViewSet):
         company_id = self.kwargs.get("company_pk", None)
         context["company_id"] = company_id
         context["user"] = self.request.user
-        context["member"] = get_member(
-            company_id=company_id,
-            user_id=self.request.user.id,
-        )
         return context
 
     def filter_queryset(self, queryset):
