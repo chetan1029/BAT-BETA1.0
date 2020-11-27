@@ -8,10 +8,7 @@ from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey,
-    GenericRelation,
-)
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -29,8 +26,8 @@ from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles
 
 from bat.company.constants import *
-from bat.globalutils.utils import pdf_file_from_html
 from bat.globalprop.validator import validator
+from bat.globalutils.utils import pdf_file_from_html
 from bat.setting.models import Category, Status
 
 User = get_user_model()
@@ -1238,67 +1235,67 @@ class CompanyContract(models.Model):
     @staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "view_contract")
+        return has_permission(member, "view_company_contract")
 
     def has_object_read_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "view_contract")
+        return has_permission(member, "view_company_contract")
 
     @staticmethod
     def has_list_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "view_contract")
+        return has_permission(member, "view_company_contract")
 
     def has_object_list_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "view_contract")
+        return has_permission(member, "view_company_contract")
 
     @staticmethod
     def has_create_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "add_contract")
+        return has_permission(member, "add_company_contract")
 
     def has_object_create_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "add_contract")
+        return has_permission(member, "add_company_contract")
 
     @staticmethod
     def has_destroy_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "delete_contract")
+        return has_permission(member, "delete_company_contract")
 
     def has_object_destroy_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "delete_contract")
+        return has_permission(member, "delete_company_contract")
 
     @staticmethod
     def has_update_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "change_contract")
+        return has_permission(member, "change_company_contract")
 
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
         if not self.is_active:
             return False
-        return has_permission(member, "change_contract")
+        return has_permission(member, "change_company_contract")
 
     @staticmethod
     def has_archive_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "archived_contract")
+        return has_permission(member, "archived_company_contract")
 
     def has_object_archive_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "archived_contract")
+        return has_permission(member, "archived_company_contract")
 
     @staticmethod
     def has_restore_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "restore_contract")
+        return has_permission(member, "restore_company_contract")
 
     def has_object_restore_permission(self, request):
         member = get_member_from_request(request)
-        return has_permission(member, "restore_contract")
+        return has_permission(member, "restore_company_contract")
 
 
 class CompanyCredential(models.Model):
