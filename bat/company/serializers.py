@@ -594,6 +594,9 @@ class CompanyContractSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
 
-        attrs["company_member"] = self.context.get("member", None)
+        attrs["company_member"] = get_member(
+            company_id=self.context['company_id'],
+            user_id=self.context['user']
+        )
         attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
