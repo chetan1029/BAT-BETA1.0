@@ -100,9 +100,6 @@ class Status(MPTTModel):
         ordering = ["name"]
         verbose_name_plural = _("Statuses")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("setting:status_list")
 
     @property
     def full_path(self):
@@ -162,9 +159,6 @@ class PaymentTerms(models.Model):
 
         verbose_name_plural = _("PaymentTerms")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("setting:paymentterms_list")
 
     def __str__(self):
         """Return Value."""

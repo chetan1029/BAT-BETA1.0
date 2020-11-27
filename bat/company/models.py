@@ -1,12 +1,18 @@
 """Model classes for company."""
 import logging
 import os
+import uuid
 
 import pytz
 from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
 from django.shortcuts import get_object_or_404
@@ -23,6 +29,7 @@ from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles
 
 from bat.company.constants import *
+from bat.globalutils.utils import pdf_file_from_html
 from bat.globalprop.validator import validator
 from bat.setting.models import Category, Status
 
@@ -222,7 +229,7 @@ class CompanyType(models.Model):
         Company, on_delete=models.PROTECT, related_name="companytype_company"
     )
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, related_name="companytype_company"
+        Category, on_delete=models.PROTECT, related_name="companytype_category"
     )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -233,13 +240,68 @@ class CompanyType(models.Model):
 
         verbose_name_plural = _("Company Types")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
     def __str__(self):
         """Return Value."""
         return self.company.name
+
+
+def file_name(instance, filename):
+    """Change name of image."""
+    name, extension = os.path.splitext(filename)
+    return "files/{0}_{1}/{2}_{3}{4}".format(
+        instance.content_type.app_label,
+        instance.content_type.model,
+        str(name),
+        uuid.uuid4(),
+        extension,
+    )
+
+
+class File(models.Model):
+    """
+    This table will store files that stored in AWS.
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
+    title = models.CharField(max_length=200, verbose_name=_("File Title"))
+    version = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        verbose_name=_("File Version"),
+        default="1.0",
+    )
+    file = models.FileField(
+        upload_to=file_name, blank=True, verbose_name=_("File")
+    )
+    note = models.TextField(blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    # def delete(self, *args, **kwargs):
+    #     print("\n\n inside delete \n\n ")
+    #     super(Image, self).delete(*args, **kwargs)
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.title) + " " + str(self.version)
 
 
 class MemberPermissionsMixin(models.Model):
@@ -313,10 +375,6 @@ class Member(MemberPermissionsMixin):
         """Meta Class."""
 
         verbose_name_plural = _("Members")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:member_detail", kwargs={"pk": self.pk})
 
     def get_member_roles(self):
         """Get Member for the company from roles and permisions."""
@@ -461,10 +519,6 @@ class CompanyPaymentTerms(models.Model):
 
         verbose_name_plural = _("PaymentTerms")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingspaymentterms_list")
-
     def archive(self):
         """
         archive model instance
@@ -579,10 +633,6 @@ class Bank(Address):
 
         verbose_name_plural = _("Banks")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingsbank_detail", kwargs={"pk": self.pk})
-
     def archive(self):
         """
         archive model instance
@@ -685,10 +735,6 @@ class Location(Address):
         """Meta Class."""
 
         verbose_name_plural = _("Locations")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingslocation_list")
 
     def archive(self):
         """
@@ -815,10 +861,6 @@ class PackingBox(models.Model):
 
         verbose_name_plural = _("Packing Boxes")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingspackingbox_list")
-
     def archive(self):
         """
         archive model instance
@@ -835,7 +877,7 @@ class PackingBox(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return self.name + " - " + str(self.company.id)
 
     @staticmethod
     def has_read_permission(request):
@@ -927,10 +969,6 @@ class HsCode(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Company HSCodes")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingshscode_list")
 
     def archive(self):
         """
@@ -1043,10 +1081,6 @@ class Tax(models.Model):
 
         verbose_name_plural = _("Company Taxes")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingstax_list")
-
     def archive(self):
         """
         archive model instance
@@ -1146,7 +1180,7 @@ class CompanyContract(models.Model):
 
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
     title = models.CharField(max_length=200, verbose_name=_("Contract Title"))
-    file = models.CharField(max_length=500, verbose_name=_("Contract File"))
+    files = GenericRelation(File)
     note = models.TextField(blank=True)
     partner_member = models.ForeignKey(
         Member, on_delete=models.CASCADE, related_name="partner_member"
@@ -1183,6 +1217,84 @@ class CompanyContract(models.Model):
             + str(self.partner_member.company.name)
         )
 
+    def save_pdf_file(self):
+        """
+        docstring
+        """
+        data = {"data": "I am variable"}
+        name = "company_contract_" + str(self.id)
+        contract_file = pdf_file_from_html(data, "company/pdf_file.html",
+                                           "company_contract_" + str(self.id))
+        f = File(content_object=self, company=self.company_member.company,
+                 note=self.note, title="company_contract_" + str(self.id))
+        f.save()
+        f.file.save(name + ".pdf", contract_file)
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_contract")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_contract")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_contract")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_contract")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_contract")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_contract")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_contract")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_contract")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_contract")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_contract")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_contract")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_contract")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_contract")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_contract")
+
 
 class CompanyCredential(models.Model):
     """
@@ -1217,7 +1329,7 @@ class ComponentMe(models.Model):
     """
     Component Manufacturer Expectation.
 
-    Component manufacturer expectation for the components.
+    Component manufacturer expectation for the .
     """
 
     from bat.product.models import Product
@@ -1226,6 +1338,7 @@ class ComponentMe(models.Model):
     revision_history = models.TextField(blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    files = GenericRelation(File)
     is_active = models.BooleanField(default=False)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1254,37 +1367,6 @@ class ComponentMe(models.Model):
         return self.product.title
 
 
-class ComponentMeFile(models.Model):
-    """
-    Component Manufacturer Expectation Files.
-
-    Component manufacturer expectation file for the components.
-    """
-
-    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
-    type = models.CharField(max_length=100)
-    # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
-    version = models.DecimalField(max_digits=5, decimal_places=1)
-    revision_history = models.TextField(blank=True)
-    file = models.CharField(max_length=500, verbose_name=_("ME File"))
-    status = models.ForeignKey(
-        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
-    )
-    # We will add status Contract as parent then add other status for draft and approved etc then make it active.
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Component ME Files")
-
-    def __str__(self):
-        """Return Value."""
-        return self.type
-
-
 class ComponentGoldenSample(models.Model):
     """
     Component Golden Sample.
@@ -1293,8 +1375,10 @@ class ComponentGoldenSample(models.Model):
     company and vendor before finalize.
     """
 
-    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     batch_id = models.CharField(max_length=100)
+    files = GenericRelation(File)
+    note = models.TextField(blank=True)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
     )
@@ -1310,28 +1394,6 @@ class ComponentGoldenSample(models.Model):
     def __str__(self):
         """Return Value."""
         return self.batch_id
-
-
-class ComponentGoldenSampleFiles(models.Model):
-    """
-    Component Golden Sample Files.
-
-    Component Golden sample files.
-    """
-
-    componentgoldensample = models.ForeignKey(
-        ComponentGoldenSample, on_delete=models.CASCADE
-    )
-    file = models.CharField(max_length=500)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Component Golden Sample Files")
-
-    def __str__(self):
-        """Return Value."""
-        return self.componentgoldensample.batch_id
 
 
 class ComponentPrice(models.Model):
@@ -1444,6 +1506,7 @@ class CompanyOrder(models.Model):
     )
     quantity = models.PositiveIntegerField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
+    files = GenericRelation(File)
     extra_data = HStoreField(null=True, blank=True)
     # we will add is_reverse_charged, is_return, refer_order_id(if return) etc
     # to extra_data
@@ -1493,36 +1556,6 @@ class CompanyOrderProduct(models.Model):
     def __str__(self):
         """Return Value."""
         return self.batch_id
-
-
-class CompanyOrderFile(models.Model):
-    """
-    Company Order Files.
-
-    Company Order file for the orders.
-    """
-
-    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
-    type = models.CharField(max_length=100)
-    # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
-    file = models.CharField(max_length=500, verbose_name=_("Order File"))
-    status = models.ForeignKey(
-        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
-    )
-    # We will add status Contract as parent then add other status for draft and approved etc then make it active.
-    note = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Company Order Files")
-
-    def __str__(self):
-        """Return Value."""
-        return self.type
 
 
 class CompanyOrderDelivery(models.Model):
@@ -1597,7 +1630,7 @@ class CompanyOrderDeliveryTestReport(models.Model):
         CompanyOrderDelivery, on_delete=models.CASCADE
     )
     inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
-    file = models.CharField(max_length=500, verbose_name=_("Test Report File"))
+    files = GenericRelation(File)
     note = models.TextField(blank=True, null=True)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
@@ -1680,8 +1713,7 @@ class CompanyOrderPaymentPaid(models.Model):
     paid_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD", default=0
     )
-    pi_file = models.CharField(max_length=200, blank=True)
-    receipt_file = models.CharField(max_length=200, blank=True)
+    files = GenericRelation(File)
     payment_date = models.DateTimeField(blank=True, null=True)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
@@ -1708,7 +1740,7 @@ class CompanyOrderCase(models.Model):
     """
 
     companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
-    file = models.CharField(max_length=500, verbose_name=_("Test Report File"))
+    files = GenericRelation(File)
     note = models.TextField(blank=True, null=True)
     importance = models.CharField(
         max_length=50,
@@ -1745,6 +1777,7 @@ class CompanyOrderInspection(models.Model):
     inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
     inspection_date = models.DateTimeField(default=timezone.now)
     note = models.TextField(blank=True, null=True)
+    files = GenericRelation(File)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
     )
@@ -1760,33 +1793,6 @@ class CompanyOrderInspection(models.Model):
     def __str__(self):
         """Return Value."""
         return self.companyorder.batch_id
-
-
-class CompanyOrderInspectionFile(models.Model):
-    """
-    Company Order Inspection File.
-
-    Inspection Files.
-    """
-
-    companyorderinspection = models.ForeignKey(
-        CompanyOrderInspection, on_delete=models.CASCADE
-    )
-    title = models.CharField(max_length=200, blank=True)
-    inspection_date = models.DateTimeField(default=timezone.now)
-    file = models.CharField(max_length=500, verbose_name=_("Inspection File"))
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Company Order Inspection Files")
-
-    def __str__(self):
-        """Return Value."""
-        return self.companyorderinspection.companyorder.batch_id
 
 
 class CompanyInventory(models.Model):
@@ -1856,6 +1862,12 @@ class CompanyInventoryPrediction(models.Model):
     companyproduct = models.ForeignKey(
         CompanyProduct, on_delete=models.CASCADE
     )
+    type = models.CharField(
+        max_length=20,
+        choices=INVENTORY_PREDICATION_TYPE,
+        default=WEEKLY,
+        verbose_name=_("Prediction Type"),
+    )
     week = models.PositiveIntegerField()
     date_start = models.DateField()
     date_end = models.DateField()
@@ -1866,7 +1878,7 @@ class CompanyInventoryPrediction(models.Model):
     total_quantity_required = models.PositiveIntegerField(default=0)
     incoming_quantity = models.PositiveIntegerField(default=0)
     outgoing_quantity = models.PositiveIntegerField(default=0)
-    weeks_of_supply = models.PositiveIntegerField(default=0)
+    supply_time = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=False)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -1875,7 +1887,7 @@ class CompanyInventoryPrediction(models.Model):
     class Meta:
         """Meta Class."""
 
-        verbose_name_plural = _("Company Inventory")
+        verbose_name_plural = _("Company Inventory Predication")
 
     def __str__(self):
         """Return Value."""

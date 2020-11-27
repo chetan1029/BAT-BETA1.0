@@ -20,8 +20,6 @@ from measurement.measures import Weight
 from rest_framework.exceptions import ValidationError
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
-from djmoney.models.fields import MoneyField
-from django_countries.fields import CountryField
 
 from bat.company.models import Company, Member, PackingBox
 from bat.product.constants import *
@@ -40,199 +38,7 @@ def get_member_from_request(request):
     return member
 
 
-class UniqueWithinCompanyMixin:
-    def save(self, **kwargs):
-        """
-        To call clean method before save an instance of model.
-        """
-        self.clean()
-        return super().save(**kwargs)
-
-    def clean(self):
-        """
-        Validate field value should be unique within company environment in a model.
-        """
-        errors = []
-        company = self.get_company
-        company_path = self.get_company_path
-        for field_name in self.unique_within_company:
-            f = self._meta.get_field(field_name)
-            lookup_value = getattr(self, f.attname)
-            if lookup_value:
-                kwargs = {company_path: company, field_name: lookup_value}
-                if self.id:
-                    if (
-                        self.__class__.objects.filter(**kwargs)
-                        .exclude(pk=self.id)
-                        .exists()
-                    ):
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-                else:
-                    if self.__class__.objects.filter(**kwargs).exists():
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-        e = self.extra_clean()
-        if len(e) > 0:
-            errors.extend(e)
-        if errors:
-            raise ValidationError(errors)
-
-
-def image_name(instance, filename):
-    """Change name of image."""
-    name, extension = os.path.splitext(filename)
-    return "images/{0}_{1}/{2}_{3}{4}".format(instance.content_type.app_label, instance.content_type.model, str(name), uuid.uuid4(), extension)
-
-
-class Image(models.Model):
-    """
-    This table will store images that stored in AWS.
-    """
-
-    company = models.ForeignKey(Company, on_delete=models.PROTECT)
-    image = models.ImageField(
-        upload_to=image_name, blank=True, verbose_name=_("Image")
-    )
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey("content_type", "object_id")
-    main_image = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    # def delete(self, *args, **kwargs):
-    #     print("\n\n inside delete \n\n ")
-    #     super(Image, self).delete(*args, **kwargs)
-
-    def archive(self):
-        """
-        archive model instance
-        """
-        self.is_active = False
-        self.save()
-
-    def restore(self):
-        """
-        restore model instance
-        """
-        self.is_active = True
-        self.save()
-
-    def __str__(self):
-        """Return Value."""
-        return self.image.name
-
-<<<<<<< HEAD
-=======
-
-# Create your models here.
-
->>>>>>> 8769a6850ef439041f1ec8ac17e49b71cd26debb
-
-class ProductParent(UniqueWithinCompanyMixin, models.Model):
-    """
-    Product Parent Model.
-
-    We are using this model to store detail for the main product and all the
-    other variation etc will be store in Product table with connection to
-    ProductVariationOption.
-    """
-
-    company = models.ForeignKey(Company, on_delete=models.PROTECT)
-    images = GenericRelation(Image)
-    is_component = models.BooleanField(
-        default=False, verbose_name=_("Is Component")
-    )
-    title = models.CharField(verbose_name=_("Title"), max_length=500)
-    type = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Product Type")
-    )
-    series = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Product Series")
-    )
-    hscode = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Product HsCode")
-    )
-    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
-    bullet_points = models.TextField(blank=True)
-    description = models.TextField(blank=True)
-    tags = TaggableManager(blank=True)
-    is_active = models.BooleanField(default=True)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
-    extra_data = HStoreField(null=True, blank=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    # UniqueWithinCompanyMixin data
-    unique_within_company = ["sku"]
-    velidation_within_company_messages = {
-        "sku": _("Product Parent with same sku already exists.")
-    }
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Products Parent")
-
-    @property
-    def get_company(self):
-        """
-        return related company
-        """
-        return self.company
-
-    @property
-    def get_company_path(self):
-        """
-        return related company
-        """
-        return "company"
-
-    def extra_clean(self):
-        """
-        retuen list of model specific velidation errors or empty list
-        """
-        return []
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
-    def archive(self):
-        """
-        archive model instance
-        """
-        self.is_active = False
-        self.save()
-        for image in self.images.all():
-            image.archive()
-        for product in self.products.all():
-            product.archive()
-
-    def restore(self):
-        """
-        restore model instance
-        """
-        self.is_active = True
-        self.save()
-        for image in self.images.all():
-            image.restore()
-        for product in self.products.all():
-            product.restore()
-
-    def __str__(self):
-        """Return Value."""
-        return self.title + " " + str(self.id)
+class ProductpermissionsModelmixin:
 
     @staticmethod
     def has_read_permission(request):
@@ -300,7 +106,214 @@ class ProductParent(UniqueWithinCompanyMixin, models.Model):
         return has_permission(member, "restore_product")
 
 
-class Product(UniqueWithinCompanyMixin, models.Model):
+class UniqueWithinCompanyMixin:
+    def save(self, **kwargs):
+        """
+        To call clean method before save an instance of model.
+        """
+        self.clean()
+        return super().save(**kwargs)
+
+    def clean(self):
+        """
+        Validate field value should be unique within company environment in a model.
+        """
+        errors = []
+        company = self.get_company
+        company_path = self.get_company_path
+        for field_name in self.unique_within_company:
+            f = self._meta.get_field(field_name)
+            lookup_value = getattr(self, f.attname)
+            if lookup_value:
+                kwargs = {company_path: company, field_name: lookup_value}
+                if self.id:
+                    if (
+                        self.__class__.objects.filter(**kwargs)
+                        .exclude(pk=self.id)
+                        .exists()
+                    ):
+                        detail = {
+                            field_name: self.velidation_within_company_messages.get(
+                                field_name, None
+                            )
+                        }
+                        errors.append(detail)
+                else:
+                    if self.__class__.objects.filter(**kwargs).exists():
+                        detail = {
+                            field_name: self.velidation_within_company_messages.get(
+                                field_name, None
+                            )
+                        }
+                        errors.append(detail)
+        e = self.extra_clean()
+        if len(e) > 0:
+            errors.extend(e)
+        if errors:
+            raise ValidationError(errors)
+
+
+def image_name(instance, filename):
+    """Change name of image."""
+    name, extension = os.path.splitext(filename)
+    return "images/{0}_{1}/{2}_{3}{4}".format(
+        instance.content_type.app_label,
+        instance.content_type.model,
+        str(name),
+        uuid.uuid4(),
+        extension,
+    )
+
+
+class Image(models.Model):
+    """
+    This table will store images that stored in AWS.
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
+    image = models.ImageField(
+        upload_to=image_name, blank=True, verbose_name=_("Image")
+    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    main_image = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    # def delete(self, *args, **kwargs):
+    #     print("\n\n inside delete \n\n ")
+    #     super(Image, self).delete(*args, **kwargs)
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
+    def __str__(self):
+        """Return Value."""
+        return self.image.name
+
+
+class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
+    """
+    Product Parent Model.
+
+    We are using this model to store detail for the main product and all the
+    other variation etc will be store in Product table with connection to
+    ProductVariationOption.
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
+    images = GenericRelation(Image)
+    is_component = models.BooleanField(
+        default=False, verbose_name=_("Is Component")
+    )
+    title = models.CharField(verbose_name=_("Title"), max_length=500)
+    type = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Product Type")
+    )
+    series = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Product Series")
+    )
+    hscode = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Product HsCode")
+    )
+    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
+    bullet_points = models.TextField(blank=True)
+    description = models.TextField(blank=True)
+    tags = TaggableManager(blank=True)
+    is_active = models.BooleanField(default=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    # UniqueWithinCompanyMixin data
+    unique_within_company = ["sku"]
+    velidation_within_company_messages = {
+        "sku": _("Product Parent with same sku already exists.")
+    }
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Products Parent")
+
+    @property
+    def get_status_name(self):
+        """
+        return status name
+        """
+        return self.status.name
+
+    @property
+    def get_company(self):
+        """
+        return related company
+        """
+        return self.company
+
+    @property
+    def get_company_path(self):
+        """
+        return related company
+        """
+        return "company"
+
+    def extra_clean(self):
+        """
+        retuen list of model specific velidation errors or empty list
+        """
+        return []
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+        for image in self.images.all():
+            image.archive()
+        for product in self.products.all():
+            product.archive()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+        for image in self.images.all():
+            image.restore()
+        for product in self.products.all():
+            product.restore()
+
+    def __str__(self):
+        """Return Value."""
+        return self.title + " - " + str(self.id)
+
+    @staticmethod
+    def has_active_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "active_product")
+
+    def has_object_active_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "active_product")
+
+
+class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
     """
     Product Model.
 
@@ -407,10 +420,6 @@ class Product(UniqueWithinCompanyMixin, models.Model):
                 errors.append(detail)
         return errors
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
     def archive(self):
         """
         archive model instance
@@ -419,6 +428,12 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         self.save()
         for image in self.images.all():
             image.archive()
+
+        for product_component in self.productcomponents_product.all():
+            product_component.archive()
+
+        for product_rrp in self.product_rrps.all():
+            product_rrp.archive()
 
     def restore(self):
         """
@@ -429,74 +444,19 @@ class Product(UniqueWithinCompanyMixin, models.Model):
         for image in self.images.all():
             image.restore()
 
+        for product_component in self.productcomponents_product.all():
+            product_component.restore()
+
+        for product_rrp in self.product_rrps.all():
+            product_rrp.restore()
+
     def __str__(self):
         """Return Value."""
-        return self.productparent.title
-
-    @staticmethod
-    def has_read_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    def has_object_read_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_list_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    def has_object_list_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_create_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_product")
-
-    def has_object_create_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_product")
-
-    @staticmethod
-    def has_destroy_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_product")
-
-    def has_object_destroy_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_product")
-
-    @staticmethod
-    def has_update_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "change_product")
-
-    def has_object_update_permission(self, request):
-        member = get_member_from_request(request)
-        if not self.is_active:
-            return False
-        return has_permission(member, "change_product")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_product")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_product")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_product")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_product")
+        name = self.productparent.title + " - " + \
+            str(self.productparent.id) + " - me -> " + str(self.id)
+        if self.productparent.is_component:
+            name += " - component"
+        return name
 
 
 class ProductOption(models.Model):
@@ -517,10 +477,6 @@ class ProductOption(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Product Options")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
 
     def __str__(self):
         """Return Value."""
@@ -548,58 +504,31 @@ class ProductVariationOption(models.Model):
 
         verbose_name_plural = _("Product Options")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
     def __str__(self):
         """Return Value."""
         return self.product.title + " - " + self.productoption.name
 
 
-<<<<<<< HEAD
-=======
-# class ProductImage(models.Model):
-#     """
-#     Product Images Model.
-
-#     This table will store product images that stored in AWS.
-#     """
-
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     file = models.CharField(verbose_name=_("File upload"), max_length=500)
-# main_image = models.BooleanField(default=False)
-# is_active = models.BooleanField(default=True)
-# create_date = models.DateTimeField(default=timezone.now)
-# update_date = models.DateTimeField(default=timezone.now)
-
-#     class Meta:
-#         """Meta Class."""
-
-#         verbose_name_plural = _("Product Images")
-
-# def __str__(self):
-#     """Return Value."""
-#     return self.name
-
-
->>>>>>> 8769a6850ef439041f1ec8ac17e49b71cd26debb
-class ProductComponent(models.Model):
+class ProductComponent(ProductpermissionsModelmixin, models.Model):
     """
     Product Component Model.
 
     We are using this model to connect product with its components.
+
+    product and component must relate to the same company.
+    product must not be marked as a component.
+    component must be marked as a component.
     """
 
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="productcomponent_product",
+        related_name="productcomponents_product",
     )
     component = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="productcomponent_component",
+        related_name="productcomponents_component",
     )
     quantity = models.PositiveIntegerField(
         verbose_name=_("Quantity"), default=1
@@ -614,19 +543,35 @@ class ProductComponent(models.Model):
 
         verbose_name_plural = _("Product Components")
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.product.title
 
 
-class ProductRrp(models.Model):
+class ProductRrp(ProductpermissionsModelmixin, models.Model):
     """
     Product RRP Model.
 
     Products with their RRP's for different countries.
+    product must not be marked as a component.
     """
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="product_rrps")
     rrp = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     country = CountryField()
     is_active = models.BooleanField(default=True)
@@ -637,21 +582,38 @@ class ProductRrp(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Product RRP's")
+        unique_together = ['product', 'country']
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""
         return self.product.title
 
 
-class ProductPackingBox(models.Model):
+class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
     """
     Product Packing Box Model.
 
     Products packing boxes for shipment with quantity that can fit in the box.
     """
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    packingbox = models.ForeignKey(PackingBox, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="product_packingboxs")
+    packingbox = models.ForeignKey(
+        PackingBox, on_delete=models.CASCADE, related_name="product_packingboxs")
     weight = MeasurementField(
         measurement=Weight,
         unit_choices=(("g", "g"), ("kg", "kg"), ("oz", "oz"), ("lb", "lb")),
@@ -669,6 +631,20 @@ class ProductPackingBox(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Product Packing Boxes")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""

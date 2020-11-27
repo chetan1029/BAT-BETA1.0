@@ -29,4 +29,5 @@ urlpatterns = [
     path("", include("bat.core.urls", namespace="core")),
     path("", include("bat.company.urls", namespace="company")),
     path("", include("bat.product.urls", namespace="product")),
+    path("", include("bat.setting.urls", namespace="setting")),
 ]

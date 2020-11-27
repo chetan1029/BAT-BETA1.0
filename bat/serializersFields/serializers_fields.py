@@ -15,12 +15,10 @@ class WeightField(Field):
         return ret
 
     def to_internal_value(self, data):
-        print("\n\n\n data: ", type(data))
         try:
-            # if not isinstance(data, dict):
-            #     raise Exception
-            data = eval(data)
-            print("\n\n\n data: ", data)
+            if not isinstance(data, dict):
+                raise Exception
+            # data = eval(data)
             unit = data["unit"]
             value = data["weight"]
             kwargs = {unit: value}
@@ -50,4 +48,6 @@ class CountrySerializerField(ChoiceField):
         """
         give code and name of Country.
         """
+        if isinstance(value, str):
+            return value
         return value.code + " - " + value.name

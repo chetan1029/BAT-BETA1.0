@@ -10,6 +10,8 @@ from bat.company.models import (
     Member,
     PackingBox,
     Tax,
+    CompanyContract,
+    File
 )
 
 admin.site.register(Bank)
@@ -21,3 +23,5 @@ admin.site.register(Location)
 admin.site.register(PackingBox)
 admin.site.register(HsCode)
 admin.site.register(Tax)
+admin.site.register(CompanyContract)
+admin.site.register(File)

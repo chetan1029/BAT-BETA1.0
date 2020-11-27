@@ -9,8 +9,10 @@ from rest_framework.exceptions import ValidationError
 from invitations.utils import get_invitation_model
 from rolepermissions.roles import get_user_roles
 from djmoney.settings import CURRENCY_CHOICES
+from bat.setting.utils import get_status
+from bat.product.constants import PRODUCT_STATUS_DRAFT
 
-from bat.company import constants
+
 from bat.company.models import (
     Bank,
     Company,
@@ -20,10 +22,15 @@ from bat.company.models import (
     Member,
     PackingBox,
     Tax,
+    CompanyType,
+    CompanyContract,
+    File
 )
-from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member, get_cbm
+from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.serializersFields.serializers_fields import WeightField, CountrySerializerField
 from bat.setting.models import Category
+from bat.globalutils.utils import get_cbm
+from bat.globalutils.utils import set_field_errors
 
 
 Invitation = get_invitation_model()
@@ -226,13 +233,10 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
     def validate(self, data):
         force_create = data.pop("force_create", False)
         data = super().validate(data)
-        print("\n\n data : ", data)
         if not force_create:
             kwargs = self.context["request"].resolver_match.kwargs
-            print("\n\n kwargs : ", kwargs)
             founded_data = self.find_similar_objects(
                 user=self.context["request"].user, company_id=kwargs.get("company_pk", None), data=data)
-            print("\n\n\n founded_data : ", founded_data)
             if founded_data.exists():
                 raise serializers.ValidationError({"detail": _(
                     "Item with same data exixts."
@@ -512,3 +516,84 @@ class TaxSerializer(ReversionSerializerMixin):
             "create_date",
             "update_date",
         )
+
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = (
+            "id",
+            "company",
+            "title",
+            "version",
+            "file",
+            "note",
+            "content_type",
+            "object_id",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "content_type",
+            "object_id",
+            "is_active",
+            "company",
+        )
+
+
+class CompanyContractSerializer(serializers.ModelSerializer):
+    """Serializer for CompanyContract."""
+
+    files = FileSerializer(many=True, required=False)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyContract
+        fields = (
+            "id",
+            "companytype",
+            "title",
+            "files",
+            "note",
+            "partner_member",
+            "company_member",
+            "paymentterms",
+            "is_active",
+            "status",
+            "extra_data"
+        )
+        read_only_fields = (
+            "id",
+            "files",
+            "is_active",
+            "status",
+            "company_member",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companytype = attrs.get("companytype", None)
+        paymentterms = attrs.get("paymentterms", None)
+        errors = {}
+        if companytype:
+            if str(companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companytype", _("Invalid company type selected.")
+                )
+        if paymentterms:
+            if str(paymentterms.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "paymentterms", _(
+                        "Invalid payment terms selected.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        attrs["company_member"] = self.context.get("member", None)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)

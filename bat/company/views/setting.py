@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -29,8 +27,9 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_cbm, get_member
+from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -125,7 +124,6 @@ class InvitationCreate(viewsets.ViewSet):
             )
         context = {}
         context["company_id"] = company.id
-        print("request.data.............:", request.data)
         serializer = serializers.InvitationDataSerializer(
             data=request.data, context=context
         )

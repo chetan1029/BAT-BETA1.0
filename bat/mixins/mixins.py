@@ -13,13 +13,13 @@ class ArchiveMixin:
         instance = self.get_object()
 
         if not instance.is_active:
-            return Response({"message": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
         try:
             with transaction.atomic():
                 instance.archive()
-            return Response({"message": self.archive_message}, status=status.HTTP_200_OK)
+            return Response({"detail": self.archive_message}, status=status.HTTP_200_OK)
         except IntegrityError:
-            return Response({"message": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response({"detail": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 class RestoreMixin:
@@ -28,10 +28,10 @@ class RestoreMixin:
         """Set the restore action."""
         instance = self.get_object()
         if instance.is_active:
-            return Response({"message": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
         try:
             with transaction.atomic():
                 instance.restore()
-            return Response({"message": self.restore_message}, status=status.HTTP_200_OK)
+            return Response({"detail": self.restore_message}, status=status.HTTP_200_OK)
         except IntegrityError:
-            return Response({"message": _("Can't restore")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response({"detail": _("Can't restore")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
