@@ -1217,19 +1217,18 @@ class CompanyContract(models.Model):
             + str(self.partner_member.company.name)
         )
 
-    def generate_pdf_file(self):
+    def save_pdf_file(self):
         """
         docstring
         """
-        print("in generate_pdf_file")
         data = {"data": "I am variable"}
+        name = "company_contract_" + str(self.id)
         contract_file = pdf_file_from_html(data, "company/pdf_file.html",
                                            "company_contract_" + str(self.id))
-
-        # f = File(content_object=self, company=self.company_member.company,
-        #          note=self.note, title="company_contract_" + str(self.id))
-        # f.save()
-        # f.file.save("test", contract_file)
+        f = File(content_object=self, company=self.company_member.company,
+                 note=self.note, title="company_contract_" + str(self.id))
+        f.save()
+        f.file.save(name + ".pdf", contract_file)
 
     @staticmethod
     def has_read_permission(request):

@@ -63,4 +63,4 @@ class CompanyContractViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         company_contract = serializer.save()
-        company_contract.generate_pdf_file()
+        company_contract.save_pdf_file()

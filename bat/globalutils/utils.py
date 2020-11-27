@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 from decimal import Decimal
 from weasyprint import HTML
@@ -63,8 +64,8 @@ def pdf_file_from_html(data, template_path, file_name):
     generate pdf file from html template with given context data
     """
 
-    with open("bat/temp/" + file_name + ".pdf", 'w') as fp:
-        pass
+    tmp_dir = tempfile.TemporaryDirectory()
+    tmp_file_path = tmp_dir.name + file_name + ".pdf"
     path = "pdf-templates/"
     html_template = render_to_string(
         path + template_path,
@@ -73,9 +74,8 @@ def pdf_file_from_html(data, template_path, file_name):
     pdf_file = HTML(
         string=html_template
     ).write_pdf(
-        "bat/temp/"
-        + file_name + ".pdf",
+        tmp_file_path
     )
-    print("data in pdf_file_from_html :", data)
-    f = open("bat/temp/" + file_name + ".pdf", 'r')
-    return File(f)
+    f = open(tmp_file_path, "rb")
+    final_file = File(f)
+    return final_file
