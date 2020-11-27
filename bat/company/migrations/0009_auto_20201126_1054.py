@@ -7,34 +7,31 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('setting', '0003_auto_20201110_1022'),
-        ('company', '0008_auto_20201126_0911'),
+        ("setting", "0003_auto_20201110_1022"),
+        ("company", "0008_auto_20201126_0911"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='componentgoldensample',
-            name='componentme',
-        ),
-        migrations.RemoveField(
-            model_name='file',
-            name='companytype',
+            model_name="componentgoldensample", name="componentme"
         ),
         migrations.AddField(
-            model_name='componentgoldensample',
-            name='company',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='company.company'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='file',
-            name='company',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.PROTECT, to='company.company'),
+            model_name="componentgoldensample",
+            name="company",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="company.company",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='companytype',
-            name='category',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='companytype_category', to='setting.category'),
+            model_name="companytype",
+            name="category",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="companytype_category",
+                to="setting.category",
+            ),
         ),
     ]
