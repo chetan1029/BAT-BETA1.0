@@ -166,9 +166,6 @@ celery==5.0.0
 # Model Translation to store database translations.
 django-modeltranslation==0.15.2 #https://django-modeltranslation.readthedocs.io/en/latest/installation.html
 
-# Django Plan and subscriptions
-# install by pip install -e git://github.com/cypreess/django-plans.git#egg=django-plans
-django-plans
 
 # Django defender
 django-defender==0.7.0 #https://github.com/jazzband/django-defender
@@ -205,3 +202,4 @@ dry-rest-permissions==0.1.10
 drf-yasg2==1.19.4
 djangorestframework-jwt==1.11.0
 drf-nested-routers==0.92.1
+django-health-check==3.16.1

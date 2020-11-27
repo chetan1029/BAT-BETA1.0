@@ -8,7 +8,10 @@ from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -1417,7 +1420,7 @@ class ComponentMe(models.Model):
 
     version = models.DecimalField(max_digits=5, decimal_places=1)
     revision_history = models.TextField(blank=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    component = models.ForeignKey(Product, on_delete=models.CASCADE)
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
     files = GenericRelation(File)
     status = models.ForeignKey(
@@ -1448,7 +1451,7 @@ class ComponentMe(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.product.title
+        return str(self.component.title) + " " + str(self.version)
 
     @staticmethod
     def has_read_permission(request):
