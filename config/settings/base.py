@@ -106,8 +106,8 @@ THIRD_PARTY_APPS = [
     "modeltranslation",
     "health_check",
     "health_check.db",
-    "health_check.cache",
-    "health_check.storage",
+    'health_check.cache',
+    'health_check.storage',
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -401,8 +401,12 @@ DEFAULT_FROM_EMAIL = env(
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS").split(",")
 
 SWAGGER_SETTINGS = {
-    "SECURITY_DEFINITIONS": {
-        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
     },
-    "USE_SESSION_AUTH": True,
+    'USE_SESSION_AUTH': True
 }
