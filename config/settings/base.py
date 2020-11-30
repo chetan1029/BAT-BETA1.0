@@ -360,7 +360,8 @@ REST_AUTH_REGISTER_SERIALIZERS = {
     "REGISTER_SERIALIZER": "bat.users.serializers.RestAuthRegisterSerializer"
 }
 REST_AUTH_SERIALIZERS = {
-    "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer"
+    "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer",
+    "PASSWORD_RESET_SERIALIZER": "bat.users.serializers.PasswordSerializer"
 }
 
 # jwt
@@ -410,3 +411,5 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': DEBUG
 }
+
+FORGET_PASSWORD_PAGE_LINK = env("FORGET_PASSWORD_PAGE_LINK", default='')

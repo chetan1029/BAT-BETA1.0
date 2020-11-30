@@ -3,7 +3,9 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
 from rest_auth.registration.serializers import RegisterSerializer
+from rest_auth.serializers import PasswordResetSerializer
 from invitations.utils import get_invitation_model
+from django.conf import settings
 
 from bat.users.models import InvitationDetail
 
@@ -62,3 +64,15 @@ class UserSerializer(serializers.ModelSerializer):
                   'first_name', 'last_name', 'profile_picture', 'phone_number',
                   'language', 'timezone',)
         read_only_fields = ('last_login', 'date_joined', 'username', 'email',)
+
+
+class PasswordSerializer(PasswordResetSerializer):
+    def get_email_options(self):
+        return {
+            'subject_template_name': 'account/email/password_reset_key_subject.txt',
+            'email_template_name': 'account/email/password_reset_key_message.txt',
+            'extra_email_context': {
+                'reset_link': settings.FORGET_PASSWORD_PAGE_LINK
+            }
+        }
+
