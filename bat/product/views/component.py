@@ -105,4 +105,4 @@ class ProductViewSet(ArchiveMixin,
                                 productoption=productoption,
                             )
         except IntegrityError:
-            return Response({"message": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response({"detail": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
