@@ -158,24 +158,24 @@ class InvitationDataSerializer(serializers.Serializer):
         """
         email = data["email"]
         company_id = self.context.get("company_id", None)
-
+        errors = {}
         if (
             data["invitation_type"]
             and data["invitation_type"] == "vendor_invitation"
         ):
             if not data["vendor_name"]:
-                raise serializers.ValidationError(
-                    _("Vendor name is required field")
-                )
+                raise serializers.ValidationError({"vendor_name":
+                                                   _("Vendor name is required field")}
+                                                  )
             if not data["vendor_type"]:
                 raise serializers.ValidationError(
-                    _("Vendor type is required field")
+                    {"vendor_type": _("Vendor type is required field")}
                 )
             if data["vendor_type"]:
                 choices = list(Category.objects.values("id", "name"))
                 if data["vendor_type"] not in choices:
                     raise serializers.ValidationError(
-                        _("Vendor type is not valid")
+                        {"vendor_type": _("Vendor type is not valid")}
                     )
             if data["vendor_type"] and data["vendor_name"] and email:
                 invitations = Invitation.objects.filter(
@@ -183,30 +183,31 @@ class InvitationDataSerializer(serializers.Serializer):
                     company_detail__company_name__iexact=data["vendor_name"],
                 )
                 if invitations.exists():
-                    msg = _(
+                    msg = {"detail": _(
                         "Invitation already sent for this vendor and email."
-                    )
+                    )}
                     raise serializers.ValidationError(msg)
         else:
             if not data["role"]:
-                raise serializers.ValidationError(_("Role is required field"))
+                raise serializers.ValidationError(
+                    {"role": _("Role is required field")})
             if not data["permissions"]:
                 raise serializers.ValidationError(
-                    _("permissions is required field")
+                    {"permissions": _("permissions is required field")}
                 )
             if company_id and email:
                 if Member.objects.filter(
                     company_id=int(company_id), user__email=email
                 ).exists():
                     raise serializers.ValidationError(
-                        _("User already is your staff member.")
+                        { "detail" : _("User already is your staff member.")}
                     )
                 else:
                     invitations = Invitation.objects.filter(
                         email=email, company_detail__company_id=int(company_id)
                     )
                     if invitations.exists():
-                        msg = _("Invitation already sent for this email.")
+                        msg = { "detail" : _("Invitation already sent for this email.")}
                         raise serializers.ValidationError(msg)
 
         return super().validate(data)
