@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.contrib.auth.models import Group, Permission
 from django.utils.translation import ugettext_lazy as _
+from djmoney.contrib.django_rest_framework import MoneyField
 from djmoney.settings import CURRENCY_CHOICES
 from invitations.utils import get_invitation_model
 from rest_framework import serializers
@@ -14,9 +15,11 @@ from bat.company.models import (
     CompanyContract,
     CompanyCredential,
     CompanyPaymentTerms,
+    CompanyProduct,
     CompanyType,
     ComponentGoldenSample,
     ComponentMe,
+    ComponentPrice,
     File,
     HsCode,
     Location,
@@ -24,10 +27,17 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
+from bat.company.utils import (
+    get_list_of_permissions,
+    get_list_of_roles,
+    get_member,
+)
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField
+from bat.serializersFields.serializers_fields import (
+    CountrySerializerField,
+    WeightField,
+)
 from bat.setting.models import Category
 from bat.setting.utils import get_status
 
@@ -162,9 +172,9 @@ class InvitationDataSerializer(serializers.Serializer):
             and data["invitation_type"] == "vendor_invitation"
         ):
             if not data["vendor_name"]:
-                raise serializers.ValidationError({"vendor_name":
-                                                   _("Vendor name is required field")}
-                                                  )
+                raise serializers.ValidationError(
+                    {"vendor_name": _("Vendor name is required field")}
+                )
             if not data["vendor_type"]:
                 raise serializers.ValidationError(
                     {"vendor_type": _("Vendor type is required field")}
@@ -181,14 +191,17 @@ class InvitationDataSerializer(serializers.Serializer):
                     company_detail__company_name__iexact=data["vendor_name"],
                 )
                 if invitations.exists():
-                    msg = {"detail": _(
-                        "Invitation already sent for this vendor and email."
-                    )}
+                    msg = {
+                        "detail": _(
+                            "Invitation already sent for this vendor and email."
+                        )
+                    }
                     raise serializers.ValidationError(msg)
         else:
             if not data["role"]:
                 raise serializers.ValidationError(
-                    {"role": _("Role is required field")})
+                    {"role": _("Role is required field")}
+                )
             if not data["permissions"]:
                 raise serializers.ValidationError(
                     {"permissions": _("permissions is required field")}
@@ -198,14 +211,18 @@ class InvitationDataSerializer(serializers.Serializer):
                     company_id=int(company_id), user__email=email
                 ).exists():
                     raise serializers.ValidationError(
-                        { "detail" : _("User already is your staff member.")}
+                        {"detail": _("User already is your staff member.")}
                     )
                 else:
                     invitations = Invitation.objects.filter(
                         email=email, company_detail__company_id=int(company_id)
                     )
                     if invitations.exists():
-                        msg = { "detail" : _("Invitation already sent for this email.")}
+                        msg = {
+                            "detail": _(
+                                "Invitation already sent for this email."
+                            )
+                        }
                         raise serializers.ValidationError(msg)
 
         return super().validate(data)
@@ -226,7 +243,9 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         """
         return data
 
-    def find_similar_objects(self, user=None, company_id=None, data=None, pk=None):
+    def find_similar_objects(
+        self, user=None, company_id=None, data=None, pk=None
+    ):
         """
         find similer objects based on passed data.
         override this method to provide complex filters.
@@ -235,10 +254,12 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         query_data = self.get_query_data(data)
         if pk:
             founded_data = ModelClass.objects.filter(
-                is_active=False, company__id=company_id, **query_data).exclude(pk=pk)
+                is_active=False, company__id=company_id, **query_data
+            ).exclude(pk=pk)
         else:
             founded_data = ModelClass.objects.filter(
-                is_active=False, company__id=company_id, **query_data)
+                is_active=False, company__id=company_id, **query_data
+            )
 
         return founded_data
 
@@ -248,9 +269,11 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         kwargs = self.context["request"].resolver_match.kwargs
         if not force_create:
             founded_data = self.find_similar_objects(
-                user=self.context["request"].user, company_id=kwargs.get(
-                    "company_pk", None),
-                data=data, pk=kwargs.get("pk", None))
+                user=self.context["request"].user,
+                company_id=kwargs.get("company_pk", None),
+                data=data,
+                pk=kwargs.get("pk", None),
+            )
             if founded_data.exists():
                 raise serializers.ValidationError(
                     {
@@ -705,11 +728,11 @@ class ComponentMeSerializer(serializers.ModelSerializer):
                 kwargs.get("company_pk", None)
             ):
                 errors = set_field_errors(
-                    errors, "product", _("Invalid product selected.")
+                    errors, "component", _("Invalid product selected.")
                 )
             if not component.productparent.is_component:
                 errors = set_field_errors(
-                    errors, "product", _("Selected component is a product.")
+                    errors, "component", _("Selected component is a product.")
                 )
         if companytype:
             if str(companytype.company.id) != str(company_id):
@@ -762,7 +785,119 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
                 kwargs.get("company_pk", None)
             ):
                 errors = set_field_errors(
-                    errors, "product", _("Invalid Component ME.")
+                    errors, "componentme", _("Invalid Component ME.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+
+class ComponentPriceSerializer(serializers.ModelSerializer):
+    """Serializer for Component Price."""
+
+    price = MoneyField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = ComponentPrice
+        fields = (
+            "id",
+            "componentgoldensample",
+            "price",
+            "start_date",
+            "end_date",
+            "status",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "status",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            The selected component golden sample must be active and from the same company.
+        """
+        kwargs = self.context["request"].resolver_match.kwargs
+        componentgoldensample = attrs.get("componentgoldensample", None)
+        errors = {}
+        if componentgoldensample:
+            if str(
+                componentgoldensample.componentme.companytype.company.id
+            ) != str(kwargs.get("company_pk", None)):
+                errors = set_field_errors(
+                    errors,
+                    "componentgoldensample",
+                    _("Invalid Component Golden Sample."),
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+
+class CompanyProductSerializer(serializers.ModelSerializer):
+    """Serializer for Company Product."""
+
+    price = MoneyField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyProduct
+        fields = (
+            "id",
+            "product",
+            "companytype",
+            "title",
+            "sku",
+            "ean",
+            "asin",
+            "model_number",
+            "manufacturer_part_number",
+            "price",
+            "status",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "status",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        kwargs = self.context["request"].resolver_match.kwargs
+        company_id = self.context.get("company_id", None)
+        companytype = attrs.get("companytype", None)
+        product = attrs.get("product", None)
+        errors = {}
+        if product:
+            if str(product.get_company.id) != str(
+                kwargs.get("company_pk", None)
+            ):
+                errors = set_field_errors(
+                    errors, "product", _("Invalid product selected.")
+                )
+            if product.productparent.is_component:
+                errors = set_field_errors(
+                    errors, "product", _("Selected product is a component.")
+                )
+        if companytype:
+            if str(companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companytype", _("Invalid company type selected.")
                 )
         if errors:
             raise serializers.ValidationError(errors)

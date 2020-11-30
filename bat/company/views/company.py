@@ -19,8 +19,10 @@ from bat.company import serializers
 from bat.company.models import (
     CompanyContract,
     CompanyCredential,
+    CompanyProduct,
     ComponentGoldenSample,
     ComponentMe,
+    ComponentPrice,
 )
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
@@ -122,5 +124,65 @@ class ComponentGoldenSampleViewSet(viewsets.ModelViewSet):
         )
         queryset = queryset.filter(
             componentme__companytype__company=member.company
+        ).order_by("-create_date")
+        return super().filter_queryset(queryset)
+
+
+class ComponentPriceViewSet(viewsets.ModelViewSet):
+    """Operations on Component Price."""
+
+    serializer_class = serializers.ComponentPriceSerializer
+    queryset = ComponentPrice.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Component Price is archived")
+    restore_message = _("Component Price is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
+
+    def filter_queryset(self, queryset):
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        queryset = queryset.filter(
+            componentgoldensample__componentme__companytype__company=member.company
+        ).order_by("-create_date")
+        return super().filter_queryset(queryset)
+
+
+class CompanyProductViewSet(viewsets.ModelViewSet):
+    """Operations on Company Product."""
+
+    serializer_class = serializers.CompanyProductSerializer
+    queryset = CompanyProduct.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Company Product is archived")
+    restore_message = _("Company Product is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
+
+    def filter_queryset(self, queryset):
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        queryset = queryset.filter(
+            companytype__company=member.company
         ).order_by("-create_date")
         return super().filter_queryset(queryset)
