@@ -408,5 +408,5 @@ SWAGGER_SETTINGS = {
             'in': 'header'
         }
     },
-    'USE_SESSION_AUTH': True
+    'USE_SESSION_AUTH': DEBUG
 }
