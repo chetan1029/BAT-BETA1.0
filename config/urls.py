@@ -5,7 +5,6 @@ from django.urls import include, path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 
-
 admin.autodiscover()
 urlpatterns = [
     # Django Admin, use {% url 'admin:index' %}
@@ -18,8 +17,8 @@ urlpatterns = [
     # Django Invitation
     path("invitations/", include("invitations.urls", namespace="invitations")),
     # API base url
-    path("api/", include("config.api_router")),
-    path("", include('health_check.urls', namespace='ht')),
+    path("ht", include('health_check.urls', namespace='ht')),
+    path("", include("config.api_router")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

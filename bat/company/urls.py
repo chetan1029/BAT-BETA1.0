@@ -1,6 +1,12 @@
 from django.urls import include, path
 from rest_framework_nested import routers
 
+from bat.company.views.company import (
+    CompanyContractViewSet,
+    CompanyCredentialViewSet,
+    ComponentGoldenSampleViewSet,
+    ComponentMeViewSet,
+)
 from bat.company.views.setting import (
     BankViewSet,
     CompanyPaymentTermsViewSet,
@@ -12,8 +18,6 @@ from bat.company.views.setting import (
     PackingBoxViewSet,
     TaxBoxViewSet,
 )
-from bat.company.views.company import (CompanyContractViewSet)
-
 
 router = routers.SimpleRouter()
 
@@ -66,13 +70,40 @@ hscode_router = routers.NestedSimpleRouter(
 hscode_router.register("hscodes", HsCodeBoxViewSet, basename="company-hscode")
 
 tax_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
-tax_router.register("taxs", TaxBoxViewSet, basename="company-tax")
+tax_router.register("taxes", TaxBoxViewSet, basename="company-tax")
 
 
 # company
 
-contract_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
-contract_router.register("contracts", CompanyContractViewSet, basename="company-contract")
+contract_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+contract_router.register(
+    "contracts", CompanyContractViewSet, basename="company-contract"
+)
+
+credentail_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+credentail_router.register(
+    "credential", CompanyCredentialViewSet, basename="company-credential"
+)
+
+componentme_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+componentme_router.register(
+    "component-me", ComponentMeViewSet, basename="company-me"
+)
+
+componentgoldesample_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+componentgoldesample_router.register(
+    "component-golden-sample",
+    ComponentGoldenSampleViewSet,
+    basename="company-golden-sample",
+)
 
 app_name = "company"
 urlpatterns = router.urls
@@ -87,4 +118,7 @@ urlpatterns += [
     path("", include(hscode_router.urls)),
     path("", include(tax_router.urls)),
     path("", include(contract_router.urls)),
+    path("", include(credentail_router.urls)),
+    path("", include(componentme_router.urls)),
+    path("", include(componentgoldesample_router.urls)),
 ]

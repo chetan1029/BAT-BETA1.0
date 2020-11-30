@@ -39,7 +39,7 @@ class ProductViewSet(ArchiveMixin,
     archive_message = _("Product parent is archived")
     restore_message = _("Product parent is restored")
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def active(self, request, *args, **kwargs):
         """Set the active action."""
         instance = self.get_object()
@@ -105,4 +105,4 @@ class ProductViewSet(ArchiveMixin,
                                 productoption=productoption,
                             )
         except IntegrityError:
-            return Response({"message": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response({"detail": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)

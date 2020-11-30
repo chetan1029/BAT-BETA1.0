@@ -134,7 +134,7 @@ AUTHENTICATION_BACKENDS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
 AUTH_USER_MODEL = "users.User"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
-LOGIN_REDIRECT_URL = "home"
+# LOGIN_REDIRECT_URL = "users:"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-url
 LOGIN_URL = "account_login"
 
@@ -350,7 +350,7 @@ REST_FRAMEWORK = {
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
-CORS_URLS_REGEX = r"^/api/.*$"
+CORS_URLS_REGEX = r"^/.*$"
 
 # rest-auth
 SITE_ID = 1
@@ -360,7 +360,8 @@ REST_AUTH_REGISTER_SERIALIZERS = {
     "REGISTER_SERIALIZER": "bat.users.serializers.RestAuthRegisterSerializer"
 }
 REST_AUTH_SERIALIZERS = {
-    "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer"
+    "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer",
+    "PASSWORD_RESET_SERIALIZER": "bat.users.serializers.PasswordSerializer"
 }
 
 # jwt
@@ -408,5 +409,7 @@ SWAGGER_SETTINGS = {
             'in': 'header'
         }
     },
-    'USE_SESSION_AUTH': True
+    'USE_SESSION_AUTH': DEBUG
 }
+
+FORGET_PASSWORD_PAGE_LINK = env("FORGET_PASSWORD_PAGE_LINK", default='')
