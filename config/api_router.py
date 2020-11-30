@@ -12,7 +12,7 @@ schema_view = get_schema_view(
         terms_of_service="https://thebatonline.com/terms",
         contact=openapi.Contact(email="chetan@volutz.com"),
     ),
-    schemes=["HTTPS", "HTTP"],
+    schemes=["http", "https"],
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
