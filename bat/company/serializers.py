@@ -221,22 +221,37 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         ret.pop("force_create")
         return ret
 
-    def find_similar_objects(self, user=None, company_id=None, data=None):
+    def get_query_data(self, data=None):
+        """
+        generate query_data to find similer objects based on passed data
+        """
+        return data
+
+    def find_similar_objects(self, user=None, company_id=None, data=None, pk=None):
         """
         find similer objects based on passed data.
         override this method to provide complex filters.
         """
         ModelClass = self.Meta.model
-        return ModelClass.objects.filter(
-            is_active=True, company__id=company_id, **data)
+        query_data = self.get_query_data(data)
+        if pk:
+            founded_data = ModelClass.objects.filter(
+                is_active=False, company__id=company_id, **query_data).exclude(pk=pk)
+        else:
+            founded_data = ModelClass.objects.filter(
+                is_active=False, company__id=company_id, **query_data)
+
+        return founded_data
 
     def validate(self, data):
         force_create = data.pop("force_create", False)
         data = super().validate(data)
+        kwargs = self.context["request"].resolver_match.kwargs
         if not force_create:
-            kwargs = self.context["request"].resolver_match.kwargs
             founded_data = self.find_similar_objects(
-                user=self.context["request"].user, company_id=kwargs.get("company_pk", None), data=data)
+                user=self.context["request"].user, company_id=kwargs.get(
+                    "company_pk", None),
+                data=data, pk=kwargs.get("pk", None))
             if founded_data.exists():
                 raise serializers.ValidationError({"detail": _(
                     "Item with same data exixts."
@@ -342,11 +357,10 @@ class BankSerializer(ReversionSerializerMixin):
             "update_date",
         )
 
-    def find_similar_objects(self, user=None, company_id=None, data=None):
+    def get_query_data(self, data=None):
         """
-        find similer bank objects based on passed data
+        generate query_data to find similer bank objects based on passed data
         """
-        ModelClass = self.Meta.model
         query_data = {}
         query_data["name"] = data.get("name", "")
         query_data["benificary"] = data.get("benificary", "")
@@ -362,8 +376,7 @@ class BankSerializer(ReversionSerializerMixin):
         if currency:
             query_data["currency__regex"] = ",".join(currency)
 
-        return ModelClass.objects.filter(
-            is_active=False, company__id=company_id, **query_data)
+        return query_data
 
 
 class LocationSerializer(ReversionSerializerMixin):
@@ -396,11 +409,10 @@ class LocationSerializer(ReversionSerializerMixin):
             "update_date",
         )
 
-    def find_similar_objects(self, user=None, company_id=None, data=None):
+    def get_query_data(self, data=None):
         """
-        find similer location objects based on passed data
+        generate query_data to find similer location objects based on passed data
         """
-        ModelClass = self.Meta.model
         query_data = {}
         query_data["name"] = data.get("name", "")
         query_data["address1"] = data.get("address1", "")
@@ -408,8 +420,8 @@ class LocationSerializer(ReversionSerializerMixin):
         query_data["zip"] = data.get("zip", "")
         query_data["region"] = data.get("region", "")
         query_data["country"] = data.get("country", "")
-        return ModelClass.objects.filter(
-            is_active=False, company__id=company_id, **query_data)
+
+        return query_data
 
 
 class PackingBoxSerializer(ReversionSerializerMixin):
@@ -453,11 +465,10 @@ class PackingBoxSerializer(ReversionSerializerMixin):
         )
         return super().validate(data)
 
-    def find_similar_objects(self, user=None, company_id=None, data=None):
+    def get_query_data(self, data=None):
         """
-        find similer bank objects based on passed data
+        generate query_data to find similer bank objects based on passed data
         """
-        ModelClass = self.Meta.model
         query_data = {}
         query_data["name"] = data.get("name", "")
         query_data["length"] = data.get("length", "")
@@ -466,8 +477,8 @@ class PackingBoxSerializer(ReversionSerializerMixin):
         query_data["length_unit"] = data.get("length_unit", "")
         query_data["cbm"] = data.get("cbm", "")
         query_data["weight"] = data.get("weight", "")
-        return ModelClass.objects.filter(
-            is_active=False, company__id=company_id, **query_data)
+
+        return query_data
 
 
 class HsCodeSerializer(ReversionSerializerMixin):
