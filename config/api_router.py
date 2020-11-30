@@ -21,29 +21,15 @@ schema_view = get_schema_view(
 app_name = "api"
 
 urlpatterns = [
-<<<<<<< HEAD
-    path(
-        "docs/",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),
-    # jwt
-    # path("api-token-auth/", jwt_views.obtain_jwt_token),
-=======
     path('docs/', schema_view.with_ui('swagger',
                                       cache_timeout=0), name='schema-swagger-ui'),
     # jwt
     # path("api-token-auth/", jwt_views.obtain_jwt_token),
 
->>>>>>> develop
     # path("api-token-verify/", jwt_views.verify_jwt_token),
     # path('auth/', include('rest_auth.urls')),
     # verifay mail (provide template name) # logic for verifay email address
     path("auth/registration/", include("rest_auth.registration.urls")),
-<<<<<<< HEAD
-=======
-
->>>>>>> develop
     path("", include("bat.users.urls", namespace="users")),
     path("", include("bat.core.urls", namespace="core")),
     path("", include("bat.company.urls", namespace="company")),

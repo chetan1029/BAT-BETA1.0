@@ -18,11 +18,7 @@ urlpatterns = [
     path("invitations/", include("invitations.urls", namespace="invitations")),
     # API base url
     path("api/", include("config.api_router")),
-<<<<<<< HEAD
-    path("", include("health_check.urls", namespace="ht")),
-=======
     path("", include('health_check.urls', namespace='ht')),
->>>>>>> develop
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

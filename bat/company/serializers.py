@@ -376,14 +376,7 @@ class BankSerializer(ReversionSerializerMixin):
         if currency:
             query_data["currency__regex"] = ",".join(currency)
 
-
-<< << << < HEAD
-return ModelClass.objects.filter(
-    is_active=False, company__id=company_id, **query_data
-)
-== == == =
-return query_data
->>>>>> > develop
+        return query_data
 
 
 class LocationSerializer(ReversionSerializerMixin):
@@ -429,15 +422,7 @@ class LocationSerializer(ReversionSerializerMixin):
         query_data["region"] = data.get("region", "")
         query_data["country"] = data.get("country", "")
 
-
-<< << << < HEAD
-return ModelClass.objects.filter(
-    is_active=False, company__id=company_id, **query_data
-)
-== == == =
-
-return query_data
->>>>>> > develop
+        return query_data
 
 
 class PackingBoxSerializer(ReversionSerializerMixin):
@@ -494,15 +479,7 @@ class PackingBoxSerializer(ReversionSerializerMixin):
         query_data["cbm"] = data.get("cbm", "")
         query_data["weight"] = data.get("weight", "")
 
-
-<< << << < HEAD
-return ModelClass.objects.filter(
-    is_active=False, company__id=company_id, **query_data
-)
-== == == =
-
-return query_data
->>>>>> > develop
+        return query_data
 
 
 class HsCodeSerializer(ReversionSerializerMixin):
