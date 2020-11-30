@@ -9,92 +9,128 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('company', '0007_auto_20201123_1454'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("company", "0007_auto_20201123_1454"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='File',
+            name="File",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200, verbose_name='File Title')),
-                ('version', models.DecimalField(decimal_places=1, default='1.0', max_digits=5, verbose_name='File Version')),
-                ('file', models.FileField(blank=True, upload_to=bat.company.models.file_name, verbose_name='File')),
-                ('note', models.TextField(blank=True)),
-                ('object_id', models.PositiveIntegerField()),
-                ('is_active', models.BooleanField(default=True)),
-                ('create_date', models.DateTimeField(default=django.utils.timezone.now)),
-                ('update_date', models.DateTimeField(default=django.utils.timezone.now)),
-                ('companytype', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='company.companytype')),
-                ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        max_length=200, verbose_name="File Title"
+                    ),
+                ),
+                (
+                    "version",
+                    models.DecimalField(
+                        decimal_places=1,
+                        default="1.0",
+                        max_digits=5,
+                        verbose_name="File Version",
+                    ),
+                ),
+                (
+                    "file",
+                    models.FileField(
+                        blank=True,
+                        upload_to=bat.company.models.file_name,
+                        verbose_name="File",
+                    ),
+                ),
+                ("note", models.TextField(blank=True)),
+                ("object_id", models.PositiveIntegerField()),
+                ("is_active", models.BooleanField(default=True)),
+                (
+                    "create_date",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                (
+                    "update_date",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                (
+                    "company",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="company.company",
+                    ),
+                ),
+                (
+                    "content_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="contenttypes.contenttype",
+                    ),
+                ),
             ],
         ),
         migrations.RemoveField(
-            model_name='companyorderinspectionfile',
-            name='companyorderinspection',
+            model_name="companyorderinspectionfile",
+            name="companyorderinspection",
         ),
         migrations.RemoveField(
-            model_name='componentgoldensamplefiles',
-            name='componentgoldensample',
+            model_name="componentgoldensamplefiles",
+            name="componentgoldensample",
         ),
         migrations.RemoveField(
-            model_name='componentmefile',
-            name='componentme',
+            model_name="componentmefile", name="componentme"
         ),
-        migrations.RemoveField(
-            model_name='componentmefile',
-            name='status',
-        ),
+        migrations.RemoveField(model_name="componentmefile", name="status"),
         migrations.AlterModelOptions(
-            name='companyinventoryprediction',
-            options={'verbose_name_plural': 'Company Inventory Predication'},
+            name="companyinventoryprediction",
+            options={"verbose_name_plural": "Company Inventory Predication"},
         ),
         migrations.RenameField(
-            model_name='companyinventoryprediction',
-            old_name='weeks_of_supply',
-            new_name='supply_time',
+            model_name="companyinventoryprediction",
+            old_name="weeks_of_supply",
+            new_name="supply_time",
+        ),
+        migrations.RemoveField(model_name="companycontract", name="file"),
+        migrations.RemoveField(model_name="companyordercase", name="file"),
+        migrations.RemoveField(
+            model_name="companyorderdeliverytestreport", name="file"
         ),
         migrations.RemoveField(
-            model_name='companycontract',
-            name='file',
+            model_name="companyorderpaymentpaid", name="pi_file"
         ),
         migrations.RemoveField(
-            model_name='companyordercase',
-            name='file',
-        ),
-        migrations.RemoveField(
-            model_name='companyorderdeliverytestreport',
-            name='file',
-        ),
-        migrations.RemoveField(
-            model_name='companyorderpaymentpaid',
-            name='pi_file',
-        ),
-        migrations.RemoveField(
-            model_name='companyorderpaymentpaid',
-            name='receipt_file',
+            model_name="companyorderpaymentpaid", name="receipt_file"
         ),
         migrations.AddField(
-            model_name='companyinventoryprediction',
-            name='type',
-            field=models.CharField(choices=[('Daily', 'Daily'), ('Weekly', 'Weekly'), ('Monthly', 'Monthly'), ('Quarterly', 'Quarterly'), ('Yearly', 'Yearly')], default='Weekly', max_length=20, verbose_name='Prediction Type'),
+            model_name="companyinventoryprediction",
+            name="type",
+            field=models.CharField(
+                choices=[
+                    ("Daily", "Daily"),
+                    ("Weekly", "Weekly"),
+                    ("Monthly", "Monthly"),
+                    ("Quarterly", "Quarterly"),
+                    ("Yearly", "Yearly"),
+                ],
+                default="Weekly",
+                max_length=20,
+                verbose_name="Prediction Type",
+            ),
         ),
         migrations.AddField(
-            model_name='componentgoldensample',
-            name='note',
+            model_name="componentgoldensample",
+            name="note",
             field=models.TextField(blank=True),
         ),
-        migrations.DeleteModel(
-            name='CompanyOrderFile',
-        ),
-        migrations.DeleteModel(
-            name='CompanyOrderInspectionFile',
-        ),
-        migrations.DeleteModel(
-            name='ComponentGoldenSampleFiles',
-        ),
-        migrations.DeleteModel(
-            name='ComponentMeFile',
-        ),
+        migrations.DeleteModel(name="CompanyOrderFile"),
+        migrations.DeleteModel(name="CompanyOrderInspectionFile"),
+        migrations.DeleteModel(name="ComponentGoldenSampleFiles"),
+        migrations.DeleteModel(name="ComponentMeFile"),
     ]

@@ -250,6 +250,7 @@ class InvitationCreate(viewsets.ViewSet):
 
 # Member
 
+
 class MemberViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -301,7 +302,7 @@ class MemberViewSet(
 class CompanySettingBaseViewSet(
     ArchiveMixin, RestoreMixin, viewsets.ModelViewSet
 ):
-    """List all the payment terms."""
+    """Company setting base view set."""
 
     class Meta:
         abstract = True
@@ -328,6 +329,7 @@ class CompanySettingBaseViewSet(
 
 # Payment terms
 
+
 class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
     """Operations on payment terms."""
 
@@ -349,9 +351,8 @@ class CompanyPaymentTermsViewSet(CompanySettingBaseViewSet):
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        serializer.save(
-            company=member.company
-        )
+        serializer.save(company=member.company)
+
 
 # Bank
 
