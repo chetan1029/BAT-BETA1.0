@@ -70,7 +70,7 @@ hscode_router = routers.NestedSimpleRouter(
 hscode_router.register("hscodes", HsCodeBoxViewSet, basename="company-hscode")
 
 tax_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
-tax_router.register("taxs", TaxBoxViewSet, basename="company-tax")
+tax_router.register("taxes", TaxBoxViewSet, basename="company-tax")
 
 
 # company

@@ -7,7 +7,7 @@ from rest_framework import status
 
 
 class ArchiveMixin:
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def archive(self, request, *args, **kwargs):
         """Set the archive action."""
         instance = self.get_object()
@@ -23,7 +23,7 @@ class ArchiveMixin:
 
 
 class RestoreMixin:
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def restore(self, request, *args, **kwargs):
         """Set the restore action."""
         instance = self.get_object()
