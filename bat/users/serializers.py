@@ -13,13 +13,25 @@ User = get_user_model()
 
 class RestAuthRegisterSerializer(RegisterSerializer):
 
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+
+    def get_cleaned_data(self):
+        return {
+            'username': self.validated_data.get('username', ''),
+            'password1': self.validated_data.get('password1', ''),
+            'email': self.validated_data.get('email', ''),
+            'first_name': self.validated_data.get('first_name', ''),
+            'last_name': self.validated_data.get('last_name', '')
+        }
+
     def custom_signup(self, request, user):
         '''
         save extra_data to user
         '''
         extra_data = {}
-        # # Check if this user has accpeted invitations or even have
-        # # any invitation. we will signup and forward user.
+        # Check if this user has accpeted invitations or even have
+        # any invitation. we will signup and forward user.
         invitations = Invitation.objects.filter(email=user.email)
         if invitations.exists():
             extra_data["step"] = "2"
@@ -28,6 +40,9 @@ class RestAuthRegisterSerializer(RegisterSerializer):
             extra_data["step"] = "1"
             extra_data["step_detail"] = "user signup"
         user.extra_data = extra_data
+
+        user.first_name = self.cleaned_data.get('first_name')
+        user.last_name = self.cleaned_data.get('last_name')
         user.save()
 
 
