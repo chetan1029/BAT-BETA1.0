@@ -69,7 +69,7 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
             User, instance=self.request.user, created=False, using=None
         )
         return Response(
-            {"message": _("Accepted successfully")}, status=status.HTTP_200_OK
+            {"detail": _("Accepted successfully")}, status=status.HTTP_200_OK
         )
 
     @action(detail=True, methods=["post"])
@@ -87,5 +87,5 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
         )
         instance.delete()
         return Response(
-            {"message": _("Rejected successfully")}, status=status.HTTP_200_OK
+            {"detail": _("Rejected successfully")}, status=status.HTTP_200_OK
         )

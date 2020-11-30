@@ -116,7 +116,7 @@ class InvitationCreate(viewsets.ViewSet):
         if not has_permission(member, "add_staff_member"):
             return Response(
                 {
-                    "message": _(
+                    "detail": _(
                         "You are not allowed to add staff member to this company"
                     )
                 },
