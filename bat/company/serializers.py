@@ -222,6 +222,9 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         return ret
 
     def get_query_data(self, data=None):
+        """
+        generate query_data to find similer objects based on passed data
+        """
         return data
 
     def find_similar_objects(self, user=None, company_id=None, data=None, pk=None):
