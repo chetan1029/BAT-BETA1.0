@@ -19,6 +19,8 @@ from bat.company.views.setting import (
     TaxBoxViewSet,
 )
 
+from bat.company.views.file import (ComponentMeFilesViewSet)
+
 router = routers.SimpleRouter()
 
 # setting
@@ -96,6 +98,14 @@ componentme_router.register(
     "component-me", ComponentMeViewSet, basename="company-me"
 )
 
+componentme_image_router = routers.NestedSimpleRouter(
+    componentme_router, "component-me", lookup="object"
+)
+
+componentme_image_router.register(
+    "files", ComponentMeFilesViewSet, basename="company-component-me-files"
+)
+
 componentgoldesample_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
@@ -120,5 +130,6 @@ urlpatterns += [
     path("", include(contract_router.urls)),
     path("", include(credentail_router.urls)),
     path("", include(componentme_router.urls)),
+    path("", include(componentme_image_router.urls)),
     path("", include(componentgoldesample_router.urls)),
 ]
