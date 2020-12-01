@@ -17,6 +17,7 @@ class RestAuthRegisterSerializer(RegisterSerializer):
 
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
+    invite_key = serializers.CharField(allow_blank=True, required=False)
 
     def get_cleaned_data(self):
         return {
@@ -24,7 +25,8 @@ class RestAuthRegisterSerializer(RegisterSerializer):
             'password1': self.validated_data.get('password1', ''),
             'email': self.validated_data.get('email', ''),
             'first_name': self.validated_data.get('first_name', ''),
-            'last_name': self.validated_data.get('last_name', '')
+            'last_name': self.validated_data.get('last_name', ''),
+            'invite_key': self.validated_data.get('invite_key'),
         }
 
     def custom_signup(self, request, user):
@@ -34,7 +36,13 @@ class RestAuthRegisterSerializer(RegisterSerializer):
         extra_data = {}
         # Check if this user has accpeted invitations or even have
         # any invitation. we will signup and forward user.
-        invitations = Invitation.objects.filter(email=user.email)
+        invite_key = self.cleaned_data.get('invite_key')
+        invite = Invitation.objects.filter(key=invite_key, accepted=False).first()
+        if invite:
+            invite.accepted = True
+            invite.save()
+
+        invitations = Invitation.objects.filter(email=user.email, accepted=True)
         if invitations.exists():
             extra_data["step"] = "2"
             extra_data["step_detail"] = "account setup"
@@ -48,12 +56,13 @@ class RestAuthRegisterSerializer(RegisterSerializer):
         user.save()
 
 
+
 class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
-        fields = ('email', 'created', 'user_detail',
+        fields = ('id', 'email', 'created', 'user_detail',
                   'company_detail', 'user_roles', 'extra_data',)
-        read_only_fields = ('email', 'user_detail',
+        read_only_fields = ('id', 'email', 'user_detail',
                             'company_detail', 'user_roles', 'extra_data')
 
 

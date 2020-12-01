@@ -2,11 +2,14 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
 
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from drf_yasg2.utils import swagger_auto_schema
 
 from rolepermissions.checkers import has_permission
 from rolepermissions.permissions import revoke_permission
@@ -105,7 +108,11 @@ input to content
 }
 """
 
-
+@method_decorator(name='create', decorator=swagger_auto_schema(
+    operation_description="Allows to invite member or vendor or other users",
+    request_body=serializers.InvitationDataSerializer(),
+    responses={201: serializers.InvitationDataSerializer()}
+))
 class InvitationCreate(viewsets.ViewSet):
     def create(self, request, company_pk):
         """

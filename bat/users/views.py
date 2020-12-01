@@ -54,6 +54,10 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = queryset.filter(
             accepted=False, email=self.request.user.email
         )
+
+        invite_key = self.request.GET.get('inviteKey', None)
+        if invite_key:
+            queryset = queryset.filter(key=invite_key)
         return queryset
 
     @action(detail=True, methods=["post"])

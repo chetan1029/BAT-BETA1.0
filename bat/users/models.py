@@ -139,8 +139,12 @@ class InvitationDetail(AbstractBaseInvitation):
     def send_invitation(self, request, **kwargs):
         """Send invitation."""
         current_site = kwargs.pop("site", Site.objects.get_current())
-        invite_url = reverse("invitations:accept-invite", args=[self.key])
-        invite_url = request.build_absolute_uri(invite_url)
+
+        existing_user = User.objects.filter(email=self.email).first()
+        
+        invite_url = (settings.EXISTING_INVITE_LINK  if existing_user else settings.INVITE_LINK) + \
+            '?inviteKey=' + self.key + "&e=" + self.email
+
         ctx = kwargs
         ctx.update(
             {
@@ -149,6 +153,7 @@ class InvitationDetail(AbstractBaseInvitation):
                 "email": self.email,
                 "key": self.key,
                 "inviter": self.inviter,
+                'inviter_name': self.inviter.get_full_name() or self.inviter.username
             }
         )
 

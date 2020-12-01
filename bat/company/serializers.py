@@ -27,9 +27,10 @@ from bat.company.models import (
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField
+from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, QueryFieldsMixin
 from bat.setting.models import Category
 from bat.setting.utils import get_status
+from bat.users.serializers import UserSerializer
 
 Invitation = get_invitation_model()
 
@@ -102,16 +103,16 @@ class CompanySerializer(serializers.ModelSerializer):
         return [role.get_name() for role in roles]
 
 
-class MemberSerializer(serializers.ModelSerializer):
-    groups = GroupsListField()
+class MemberSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+    roles = GroupsListField(source='groups')
     user_permissions = PermissionListField()
+    user = UserSerializer()
 
     class Meta:
         model = Member
         fields = (
             "id",
-            "is_superuser",
-            "groups",
+            "roles",
             "user_permissions",
             "job_title",
             "user",
@@ -120,18 +121,15 @@ class MemberSerializer(serializers.ModelSerializer):
             "is_active",
             "invitation_accepted",
             "extra_data",
-            "last_login",
         )
         read_only_fields = (
             "id",
-            "is_superuser",
             "user",
             "is_active",
             "invited_by",
             "is_admin",
             "invitation_accepted",
             "extra_data",
-            "last_login",
         )
 
 
