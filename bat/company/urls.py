@@ -19,7 +19,8 @@ from bat.company.views.setting import (
     TaxBoxViewSet,
 )
 
-from bat.company.views.file import (ComponentMeFilesViewSet)
+from bat.company.views.file import (
+    CompanyContractFilesViewSet, ComponentMeFilesViewSet)
 
 router = routers.SimpleRouter()
 
@@ -84,6 +85,16 @@ contract_router.register(
     "contracts", CompanyContractViewSet, basename="company-contract"
 )
 
+
+contract_file_router = routers.NestedSimpleRouter(
+    contract_router, "contracts", lookup="object"
+)
+
+contract_file_router.register(
+    "files", CompanyContractFilesViewSet, basename="company-contract-files"
+)
+
+
 credentail_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
@@ -98,11 +109,11 @@ componentme_router.register(
     "component-me", ComponentMeViewSet, basename="company-me"
 )
 
-componentme_image_router = routers.NestedSimpleRouter(
+componentme_file_router = routers.NestedSimpleRouter(
     componentme_router, "component-me", lookup="object"
 )
 
-componentme_image_router.register(
+componentme_file_router.register(
     "files", ComponentMeFilesViewSet, basename="company-component-me-files"
 )
 
@@ -128,8 +139,9 @@ urlpatterns += [
     path("", include(hscode_router.urls)),
     path("", include(tax_router.urls)),
     path("", include(contract_router.urls)),
+    path("", include(contract_file_router.urls)),
     path("", include(credentail_router.urls)),
     path("", include(componentme_router.urls)),
-    path("", include(componentme_image_router.urls)),
+    path("", include(componentme_file_router.urls)),
     path("", include(componentgoldesample_router.urls)),
 ]
