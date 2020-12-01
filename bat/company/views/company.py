@@ -77,7 +77,7 @@ class CompanyCredentialViewSet(CompanySettingBaseViewSet):
 
     serializer_class = serializers.CompanyCredentialSerializer
     queryset = CompanyCredential.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
+    permission_classes = (IsAuthenticated, DRYPermissions,)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
 
