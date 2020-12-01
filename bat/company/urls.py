@@ -5,7 +5,7 @@ from bat.company.views.company import (
     CompanyContractViewSet,
     CompanyCredentialViewSet,
     ComponentGoldenSampleViewSet,
-    ComponentMeViewSet,
+    ComponentMeViewSet
 )
 from bat.company.views.setting import (
     BankViewSet,
@@ -21,6 +21,10 @@ from bat.company.views.setting import (
 
 from bat.company.views.file import (
     CompanyContractFilesViewSet, ComponentMeFilesViewSet)
+
+from bat.company.views.comment import (
+    CompanyContractCommentsViewSet, )
+
 
 router = routers.SimpleRouter()
 
@@ -95,6 +99,15 @@ contract_file_router.register(
 )
 
 
+contract_comment_router = routers.NestedSimpleRouter(
+    contract_router, "contracts", lookup="object"
+)
+
+contract_comment_router.register(
+    "comments", CompanyContractCommentsViewSet, basename="company-contract-comments"
+)
+
+
 credentail_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
@@ -143,5 +156,6 @@ urlpatterns += [
     path("", include(credentail_router.urls)),
     path("", include(componentme_router.urls)),
     path("", include(componentme_file_router.urls)),
+    path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
 ]

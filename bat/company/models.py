@@ -32,6 +32,8 @@ from bat.company.constants import *
 from bat.globalprop.validator import validator
 from bat.globalutils.utils import pdf_file_from_html
 from bat.setting.models import Category, Status
+from bat.comments.models import Comment
+
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -52,7 +54,6 @@ def get_member_from_request(request):
     return member
 
 
-# Create your models here.
 def companylogo_name(instance, filename):
     """Manage path and name for vendor logo."""
     name, extension = os.path.splitext(filename)
@@ -1197,6 +1198,7 @@ class CompanyContract(models.Model):
     # like inventory rotations, margins etc for the sales channels that we will save in extra_data.
     # Extra field for Sales Channel contracts :
     # (inventory_rotation, rotation_percentage, retail_margin, distributor_margin, air_freight, sea_freight, air_misc, sea_misc)
+    comments = GenericRelation(Comment)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
@@ -1295,6 +1297,17 @@ class CompanyContract(models.Model):
     def has_object_restore_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_company_contract")
+
+    @staticmethod
+    def has_comment_permission(request):
+        member = get_member_from_request(request)
+        print("\n\n\ncomment_company_contract\n\n\n")
+        return has_permission(member, "comment_company_contract")
+
+    def has_object_comment_permission(self, request):
+        member = get_member_from_request(request)
+        print("\n\n\ncomment_company_contract2\n\n\n")
+        return has_permission(member, "comment_company_contract")
 
 
 class CompanyCredential(models.Model):

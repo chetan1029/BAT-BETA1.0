@@ -12,7 +12,6 @@ from mptt.models import MPTTModel, TreeForeignKey
 User = get_user_model()
 
 
-# Create your models here.
 class Category(MPTTModel):
     """
     Category Model used for product, shipping, vendors etc.
@@ -100,7 +99,6 @@ class Status(MPTTModel):
         ordering = ["name"]
         verbose_name_plural = _("Statuses")
 
-
     @property
     def full_path(self):
         """List of all status."""
@@ -158,7 +156,6 @@ class PaymentTerms(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("PaymentTerms")
-
 
     def __str__(self):
         """Return Value."""
