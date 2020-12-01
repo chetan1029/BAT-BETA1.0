@@ -1,19 +1,12 @@
-from decimal import Decimal
 
-from django.contrib.auth import get_user_model
-from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
-from invitations.utils import get_invitation_model
-from notifications.signals import notify
-from rest_framework import mixins, status, viewsets
-from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rolepermissions.checkers import has_permission
-from rolepermissions.permissions import revoke_permission
-from rolepermissions.roles import RolesManager, assign_role, clear_roles
+
 
 from bat.company import serializers
 from bat.company.models import (
@@ -24,6 +17,7 @@ from bat.company.models import (
 )
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+
 
 
 # Company base view set.
@@ -70,12 +64,15 @@ class CompanyContractViewSet(CompanySettingBaseViewSet):
         company_contract.save_pdf_file()
 
 
+
+
+
 class CompanyCredentialViewSet(CompanySettingBaseViewSet):
     """Operations on Company Credential."""
 
     serializer_class = serializers.CompanyCredentialSerializer
     queryset = CompanyCredential.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
+    permission_classes = (IsAuthenticated, DRYPermissions,)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
 

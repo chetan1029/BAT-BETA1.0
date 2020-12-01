@@ -5,7 +5,7 @@ from bat.company.views.company import (
     CompanyContractViewSet,
     CompanyCredentialViewSet,
     ComponentGoldenSampleViewSet,
-    ComponentMeViewSet,
+    ComponentMeViewSet
 )
 from bat.company.views.setting import (
     BankViewSet,
@@ -18,6 +18,13 @@ from bat.company.views.setting import (
     PackingBoxViewSet,
     TaxBoxViewSet,
 )
+
+from bat.company.views.file import (
+    CompanyContractFilesViewSet, ComponentMeFilesViewSet)
+
+from bat.company.views.comment import (
+    CompanyContractCommentsViewSet, )
+
 
 router = routers.SimpleRouter()
 
@@ -82,6 +89,25 @@ contract_router.register(
     "contracts", CompanyContractViewSet, basename="company-contract"
 )
 
+
+contract_file_router = routers.NestedSimpleRouter(
+    contract_router, "contracts", lookup="object"
+)
+
+contract_file_router.register(
+    "files", CompanyContractFilesViewSet, basename="company-contract-files"
+)
+
+
+contract_comment_router = routers.NestedSimpleRouter(
+    contract_router, "contracts", lookup="object"
+)
+
+contract_comment_router.register(
+    "comments", CompanyContractCommentsViewSet, basename="company-contract-comments"
+)
+
+
 credentail_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
@@ -94,6 +120,14 @@ componentme_router = routers.NestedSimpleRouter(
 )
 componentme_router.register(
     "component-me", ComponentMeViewSet, basename="company-me"
+)
+
+componentme_file_router = routers.NestedSimpleRouter(
+    componentme_router, "component-me", lookup="object"
+)
+
+componentme_file_router.register(
+    "files", ComponentMeFilesViewSet, basename="company-component-me-files"
 )
 
 componentgoldesample_router = routers.NestedSimpleRouter(
@@ -118,7 +152,10 @@ urlpatterns += [
     path("", include(hscode_router.urls)),
     path("", include(tax_router.urls)),
     path("", include(contract_router.urls)),
+    path("", include(contract_file_router.urls)),
     path("", include(credentail_router.urls)),
     path("", include(componentme_router.urls)),
+    path("", include(componentme_file_router.urls)),
+    path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
 ]
