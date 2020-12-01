@@ -14,6 +14,8 @@ from bat.company.models import (
     Company,
     CompanyContract,
     CompanyCredential,
+    CompanyOrder,
+    CompanyOrderProduct,
     CompanyPaymentTerms,
     CompanyProduct,
     CompanyType,
@@ -862,6 +864,7 @@ class CompanyProductSerializer(serializers.ModelSerializer):
             "model_number",
             "manufacturer_part_number",
             "price",
+            "price_currency",
             "status",
             "is_active",
         )
@@ -899,6 +902,103 @@ class CompanyProductSerializer(serializers.ModelSerializer):
                 errors = set_field_errors(
                     errors, "companytype", _("Invalid company type selected.")
                 )
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+
+class CompanyOrderProductSerializer(serializers.ModelSerializer):
+    """Serializer for Company Order Product."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyOrderProduct
+        fields = (
+            "id",
+            "companyorder",
+            "companyproduct",
+            "componentprice",
+            "quantity",
+            "shipped_quantity",
+            "remaining_quantity",
+            "companypaymentterms",
+            "price",
+            "amount",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "companyorder",
+            "shipped_quantity",
+            "remaining_quantity",
+            "amount",
+            "is_active",
+            "create_date",
+            "update_date",
+        )
+
+
+class CompanyOrderSerializer(serializers.ModelSerializer):
+    """Serializer for Company Order."""
+
+    orderproducts = CompanyOrderProductSerializer(many=True, read_only=False)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyOrder
+        fields = (
+            "id",
+            "batch_id",
+            "companytype",
+            "order_date",
+            "delivery_date",
+            "buyer_member",
+            "seller_member",
+            "sub_amount",
+            "vat_amount",
+            "tax_amount",
+            "total_amount",
+            "return_amount",
+            "deposit_amount",
+            "quantity",
+            "note",
+            "status",
+            "orderproducts",
+        )
+        read_only_fields = (
+            "id",
+            "status",
+            "sub_amount",
+            "vat_amount",
+            "tax_amount",
+            "total_amount",
+            "return_amount",
+            "deposit_amount",
+            "quantity",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companytype = attrs.get("companytype", None)
+        orderproducts = attrs.get("orderproducts", [])
+        errors = {}
+        if companytype:
+            if str(companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companytype", _("Invalid company type selected.")
+                )
+        if len(orderproducts) <= 0:
+            msg = _("At Least one product required to place an order.")
+            raise serializers.ValidationError({"orderproducts": msg})
         if errors:
             raise serializers.ValidationError(errors)
         attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)

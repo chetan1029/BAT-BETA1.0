@@ -1912,7 +1912,7 @@ class CompanyOrder(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return str(self.batch_id)
 
     @staticmethod
     def has_read_permission(request):
@@ -1991,6 +1991,9 @@ class CompanyOrderProduct(models.Model):
     companyproduct = models.ForeignKey(
         CompanyProduct, on_delete=models.CASCADE
     )
+    componentprice = models.ForeignKey(
+        ComponentPrice, on_delete=models.CASCADE, blank=True, null=True
+    )
     quantity = models.PositiveIntegerField()
     shipped_quantity = models.PositiveIntegerField(default=0)
     remaining_quantity = models.PositiveIntegerField(default=0)
@@ -2002,6 +2005,7 @@ class CompanyOrderProduct(models.Model):
         CompanyPaymentTerms, on_delete=models.CASCADE
     )
     extra_data = HStoreField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
@@ -2012,7 +2016,7 @@ class CompanyOrderProduct(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return str(self.companyorder.batch_id)
 
 
 class CompanyOrderDelivery(models.Model):

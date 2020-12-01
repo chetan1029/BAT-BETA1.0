@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,6 +20,8 @@ from bat.company import serializers
 from bat.company.models import (
     CompanyContract,
     CompanyCredential,
+    CompanyOrder,
+    CompanyOrderProduct,
     CompanyProduct,
     ComponentGoldenSample,
     ComponentMe,
@@ -26,6 +29,8 @@ from bat.company.models import (
 )
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+from bat.product.constants import PRODUCT_STATUS_ACTIVE, PRODUCT_STATUS_DRAFT
+from bat.setting.utils import get_status
 
 
 # Company base view set.
@@ -186,3 +191,79 @@ class CompanyProductViewSet(viewsets.ModelViewSet):
             companytype__company=member.company
         ).order_by("-create_date")
         return super().filter_queryset(queryset)
+
+
+class CompanyOrderViewSet(
+    ArchiveMixin,
+    RestoreMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Operations on Company Order."""
+
+    serializer_class = serializers.CompanyOrderSerializer
+    queryset = CompanyOrder.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ["status"]
+    search_fields = ["batch_id"]
+
+    archive_message = _("Order is archived")
+    restore_message = _("Order is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
+
+    def perform_create(self, serializer):
+        """
+        save company order with the products and related objects.
+        """
+        try:
+            with transaction.atomic():
+                orderproducts = serializer.validated_data.get(
+                    "orderproducts", None
+                )
+                serializer.validated_data.pop("orderproducts")
+                # order_status = get_status("Basic", PRODUCT_STATUS_DRAFT)
+                # # Draft, Active, Archived
+                # companyorder = serializer.save(status=order_status)
+                # # save order products
+                # total_quantity = 0
+                # total_amount = 0
+                # for orderproduct in orderproducts or []:
+                #     quantity = orderproduct.validated_data.get(
+                #         "quantity", None
+                #     )
+                #     remaining_quantity = quantity
+                #     componentprice_id = orderproduct.validated_data.get(
+                #         "componentprice", None
+                #     )
+                #     componentprice = ComponentPrice.objects.get(
+                #         pk=componentprice_id
+                #     )
+                #     price = componentprice.price
+                #     amount = Decimal(price) * Decimal(quantity)
+                #     total_quantity = total_quantity + quantity
+                #     total_amount = Decimal(amount) + Decimal(total_amount)
+                #     CompanyOrderProduct.objects.create(
+                #         companyorder=companyorder,
+                #         price=price,
+                #         amount=amount,
+                #         remaining_quantity=remaining_quantity,
+                #         **orderproduct
+                #     )
+                # companyorder.sub_amount = total_amount
+                # companyorder.total_amount = total_amount
+                # companyorder.quantity = total_quantity
+                # companyorder.save()
+        except IntegrityError:
+            return Response(
+                {"detail": _("Can't have to same product in the same order")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
