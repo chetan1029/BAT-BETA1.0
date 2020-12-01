@@ -281,10 +281,6 @@ class File(models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
-    # def delete(self, *args, **kwargs):
-    #     print("\n\n inside delete \n\n ")
-    #     super(Image, self).delete(*args, **kwargs)
-
     def archive(self):
         """
         archive model instance

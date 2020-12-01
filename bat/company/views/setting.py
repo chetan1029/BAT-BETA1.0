@@ -239,15 +239,6 @@ class InvitationCreate(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
-
-# class SetCompanyAndUserInContexMixin(viewsets.GenericViewSet):
-
-#     def get_serializer_context(self):
-#         context = super().get_serializer_context()
-#         context["user_id"] = self.request.user.id
-#         return context
-
-
 # Member
 
 

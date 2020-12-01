@@ -11,7 +11,8 @@ from bat.company.models import (
     PackingBox,
     Tax,
     CompanyContract,
-    File
+    File,
+    ComponentMe
 )
 
 admin.site.register(Bank)
@@ -25,3 +26,4 @@ admin.site.register(HsCode)
 admin.site.register(Tax)
 admin.site.register(CompanyContract)
 admin.site.register(File)
+admin.site.register(ComponentMe)

@@ -8,6 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rolepermissions.roles import get_user_roles
 
+
 from bat.company.models import (
     Bank,
     Company,
@@ -30,6 +31,8 @@ from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField
 from bat.setting.models import Category
 from bat.setting.utils import get_status
+from bat.company.file_serializers import FileSerializer
+
 
 Invitation = get_invitation_model()
 
@@ -198,14 +201,15 @@ class InvitationDataSerializer(serializers.Serializer):
                     company_id=int(company_id), user__email=email
                 ).exists():
                     raise serializers.ValidationError(
-                        { "detail" : _("User already is your staff member.")}
+                        {"detail": _("User already is your staff member.")}
                     )
                 else:
                     invitations = Invitation.objects.filter(
                         email=email, company_detail__company_id=int(company_id)
                     )
                     if invitations.exists():
-                        msg = { "detail" : _("Invitation already sent for this email.")}
+                        msg = {"detail": _(
+                            "Invitation already sent for this email.")}
                         raise serializers.ValidationError(msg)
 
         return super().validate(data)
@@ -536,29 +540,6 @@ class TaxSerializer(ReversionSerializerMixin):
             "company",
             "create_date",
             "update_date",
-        )
-
-
-class FileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = File
-        fields = (
-            "id",
-            "company",
-            "title",
-            "version",
-            "file",
-            "note",
-            "content_type",
-            "object_id",
-            "is_active",
-        )
-        read_only_fields = (
-            "id",
-            "content_type",
-            "object_id",
-            "is_active",
-            "company",
         )
 
 
