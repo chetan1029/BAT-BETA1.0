@@ -1,12 +1,17 @@
 from decimal import Decimal
 
+from django.utils.translation import ugettext_lazy as _
+
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import Field, ChoiceField
+from rest_framework.serializers import Field, ChoiceField, JSONField
 
 from django_countries import countries
 from measurement.measures import Weight
+from djmoney.money import Money
 
 from bat.company import constants
+
+from bat.globalconstants.constants import CURRENCY_CODE_CHOICES
 
 
 class WeightField(Field):
@@ -51,3 +56,36 @@ class CountrySerializerField(ChoiceField):
         if isinstance(value, str):
             return value
         return value.code + " - " + value.name
+
+
+class MoneySerializerField(JSONField):
+
+    def to_representation(self, value):
+        ret = {"amount": value.amount, "currency": value.currency.code}
+        return ret
+
+    def to_internal_value(self, data):
+        if not isinstance(data, dict):
+            raise ValidationError(
+                "%s is not a valid %s" % (data, "format")
+            )
+        amount = data.get("amount", None)
+        currency = data.get("currency", None)
+        if amount is None:
+            raise ValidationError(
+                {"amount": _("amount is required")})
+        try:
+            Decimal(amount)
+        except Exception:
+            raise ValidationError(
+                {"amount": _("amount is not a valid decimal")})
+
+        if currency is None:
+            raise ValidationError(
+                {"currency": _("currency is required")})
+
+        if currency in CURRENCY_CODE_CHOICES:
+            return Money(amount, currency)
+        else:
+            raise ValidationError(
+                {"currency": _(f"{currency} is not a valid currency")})
