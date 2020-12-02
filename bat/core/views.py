@@ -12,9 +12,9 @@ class CurrencyChoicesViewSet(viewsets.ViewSet):
         list available currency choices in system
         """
         currency_choices = []
-        for currency in CURRENCY_CHOICES:
+        for code, name in CURRENCY_CHOICES:
             currency_choices.append({
-                "code": currency[0],
-                "name": currency[1]
+                "code": code,
+                "name": name
             })
         return Response(currency_choices, status=status.HTTP_200_OK)
