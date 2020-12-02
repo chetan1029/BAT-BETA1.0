@@ -1,7 +1,7 @@
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -14,7 +14,7 @@ from bat.company.utils import get_member
 from bat.globalutils.utils import has_any_permission
 
 
-class BaseFilesViewSet(mixins.DestroyModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class BaseFilesViewSet(viewsets.ModelViewSet):
 
     serializer_class = file_serializers.FileSerializer
     queryset = File.objects.all()
