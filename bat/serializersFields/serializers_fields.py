@@ -81,14 +81,10 @@ class MoneySerializerField(JSONField):
         return ret
 
     def to_internal_value(self, data):
-        try:
-            if not isinstance(data, dict):
-                raise Exception
-        except Exception:
-            if data:
-                raise ValidationError(
-                    "%s is not a valid %s" % (data, "format")
-                )
+        if not isinstance(data, dict):
+            raise ValidationError(
+                "%s is not a valid %s" % (data, "format")
+            )
         amount = data.get("amount", None)
         currency = data.get("currency", None)
         if amount is None:

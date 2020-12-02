@@ -11,4 +11,10 @@ class CurrencyChoicesViewSet(viewsets.ViewSet):
         """
         list available currency choices in system
         """
-        return Response(CURRENCY_CHOICES, status=status.HTTP_200_OK)
+        currency_choices = []
+        for currency in CURRENCY_CHOICES:
+            currency_choices.append({
+                "code": currency[0],
+                "name": currency[1]
+            })
+        return Response(currency_choices, status=status.HTTP_200_OK)
