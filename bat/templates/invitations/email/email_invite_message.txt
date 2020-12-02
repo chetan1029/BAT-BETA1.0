@@ -1,0 +1,15 @@
+{% load i18n %}
+{% autoescape off %}
+{% blocktrans %}
+
+Hello,
+
+You have been invited to join {{ company_name }} on {{ site_name }}.
+
+If you'd like to join, please go to {{ invite_url }}
+
+Best,
+{{ site_name }}
+
+{% endblocktrans %}
+{% endautoescape %}

@@ -213,13 +213,7 @@ class InvitationCreate(viewsets.ViewSet):
 
         user = User.objects.filter(email=email).first()
         # url to accept invitation
-        print(
-            "\n \n \naccept url : ",
-            reverse(
-                "api:users:invitationdetail-accept", kwargs={"pk": invite.id}
-            ),
-            "\n \n \n",
-        )
+       
         if user:
             actions = [
                 {
