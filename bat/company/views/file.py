@@ -1,7 +1,7 @@
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -14,7 +14,7 @@ from bat.company.utils import get_member
 from bat.globalutils.utils import has_any_permission
 
 
-class BaseFilesViewSet(viewsets.ModelViewSet):
+class BaseFilesViewSet(mixins.DestroyModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
 
     serializer_class = file_serializers.FileSerializer
     queryset = File.objects.all()
@@ -33,6 +33,15 @@ class BaseFilesViewSet(viewsets.ModelViewSet):
                         object_id=object_pk, content_type=content_type)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def destroy(self, request, *args, **kwargs):
+        company_pk = kwargs.get("company_pk", None)
+        member = get_member(company_id=company_pk, user_id=request.user.id)
+        if not (has_any_permission(member, self.permission_list)):
+            return Response({"detail": _("You do not have permission to perform this action.")}, status=status.HTTP_403_FORBIDDEN)
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CompanyContractFilesViewSet(BaseFilesViewSet):
