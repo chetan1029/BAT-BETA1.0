@@ -14,34 +14,43 @@ from bat.company import constants
 from bat.globalconstants.constants import CURRENCY_CODE_CHOICES
 
 
-class WeightField(Field):
+class WeightField(JSONField):
     def to_representation(self, value):
-        ret = {"weight": value.value, "unit": value.unit}
+        '''
+        represent weight object to json data
+        '''
+        ret = {"value": value.value, "unit": value.unit}
         return ret
 
     def to_internal_value(self, data):
+        '''
+        generate weight object from json data
+        '''
+        if not isinstance(data, dict):
+            raise ValidationError(
+                "%s is not a valid %s" % (data, "format")
+            )
+        value = data.get("value", None)
+        unit = data.get("unit", None)
+        if value is None:
+            raise ValidationError(
+                {"value": _("value is required")})
         try:
-            if not isinstance(data, dict):
-                raise Exception
-            # data = eval(data)
-            unit = data["unit"]
-            value = data["weight"]
-            kwargs = {unit: value}
-            if unit in constants.WEIGHT_UNIT_TYPE_LIST:
-                return Weight(**kwargs)
-            else:
-                raise ValidationError("%s is not a valid %s" % (data, "Unit"))
+            Decimal(value)
         except Exception:
-            if data:
-                raise ValidationError(
-                    "%s is not a valid %s" % (data, "format")
-                )
-            else:
-                if self.required:
-                    raise ValidationError("%s is %s" % ("weight", "required"))
-                else:
-                    # TODO
-                    return data
+            raise ValidationError(
+                {"value": _("value is not a valid decimal")})
+
+        if unit is None:
+            raise ValidationError(
+                {"unit": _("unit is required")})
+
+        kwargs = {unit: value}
+        if unit in constants.WEIGHT_UNIT_TYPE_LIST:
+            return Weight(**kwargs)
+        else:
+            raise ValidationError(
+                {"unit": _(f"{unit} is not a valid unit")})
 
 
 class CountrySerializerField(ChoiceField):
@@ -58,13 +67,35 @@ class CountrySerializerField(ChoiceField):
         return value.code + " - " + value.name
 
 
+class TagField(Field):
+    def to_representation(self, value):
+        """
+        Convert from tags to csv string of tag names.
+        """
+        if not isinstance(value, str):
+            value = ",".join(list(value.names()))
+        return value
+
+    def to_internal_value(self, data):
+        """
+        Convert from csv string of tag names to list of tags.
+        """
+        return data.split(",")
+
+
 class MoneySerializerField(JSONField):
 
     def to_representation(self, value):
+        '''
+        represent money object to json data
+        '''
         ret = {"amount": value.amount, "currency": value.currency.code}
         return ret
 
     def to_internal_value(self, data):
+        '''
+        generate money object from json data
+        '''
         if not isinstance(data, dict):
             raise ValidationError(
                 "%s is not a valid %s" % (data, "format")
