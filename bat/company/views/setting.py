@@ -2,11 +2,14 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
 
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from drf_yasg2.utils import swagger_auto_schema
 
 from rolepermissions.checkers import has_permission
 from rolepermissions.permissions import revoke_permission
@@ -105,7 +108,11 @@ input to content
 }
 """
 
-
+@method_decorator(name='create', decorator=swagger_auto_schema(
+    operation_description="Allows to invite member or vendor or other users",
+    request_body=serializers.InvitationDataSerializer(),
+    responses={201: serializers.InvitationDataSerializer()}
+))
 class InvitationCreate(viewsets.ViewSet):
     def create(self, request, company_pk):
         """
@@ -276,16 +283,17 @@ class MemberViewSet(
         """ update member with given roles and permissions """
         instance = self.get_object()
         data = serializer.validated_data.copy()
+        
         clear_roles(instance)
-        for group in data.get("groups", None):
+        for group in data.get("groups", []):
             assign_role(instance, group.name)
             role_obj = RolesManager.retrieve_role(group.name)
             # remove unneccesary permissions
             for perm in role_obj.get_all_permissions():
-                if perm not in data.get("user_permissions", None):
+                if perm not in data.get("user_permissions", []):
                     revoke_permission(instance, perm.codename)
-        serializer.validated_data.pop("groups")
-        serializer.validated_data.pop("user_permissions")
+        serializer.validated_data.pop("groups", None)
+        serializer.validated_data.pop("user_permissions", None)
         serializer.save()
 
 

@@ -36,7 +36,7 @@ invitation_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 invitation_router.register(
-    "invitations", InvitationCreate, basename="company-invitation"
+    "invite", InvitationCreate, basename="company-invitation"
 )
 member_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"

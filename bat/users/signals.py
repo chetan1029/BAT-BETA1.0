@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.signals import user_logged_in
+
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
 from rolepermissions.permissions import revoke_permission
@@ -82,3 +84,19 @@ def process_invitations(sender, instance, **kwargs):
             )
 
             invitation.delete()
+
+
+@receiver(user_logged_in)
+def user_logged_in_callback(sender, request, user, **kwargs):  
+    from bat.users.models import UserLoginActivity
+
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    
+    user_agent_info = request.META.get('HTTP_USER_AGENT', '<unknown>')[:255],
+
+    UserLoginActivity.objects.create(user=user, ip=ip, agent_info=user_agent_info)
+
