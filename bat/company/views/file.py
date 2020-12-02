@@ -34,15 +34,6 @@ class BaseFilesViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def destroy(self, request, *args, **kwargs):
-        company_pk = kwargs.get("company_pk", None)
-        member = get_member(company_id=company_pk, user_id=request.user.id)
-        if not (has_any_permission(member, self.permission_list)):
-            return Response({"detail": _("You do not have permission to perform this action.")}, status=status.HTTP_403_FORBIDDEN)
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 class CompanyContractFilesViewSet(BaseFilesViewSet):
     """
