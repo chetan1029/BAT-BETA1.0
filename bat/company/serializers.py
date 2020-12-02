@@ -113,9 +113,8 @@ class MemberSerializer(QueryFieldsMixin, serializers.ModelSerializer):
     login_activities = serializers.SerializerMethodField()
 
     def get_login_activities(self, obj):
-        return UserLoginActivitySerializer(obj.user.get_recent_logged_in_activities(), \
-            many=True).data
-
+        return UserLoginActivitySerializer(obj.user.get_recent_logged_in_activities(),
+                                           many=True).data
 
     class Meta:
         model = Member

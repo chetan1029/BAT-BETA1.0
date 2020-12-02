@@ -20,7 +20,7 @@ from bat.company.views.setting import (
 )
 
 from bat.company.views.file import (
-    CompanyContractFilesViewSet, ComponentMeFilesViewSet)
+    CompanyContractFilesViewSet, ComponentMeFilesViewSet, ComponentGoldenSampleFilesViewSet)
 
 from bat.company.views.comment import (
     CompanyContractCommentsViewSet, )
@@ -134,9 +134,17 @@ componentgoldesample_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 componentgoldesample_router.register(
-    "component-golden-sample",
+    "component-golden-samples",
     ComponentGoldenSampleViewSet,
     basename="company-golden-sample",
+)
+
+componentgoldensample_file_router = routers.NestedSimpleRouter(
+    componentgoldesample_router, "component-golden-samples", lookup="object"
+)
+
+componentgoldensample_file_router.register(
+    "files", ComponentGoldenSampleFilesViewSet, basename="company-component-golden-sample-files"
 )
 
 app_name = "company"
@@ -158,4 +166,5 @@ urlpatterns += [
     path("", include(componentme_file_router.urls)),
     path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
+    path("", include(componentgoldensample_file_router.urls)),
 ]
