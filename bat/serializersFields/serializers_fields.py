@@ -58,22 +58,6 @@ class CountrySerializerField(ChoiceField):
         return value.code + " - " + value.name
 
 
-class TagField(Field):
-    def to_representation(self, value):
-        """
-        Convert from tags to csv string of tag names.
-        """
-        if not isinstance(value, str):
-            value = ",".join(list(value.names()))
-        return value
-
-    def to_internal_value(self, data):
-        """
-        Convert from csv string of tag names to list of tags.
-        """
-        return data.split(",")
-
-
 class MoneySerializerField(JSONField):
 
     def to_representation(self, value):
