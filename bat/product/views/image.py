@@ -46,6 +46,9 @@ class BaseImagesViewSet(viewsets.ViewSet):
         """
         Delete all the images which id is specified in the list
         """
+        member = get_member(company_id=company_pk, user_id=request.user.id)
+        if not (has_any_permission(member, self.permission_list)):
+            return Response({"detail": _("You do not have permission to perform this action.")}, status=status.HTTP_403_FORBIDDEN)
         ids = request.GET.get("ids", None).split(",")
         images = Image.objects.filter(
             company__id=company_pk, object_id=object_pk, id__in=ids)
