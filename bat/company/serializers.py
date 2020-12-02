@@ -113,9 +113,8 @@ class MemberSerializer(QueryFieldsMixin, serializers.ModelSerializer):
     login_activities = serializers.SerializerMethodField()
 
     def get_login_activities(self, obj):
-        return UserLoginActivitySerializer(obj.user.get_recent_logged_in_activities(), \
-            many=True).data
-
+        return UserLoginActivitySerializer(obj.user.get_recent_logged_in_activities(),
+                                           many=True).data
 
     class Meta:
         model = Member
@@ -691,11 +690,11 @@ class ComponentMeSerializer(serializers.ModelSerializer):
                 kwargs.get("company_pk", None)
             ):
                 errors = set_field_errors(
-                    errors, "product", _("Invalid product selected.")
+                    errors, "component", _("Invalid component selected.")
                 )
             if not component.productparent.is_component:
                 errors = set_field_errors(
-                    errors, "product", _("Selected component is a product.")
+                    errors, "component", _("Selected component is a product.")
                 )
         if companytype:
             if str(companytype.company.id) != str(company_id):
@@ -738,7 +737,7 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         """
         validate that :
-            the selected company type must relate to the current company.
+            company type of selected componentme must relate to the current company.
         """
         kwargs = self.context["request"].resolver_match.kwargs
         componentme = attrs.get("componentme", None)
@@ -748,7 +747,7 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
                 kwargs.get("company_pk", None)
             ):
                 errors = set_field_errors(
-                    errors, "product", _("Invalid Component ME.")
+                    errors, "componentme", _("Invalid Component ME.")
                 )
         if errors:
             raise serializers.ValidationError(errors)
