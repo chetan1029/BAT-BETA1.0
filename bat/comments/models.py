@@ -60,8 +60,4 @@ class Comment(models.Model):
         return True
 
     def has_object_update_permission(self, request):
-        print("\n\n update, :", self.user == request.user)
-        print("\n\n update 2, :", self.user, request.user)
-        print("\n\n\n szfsf : ",
-              self.content_object.has_read_permission(request))
         return self.user == request.user

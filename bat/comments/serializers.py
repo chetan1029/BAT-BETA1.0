@@ -11,5 +11,5 @@ class CommentSerializear(serializers.ModelSerializer):
         model = Comment
         fields = ("id", "user", "parent", "content_type", "object_id",
                   "content", "posted", "edited")
-        read_only_fields = ("id", "user", "parent", "content_type",
+        read_only_fields = ("id", "user", "content_type",
                             "object_id", "posted", "edited")
