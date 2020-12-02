@@ -78,6 +78,7 @@ class CompanyAdmin(AbstractUserRole):
         "archived_company_contract": True,
         "restore_company_contract": True,
         "delete_company_contract": True,
+        "comment_company_contract": True,
         # Company Credential
         "view_company_credential": True,
         "add_company_credential": True,
@@ -226,6 +227,7 @@ class SupplyChainManager(AbstractUserRole):
         "archived_company_contract": True,
         "restore_company_contract": True,
         "delete_company_contract": False,
+        "comment_company_contract": True,
         # Company Credential
         "view_company_credential": True,
         "add_company_credential": True,

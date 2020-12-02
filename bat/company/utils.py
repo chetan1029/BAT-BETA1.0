@@ -1,8 +1,6 @@
 from collections import OrderedDict
-from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
-from rolepermissions.checkers import has_permission
 from rolepermissions.roles import RolesManager
 
 from bat.company.models import Member
@@ -40,5 +38,3 @@ def get_list_of_permissions():
     for role in RolesManager.get_roles():
         permissions.extend(list(role.permission_names_list()))
     return permissions
-
-

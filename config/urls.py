@@ -7,17 +7,14 @@ from django.views.generic import TemplateView
 
 admin.autodiscover()
 urlpatterns = [
-    # Django Admin, use {% url 'admin:index' %}
     path("admin/", admin.site.urls),
     # defender admin
     path("admin/defender/", include("defender.urls")),
-    # User management
-    # path("users/", include("bat.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
     # Django Invitation
     path("invitations/", include("invitations.urls", namespace="invitations")),
-    # API base url
     path("ht", include('health_check.urls', namespace='ht')),
+    # API base url
     path("", include("config.api_router")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
