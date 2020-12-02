@@ -149,6 +149,8 @@ class InvitationDetail(AbstractBaseInvitation):
         invite_url = (settings.EXISTING_INVITE_LINK  if existing_user else settings.INVITE_LINK) + \
             '?inviteKey=' + self.key + "&e=" + self.email
 
+        company_name = self.company_detail.get('company_name')
+
         ctx = kwargs
         ctx.update(
             {
@@ -157,6 +159,7 @@ class InvitationDetail(AbstractBaseInvitation):
                 "email": self.email,
                 "key": self.key,
                 "inviter": self.inviter,
+                "company_name": company_name,
                 'inviter_name': self.inviter.get_full_name() or self.inviter.username
             }
         )
