@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import HStoreField
 from django.contrib.sites.models import Site
+from django.db import models
 from django.db.models import CharField, DateTimeField, EmailField, ImageField, JSONField
 from django.urls import reverse
 from django.utils import timezone
@@ -85,6 +86,9 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"username": self.username})
+
+    def get_recent_logged_in_activities(self, no_of_activities=5):
+        return UserLoginActivity.objects.filter(user=self).order_by('-logged_in_at')[:no_of_activities]
 
 
 class InvitationDetail(AbstractBaseInvitation):
@@ -173,3 +177,14 @@ class InvitationDetail(AbstractBaseInvitation):
     def __str__(self):
         """Return Value."""
         return "Invite: {0}".format(self.email) + str(self.id)
+
+
+class UserLoginActivity(models.Model):
+    ip = models.GenericIPAddressField(verbose_name=_('IP address'), null=True, blank=True)
+    logged_in_at = models.DateTimeField(verbose_name=_('logged in date'), auto_now=True)
+    user = models.ForeignKey(User, verbose_name=_("User"), on_delete=models.CASCADE)
+    agent_info = models.CharField(verbose_name=_('Agent info'), max_length=2096, null=True, blank=True)
+    location = models.CharField(verbose_name=_('location'), max_length=2096, null=True, blank=True)
+
+    def __str__(self):
+        return self(user.id) + " = " + str(self.ip)

@@ -30,7 +30,7 @@ from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, QueryFieldsMixin
 from bat.setting.models import Category
 from bat.setting.utils import get_status
-from bat.users.serializers import UserSerializer
+from bat.users.serializers import UserSerializer, UserLoginActivitySerializer
 
 Invitation = get_invitation_model()
 
@@ -107,6 +107,12 @@ class MemberSerializer(QueryFieldsMixin, serializers.ModelSerializer):
     roles = GroupsListField(source='groups')
     user_permissions = PermissionListField()
     user = UserSerializer()
+    login_activities = serializers.SerializerMethodField()
+
+    def get_login_activities(self, obj):
+        return UserLoginActivitySerializer(obj.user.get_recent_logged_in_activities(), \
+            many=True).data
+
 
     class Meta:
         model = Member
@@ -121,6 +127,7 @@ class MemberSerializer(QueryFieldsMixin, serializers.ModelSerializer):
             "is_active",
             "invitation_accepted",
             "extra_data",
+            "login_activities",
         )
         read_only_fields = (
             "id",

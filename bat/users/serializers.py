@@ -7,7 +7,7 @@ from rest_auth.serializers import PasswordResetSerializer
 from invitations.utils import get_invitation_model
 from django.conf import settings
 
-from bat.users.models import InvitationDetail
+from bat.users.models import InvitationDetail, UserLoginActivity
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -85,3 +85,8 @@ class PasswordSerializer(PasswordResetSerializer):
             }
         }
 
+
+class UserLoginActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserLoginActivity
+        fields = ('ip', 'logged_in_at', 'agent_info', 'location', )

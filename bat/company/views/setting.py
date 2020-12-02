@@ -292,16 +292,17 @@ class MemberViewSet(
         """ update member with given roles and permissions """
         instance = self.get_object()
         data = serializer.validated_data.copy()
+        
         clear_roles(instance)
-        for group in data.get("groups", None):
+        for group in data.get("groups", []):
             assign_role(instance, group.name)
             role_obj = RolesManager.retrieve_role(group.name)
             # remove unneccesary permissions
             for perm in role_obj.get_all_permissions():
-                if perm not in data.get("user_permissions", None):
+                if perm not in data.get("user_permissions", []):
                     revoke_permission(instance, perm.codename)
-        serializer.validated_data.pop("groups")
-        serializer.validated_data.pop("user_permissions")
+        serializer.validated_data.pop("groups", None)
+        serializer.validated_data.pop("user_permissions", None)
         serializer.save()
 
 
