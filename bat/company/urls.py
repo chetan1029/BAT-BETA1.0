@@ -4,8 +4,11 @@ from rest_framework_nested import routers
 from bat.company.views.company import (
     CompanyContractViewSet,
     CompanyCredentialViewSet,
+    CompanyOrderViewSet,
+    CompanyProductViewSet,
     ComponentGoldenSampleViewSet,
-    ComponentMeViewSet
+    ComponentMeViewSet,
+    ComponentPriceViewSet,
 )
 from bat.company.views.setting import (
     BankViewSet,
@@ -141,6 +144,27 @@ componentgoldesample_router.register(
     basename="company-golden-sample",
 )
 
+componentprice_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+componentprice_router.register(
+    "component-price", ComponentPriceViewSet, basename="component-price"
+)
+
+companyproduct_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+companyproduct_router.register(
+    "company-product", CompanyProductViewSet, basename="company-product"
+)
+
+companyorder_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+companyorder_router.register(
+    "company-order", CompanyOrderViewSet, basename="company-order"
+)
+
 app_name = "company"
 urlpatterns = router.urls
 
@@ -160,4 +184,7 @@ urlpatterns += [
     path("", include(componentme_file_router.urls)),
     path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
+    path("", include(componentprice_router.urls)),
+    path("", include(companyproduct_router.urls)),
+    path("", include(companyorder_router.urls)),
 ]

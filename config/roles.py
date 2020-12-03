@@ -110,6 +110,14 @@ class CompanyAdmin(AbstractUserRole):
         "archived_component_price": True,
         "restore_component_price": True,
         "delete_component_price": True,
+        # Company Product
+        "view_company_product": True,
+        "add_company_product": True,
+        "approve_company_product": True,
+        "change_company_product": True,
+        "archived_company_product": True,
+        "restore_company_product": True,
+        "delete_company_product": True,
         # Company Order
         "view_order": True,
         "add_order": True,
@@ -259,6 +267,14 @@ class SupplyChainManager(AbstractUserRole):
         "archived_component_price": True,
         "restore_component_price": True,
         "delete_component_price": False,
+        # Company Product
+        "view_company_product": True,
+        "add_company_product": True,
+        "approve_company_product": True,
+        "change_company_product": True,
+        "archived_company_product": True,
+        "restore_company_product": True,
+        "delete_company_product": True,
         # Company Order
         "view_order": True,
         "add_order": True,
