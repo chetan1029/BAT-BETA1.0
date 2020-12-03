@@ -1,5 +1,6 @@
 
 from django.utils.translation import ugettext_lazy as _
+from django.db import transaction
 from djmoney.contrib.django_rest_framework import MoneyField
 from rest_framework import serializers
 
@@ -17,6 +18,10 @@ from bat.product.models import (
 )
 from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, TagField, MoneySerializerField
 from bat.setting.serializers import StatusSerializer
+from bat.company.utils import get_member
+from bat.company.models import HsCode
+from bat.setting.utils import get_status
+from bat.product.constants import PRODUCT_STATUS_DRAFT
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -99,7 +104,7 @@ class ProductSerializer(serializers.ModelSerializer):
     """
 
     tags = TagField(required=False)
-    status = StatusSerializer()
+    status = StatusSerializer(required=False)
     products = ProductVariationSerializer(many=True, read_only=False)
     images = ImageSerializer(many=True, read_only=True, required=False)
 
@@ -137,6 +142,58 @@ class ProductSerializer(serializers.ModelSerializer):
             msg = _("At Least one child product required.")
             raise serializers.ValidationError({"products": msg})
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        '''
+        save product parent with all children products and related objects.
+        '''
+        member = get_member(
+            company_id=self.context.get("company_id", None),
+            user_id=self.context.get("user_id", None),
+        )
+        data = validated_data.copy()
+        with transaction.atomic():
+            hscode = data.get("hscode", None)
+            if hscode:
+                hscode, _c = HsCode.objects.get_or_create(
+                    hscode=hscode, company=member.company
+                )
+            data.pop("images", None)
+            tags = data.get("tags", None)
+            data.pop("tags", None)
+            products = data.get("products", None)
+            data.pop("products")
+            product_status = get_status("Basic", PRODUCT_STATUS_DRAFT)
+            # Draft, Active, Archived
+            product_parent = ProductParent.objects.create(
+                company=member.company, status=product_status, **data)
+            if tags:
+                # set tags
+                product_parent.tags.set(*tags)
+            # save variations
+            for product in products or []:
+                product_variation_options = product.get(
+                    "product_variation_options", None)
+                product.pop("product_variation_options", None)
+                new_product = Product.objects.create(
+                    productparent=product_parent, **product)
+                # save options
+                for variation_option in product_variation_options or []:
+                    name = variation_option.get(
+                        "productoption", None).get("name", None)
+                    value = variation_option.get(
+                        "productoption", None).get("value", None)
+                    if name and value:
+                        productoption, _c = ProductOption.objects.get_or_create(
+                            name=name,
+                            value=value,
+                            productparent=product_parent,
+                        )
+                        ProductVariationOption.objects.create(
+                            product=new_product,
+                            productoption=productoption,
+                        )
+        return product_parent
 
 
 class ProductComponentSerializer(serializers.ModelSerializer):
