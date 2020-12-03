@@ -29,10 +29,17 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
+from bat.company.utils import (
+    get_list_of_permissions,
+    get_list_of_roles,
+    get_member,
+)
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField
+from bat.serializersFields.serializers_fields import (
+    CountrySerializerField,
+    WeightField,
+)
 from bat.setting.models import Category
 from bat.setting.utils import get_status
 
