@@ -5,6 +5,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 
+import djqscsv
+
+from shutil import copyfile
+import tempfile
+
 
 class ArchiveMixin:
     @action(detail=True, methods=["post"])
@@ -35,3 +40,19 @@ class RestoreMixin:
             return Response({"detail": self.restore_message}, status=status.HTTP_200_OK)
         except IntegrityError:
             return Response({"detail": _("Can't restore")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+class CsvExportMixin:
+
+    @action(detail=False, methods=["get"])
+    def csvexport(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(
+            self.get_queryset())
+        if getattr(self, "csv_export_fields", None):
+            queryset = queryset.values(*self.csv_export_fields)
+        if getattr(self, "csv_field_header_map", None):
+            return djqscsv.render_to_csv_response(
+                queryset, append_datestamp=True, field_header_map=self.csv_field_header_map)
+        else:
+            return djqscsv.render_to_csv_response(
+                queryset, append_datestamp=True)

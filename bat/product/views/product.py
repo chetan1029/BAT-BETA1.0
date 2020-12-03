@@ -5,10 +5,13 @@ from rest_framework import viewsets, mixins
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 
+from drf_renderer_xlsx.mixins import XLSXFileMixin
+from drf_renderer_xlsx.renderers import XLSXRenderer
+
 from bat.product import serializers
 from bat.product.models import (
     Product, ProductComponent, ProductRrp, ProductPackingBox)
-from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+from bat.mixins.mixins import ArchiveMixin, RestoreMixin, CsvExportMixin
 
 
 class ProductVariationViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -57,7 +60,7 @@ class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     restore_message = _("Product component is restored")
 
 
-class ProductRrpViewSet(ProductMetadatMxin):
+class ProductRrpViewSet(CsvExportMixin, ProductMetadatMxin):
     """Operations on ProductRrp."""
 
     serializer_class = serializers.ProductRrpSerializer
@@ -65,6 +68,24 @@ class ProductRrpViewSet(ProductMetadatMxin):
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+    csv_export_fields = ["id", "product__id", "product__model_number", "rrp",
+                         "country", "is_active", "create_date", "update_date"]
+    csv_field_header_map = {"product__id": "product id",
+                            "product__model_number": "model number for product"}
+
+
+class ProductRrpExportXLSViewSet(XLSXFileMixin, ProductRrpViewSet):
+    renderer_classes = (XLSXRenderer,)
+    filename = 'productrrp_export.xlsx'
+    csv_export_fields = ["id", "product__id", "product__model_number", "rrp",
+                         "country", "is_active", "create_date", "update_date"]
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        if getattr(self, "csv_export_fields", None):
+            queryset = queryset.values(*self.csv_export_fields)
+
+        return queryset
 
 
 class ProductPackingBoxViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
