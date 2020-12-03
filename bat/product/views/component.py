@@ -39,6 +39,13 @@ class ProductViewSet(ArchiveMixin,
     archive_message = _("Product parent is archived")
     restore_message = _("Product parent is restored")
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user_id"] = self.request.user.id
+        return context
+
     @action(detail=True, methods=["post"])
     def active(self, request, *args, **kwargs):
         """Set the active action."""
@@ -53,56 +60,3 @@ class ProductViewSet(ArchiveMixin,
             return Response({"detail": self.archive_message}, status=status.HTTP_200_OK)
         except IntegrityError:
             return Response({"detail": _("Can't activate")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-    def perform_create(self, serializer):
-        '''
-        save product parent with all children products and related objects.
-        '''
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        try:
-            with transaction.atomic():
-                hscode = serializer.validated_data.get("hscode", None)
-                if hscode:
-                    hscode, _c = HsCode.objects.get_or_create(
-                        hscode=hscode, company=member.company
-                    )
-                serializer.validated_data.pop("images", None)
-                tags = serializer.validated_data.get("tags", None)
-                serializer.validated_data.pop("tags", None)
-                products = serializer.validated_data.get("products", None)
-                serializer.validated_data.pop("products")
-                product_status = get_status("Basic", PRODUCT_STATUS_DRAFT)
-                # Draft, Active, Archived
-                product_parent = serializer.save(
-                    company=member.company, status=product_status)
-                if tags:
-                    # set tags
-                    product_parent.tags.set(*tags)
-                # save variations
-                for product in products or []:
-                    product_variation_options = product.get(
-                        "product_variation_options", None)
-                    product.pop("product_variation_options", None)
-                    new_product = Product.objects.create(
-                        productparent=product_parent, **product)
-                    # save options
-                    for variation_option in product_variation_options or []:
-                        name = variation_option.get(
-                            "productoption", None).get("name", None)
-                        value = variation_option.get(
-                            "productoption", None).get("value", None)
-                        if name and value:
-                            productoption, _c = ProductOption.objects.get_or_create(
-                                name=name,
-                                value=value,
-                                productparent=product_parent,
-                            )
-                            ProductVariationOption.objects.create(
-                                product=new_product,
-                                productoption=productoption,
-                            )
-        except IntegrityError:
-            return Response({"detail": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
