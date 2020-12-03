@@ -147,7 +147,6 @@ class ProductSerializer(serializers.ModelSerializer):
         '''
         save product parent with all children products and related objects.
         '''
-        print("..........................")
         member = get_member(
             company_id=self.context.get("company_id", None),
             user_id=self.context.get("user_id", None),
