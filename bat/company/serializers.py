@@ -2,11 +2,14 @@ from decimal import Decimal
 
 from django.contrib.auth.models import Group, Permission
 from django.utils.translation import ugettext_lazy as _
-from djmoney.settings import CURRENCY_CHOICES
-from invitations.utils import get_invitation_model
+from django.db import transaction
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rolepermissions.roles import get_user_roles
+
+from djmoney.contrib.django_rest_framework import MoneyField
+from djmoney.settings import CURRENCY_CHOICES
+from invitations.utils import get_invitation_model
 
 
 from bat.company.models import (
@@ -14,10 +17,14 @@ from bat.company.models import (
     Company,
     CompanyContract,
     CompanyCredential,
+    CompanyOrder,
+    CompanyOrderProduct,
     CompanyPaymentTerms,
+    CompanyProduct,
     CompanyType,
     ComponentGoldenSample,
     ComponentMe,
+    ComponentPrice,
     File,
     HsCode,
     Location,
@@ -28,7 +35,8 @@ from bat.company.models import (
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, QueryFieldsMixin
+from bat.serializersFields.serializers_fields import (
+    CountrySerializerField, WeightField, MoneySerializerField, QueryFieldsMixin)
 from bat.setting.models import Category
 from bat.setting.utils import get_status
 from bat.users.serializers import UserSerializer, UserLoginActivitySerializer
@@ -169,9 +177,9 @@ class InvitationDataSerializer(serializers.Serializer):
             and data["invitation_type"] == "vendor_invitation"
         ):
             if not data["vendor_name"]:
-                raise serializers.ValidationError({"vendor_name":
-                                                   _("Vendor name is required field")}
-                                                  )
+                raise serializers.ValidationError(
+                    {"vendor_name": _("Vendor name is required field")}
+                )
             if not data["vendor_type"]:
                 raise serializers.ValidationError(
                     {"vendor_type": _("Vendor type is required field")}
@@ -188,14 +196,17 @@ class InvitationDataSerializer(serializers.Serializer):
                     company_detail__company_name__iexact=data["vendor_name"],
                 )
                 if invitations.exists():
-                    msg = {"detail": _(
-                        "Invitation already sent for this vendor and email."
-                    )}
+                    msg = {
+                        "detail": _(
+                            "Invitation already sent for this vendor and email."
+                        )
+                    }
                     raise serializers.ValidationError(msg)
         else:
             if not data["role"]:
                 raise serializers.ValidationError(
-                    {"role": _("Role is required field")})
+                    {"role": _("Role is required field")}
+                )
             if not data["permissions"]:
                 raise serializers.ValidationError(
                     {"permissions": _("permissions is required field")}
@@ -234,7 +245,9 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         """
         return data
 
-    def find_similar_objects(self, user=None, company_id=None, data=None, pk=None):
+    def find_similar_objects(
+        self, user=None, company_id=None, data=None, pk=None
+    ):
         """
         find similer objects based on passed data.
         override this method to provide complex filters.
@@ -243,10 +256,12 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         query_data = self.get_query_data(data)
         if pk:
             founded_data = ModelClass.objects.filter(
-                is_active=False, company__id=company_id, **query_data).exclude(pk=pk)
+                is_active=False, company__id=company_id, **query_data
+            ).exclude(pk=pk)
         else:
             founded_data = ModelClass.objects.filter(
-                is_active=False, company__id=company_id, **query_data)
+                is_active=False, company__id=company_id, **query_data
+            )
 
         return founded_data
 
@@ -256,9 +271,11 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         kwargs = self.context["request"].resolver_match.kwargs
         if not force_create:
             founded_data = self.find_similar_objects(
-                user=self.context["request"].user, company_id=kwargs.get(
-                    "company_pk", None),
-                data=data, pk=kwargs.get("pk", None))
+                user=self.context["request"].user,
+                company_id=kwargs.get("company_pk", None),
+                data=data,
+                pk=kwargs.get("pk", None),
+            )
             if founded_data.exists():
                 raise serializers.ValidationError(
                     {
@@ -753,3 +770,256 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
         attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
+
+
+class ComponentPriceSerializer(serializers.ModelSerializer):
+    """Serializer for Component Price."""
+
+    price = MoneyField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = ComponentPrice
+        fields = (
+            "id",
+            "componentgoldensample",
+            "price",
+            "start_date",
+            "end_date",
+            "status",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "status",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            The selected component golden sample must be active and from the same company.
+        """
+        kwargs = self.context["request"].resolver_match.kwargs
+        componentgoldensample = attrs.get("componentgoldensample", None)
+        errors = {}
+        if componentgoldensample:
+            if str(
+                componentgoldensample.componentme.companytype.company.id
+            ) != str(kwargs.get("company_pk", None)):
+                errors = set_field_errors(
+                    errors,
+                    "componentgoldensample",
+                    _("Invalid Component Golden Sample."),
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+
+class CompanyProductSerializer(serializers.ModelSerializer):
+    """Serializer for Company Product."""
+
+    price = MoneyField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyProduct
+        fields = (
+            "id",
+            "product",
+            "companytype",
+            "title",
+            "sku",
+            "ean",
+            "asin",
+            "model_number",
+            "manufacturer_part_number",
+            "price",
+            "price_currency",
+            "status",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "status",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        kwargs = self.context["request"].resolver_match.kwargs
+        company_id = self.context.get("company_id", None)
+        companytype = attrs.get("companytype", None)
+        product = attrs.get("product", None)
+        errors = {}
+        if product:
+            if str(product.get_company.id) != str(
+                kwargs.get("company_pk", None)
+            ):
+                errors = set_field_errors(
+                    errors, "product", _("Invalid product selected.")
+                )
+            if product.productparent.is_component:
+                errors = set_field_errors(
+                    errors, "product", _("Selected product is a component.")
+                )
+        if companytype:
+            if str(companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companytype", _("Invalid company type selected.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+
+class CompanyOrderProductSerializer(serializers.ModelSerializer):
+    """Serializer for Company Order Product."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyOrderProduct
+        fields = (
+            "id",
+            "companyorder",
+            "companyproduct",
+            "componentprice",
+            "quantity",
+            "shipped_quantity",
+            "remaining_quantity",
+            "companypaymentterms",
+            "price",
+            "amount",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "companyorder",
+            "shipped_quantity",
+            "remaining_quantity",
+            "amount",
+            "price",
+            "is_active",
+            "create_date",
+            "update_date",
+        )
+
+
+class CompanyOrderSerializer(serializers.ModelSerializer):
+    """Serializer for Company Order."""
+
+    orderproducts = CompanyOrderProductSerializer(many=True, read_only=False)
+    sub_amount = MoneySerializerField(default=0)
+    vat_amount = MoneySerializerField(default=0)
+    tax_amount = MoneySerializerField(default=0)
+    total_amount = MoneySerializerField(default=0)
+    return_amount = MoneySerializerField(default=0)
+    deposit_amount = MoneySerializerField(default=0)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyOrder
+        fields = (
+            "id",
+            "batch_id",
+            "companytype",
+            "order_date",
+            "delivery_date",
+            "buyer_member",
+            "seller_member",
+            "sub_amount",
+            "vat_amount",
+            "tax_amount",
+            "total_amount",
+            "return_amount",
+            "deposit_amount",
+            "quantity",
+            "note",
+            "status",
+            "orderproducts",
+        )
+        read_only_fields = (
+            "id",
+            "status",
+            "sub_amount",
+            "vat_amount",
+            "tax_amount",
+            "total_amount",
+            "return_amount",
+            "deposit_amount",
+            "quantity",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companytype = attrs.get("companytype", None)
+        orderproducts = attrs.get("orderproducts", [])
+        errors = {}
+        if companytype:
+            if str(companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companytype", _("Invalid company type selected.")
+                )
+        if len(orderproducts) <= 0:
+            msg = _("At Least one product required to place an order.")
+            raise serializers.ValidationError({"orderproducts": msg})
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            data = validated_data.copy()
+            orderproducts = data.get(
+                "orderproducts", None
+            )
+            data.pop("orderproducts")
+
+            # save order
+            companyorder = CompanyOrder.objects.create(
+                **data)
+
+            # save order products
+            quantity = companyorder.quantity or 0
+            total_amount = 0
+            for orderproduct in orderproducts or []:
+                product_quantity = orderproduct.get("quantity", 0)
+                quantity += product_quantity
+                amount = Decimal(orderproduct.get(
+                    "componentprice", None).price.amount) * \
+                    Decimal(quantity)
+                total_amount += amount
+                CompanyOrderProduct.objects.create(
+                    companyorder=companyorder,
+                    price=orderproduct.get(
+                        "componentprice", None).price.amount,
+                    amount=amount,
+                    remaining_quantity=quantity,
+                    **orderproduct
+                )
+            companyorder.sub_amount = total_amount
+            companyorder.total_amount = total_amount
+            companyorder.quantity = quantity
+            companyorder.save()
+        return companyorder

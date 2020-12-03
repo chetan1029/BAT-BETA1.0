@@ -1801,6 +1801,71 @@ class CompanyProduct(models.Model):
         """Return Value."""
         return self.title
 
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_product")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_product")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_product")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_product")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_company_product")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_company_product")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_product")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_product")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_product")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_product")
+
 
 class CompanyOrder(models.Model):
     """
@@ -1859,7 +1924,7 @@ class CompanyOrder(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return str(self.batch_id)
 
     @staticmethod
     def has_read_permission(request):
@@ -1934,9 +1999,14 @@ class CompanyOrderProduct(models.Model):
     Order place for vendors and by sales channel will be display here.
     """
 
-    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    companyorder = models.ForeignKey(
+        CompanyOrder, on_delete=models.CASCADE, related_name="orderproducts"
+    )
     companyproduct = models.ForeignKey(
         CompanyProduct, on_delete=models.CASCADE
+    )
+    componentprice = models.ForeignKey(
+        ComponentPrice, on_delete=models.CASCADE, blank=True, null=True
     )
     quantity = models.PositiveIntegerField()
     shipped_quantity = models.PositiveIntegerField(default=0)
@@ -1949,6 +2019,7 @@ class CompanyOrderProduct(models.Model):
         CompanyPaymentTerms, on_delete=models.CASCADE
     )
     extra_data = HStoreField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
@@ -1959,7 +2030,7 @@ class CompanyOrderProduct(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return str(self.companyorder.batch_id)
 
 
 class CompanyOrderDelivery(models.Model):
