@@ -12,7 +12,6 @@ from djmoney.settings import CURRENCY_CHOICES
 from invitations.utils import get_invitation_model
 
 
-
 from bat.company.models import (
     Bank,
     Company,
@@ -36,7 +35,8 @@ from bat.company.models import (
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, QueryFieldsMixin
+from bat.serializersFields.serializers_fields import (
+    CountrySerializerField, WeightField, MoneySerializerField, QueryFieldsMixin)
 from bat.setting.models import Category
 from bat.setting.utils import get_status
 from bat.users.serializers import UserSerializer, UserLoginActivitySerializer
@@ -922,7 +922,12 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
     """Serializer for Company Order."""
 
     orderproducts = CompanyOrderProductSerializer(many=True, read_only=False)
-    sub_amount =
+    sub_amount = MoneySerializerField(default=0)
+    vat_amount = MoneySerializerField(default=0)
+    tax_amount = MoneySerializerField(default=0)
+    total_amount = MoneySerializerField(default=0)
+    return_amount = MoneySerializerField(default=0)
+    deposit_amount = MoneySerializerField(default=0)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -990,35 +995,31 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
                 "orderproducts", None
             )
             data.pop("orderproducts")
+
+            # save order
             companyorder = CompanyOrder.objects.create(
                 **data)
+
             # save order products
-            total_quantity = 0
+            quantity = companyorder.quantity or 0
             total_amount = 0
             for orderproduct in orderproducts or []:
-                quantity = orderproduct.validated_data.get(
-                    "quantity", None
-                )
-                remaining_quantity = quantity
-                componentprice_id = orderproduct.validated_data.get(
-                    "componentprice", None
-                )
-                componentprice = ComponentPrice.objects.get(
-                    pk=componentprice_id
-                )
-                price = componentprice.price
-                amount = Decimal(price) * Decimal(quantity)
-                total_quantity = total_quantity + quantity
-                total_amount = Decimal(amount) + Decimal(total_amount)
+                product_quantity = orderproduct.get("quantity", 0)
+                quantity += product_quantity
+                amount = Decimal(orderproduct.get(
+                    "componentprice", None).price.amount) * \
+                    Decimal(quantity)
+                total_amount += amount
                 CompanyOrderProduct.objects.create(
                     companyorder=companyorder,
-                    price=price,
+                    price=orderproduct.get(
+                        "componentprice", None).price.amount,
                     amount=amount,
-                    remaining_quantity=remaining_quantity,
+                    remaining_quantity=quantity,
                     **orderproduct
                 )
             companyorder.sub_amount = total_amount
             companyorder.total_amount = total_amount
-            companyorder.quantity = total_quantity
+            companyorder.quantity = quantity
             companyorder.save()
         return companyorder

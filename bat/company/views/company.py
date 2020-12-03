@@ -4,8 +4,9 @@ from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.filters import SearchFilter
 
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
@@ -26,7 +27,6 @@ from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 from bat.product.constants import PRODUCT_STATUS_ACTIVE, PRODUCT_STATUS_DRAFT
 from bat.setting.utils import get_status
-
 
 
 # Company base view set.
@@ -71,9 +71,6 @@ class CompanyContractViewSet(CompanySettingBaseViewSet):
     def perform_create(self, serializer):
         company_contract = serializer.save()
         company_contract.save_pdf_file()
-
-
-
 
 
 class CompanyCredentialViewSet(CompanySettingBaseViewSet):
@@ -218,5 +215,3 @@ class CompanyOrderViewSet(
         context["company_id"] = company_id
         context["user"] = self.request.user
         return context
-
-    
