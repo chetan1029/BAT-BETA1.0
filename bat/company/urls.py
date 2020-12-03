@@ -17,6 +17,7 @@ from bat.company.views.setting import (
     MemberViewSet,
     PackingBoxViewSet,
     TaxBoxViewSet,
+    CompanyInvitationViewSet,
 )
 
 from bat.company.views.file import (
@@ -42,6 +43,7 @@ member_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 member_router.register("members", MemberViewSet, basename="company-members")
+member_router.register("invitations", CompanyInvitationViewSet, basename="company-invitations")
 
 
 payment_terms_router = routers.NestedSimpleRouter(
