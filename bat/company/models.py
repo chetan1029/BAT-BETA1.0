@@ -8,7 +8,10 @@ from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -1987,7 +1990,9 @@ class CompanyOrderProduct(models.Model):
     Order place for vendors and by sales channel will be display here.
     """
 
-    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    companyorder = models.ForeignKey(
+        CompanyOrder, on_delete=models.CASCADE, related_name="orderproducts"
+    )
     companyproduct = models.ForeignKey(
         CompanyProduct, on_delete=models.CASCADE
     )
