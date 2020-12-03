@@ -1,4 +1,3 @@
-from itertools import groupby
 
 from django.utils.translation import ugettext_lazy as _
 from djmoney.contrib.django_rest_framework import MoneyField
@@ -16,24 +15,8 @@ from bat.product.models import (
     ProductRrp,
     ProductVariationOption,
 )
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField
+from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, TagField, MoneySerializerField
 from bat.setting.serializers import StatusSerializer
-
-
-class TagField(serializers.Field):
-    def to_representation(self, value):
-        """
-        Convert from tags to csv string of tag names.
-        """
-        if not isinstance(value, str):
-            value = ",".join(list(value.names()))
-        return value
-
-    def to_internal_value(self, data):
-        """
-        Convert from csv string of tag names to list of tags.
-        """
-        return data.split(",")
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -219,12 +202,12 @@ class ProductComponentSerializer(serializers.ModelSerializer):
 
 class ProductRrpSerializer(serializers.ModelSerializer):
     country = CountrySerializerField()
-    rrp = MoneyField(max_digits=14, decimal_places=2)
+    rrp = MoneySerializerField()
 
     class Meta:
         model = ProductRrp
         fields = ("id", "product", "rrp", "country", "is_active")
-        read_only_fields = ("id", "is_active")
+        read_only_fields = ("id", "is_active", "product")
 
     def validate(self, attrs):
         """
@@ -263,6 +246,7 @@ class ProductRrpSerializer(serializers.ModelSerializer):
 
 class ProductPackingBoxSerializer(serializers.ModelSerializer):
     weight = WeightField()
+    packingbox = PackingBoxSerializer()
 
     class Meta:
         model = ProductPackingBox

@@ -3,9 +3,20 @@ import tempfile
 
 from decimal import Decimal
 from weasyprint import HTML
+from rolepermissions.checkers import has_permission
 
 from django.core.files import File
 from django.template.loader import render_to_string
+
+
+def has_any_permission(obj, permission_list):
+    """
+    docstring
+    """
+    for perm in permission_list:
+        if has_permission(obj, perm):
+            return True
+    return False
 
 
 def set_field_errors(list_of_errors, field, error_msg):

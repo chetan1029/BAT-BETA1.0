@@ -115,6 +115,7 @@ LOCAL_APPS = [
     "bat.company.apps.CompanyConfig",
     "bat.setting.apps.SettingConfig",
     "bat.product.apps.ProductConfig",
+    "bat.comments.apps.CommentsConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -413,3 +414,5 @@ SWAGGER_SETTINGS = {
 }
 
 FORGET_PASSWORD_PAGE_LINK = env("FORGET_PASSWORD_PAGE_LINK", default='')
+INVITE_LINK = env("INVITE_LINK", default="")
+EXISTING_INVITE_LINK = env("EXISTING_INVITE_LINK", default="")

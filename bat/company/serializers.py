@@ -12,6 +12,7 @@ from djmoney.settings import CURRENCY_CHOICES
 from invitations.utils import get_invitation_model
 
 
+
 from bat.company.models import (
     Bank,
     Company,
@@ -35,9 +36,12 @@ from bat.company.models import (
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField
+from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, QueryFieldsMixin
 from bat.setting.models import Category
 from bat.setting.utils import get_status
+from bat.users.serializers import UserSerializer, UserLoginActivitySerializer
+from bat.company.file_serializers import FileSerializer
+
 
 Invitation = get_invitation_model()
 
@@ -110,16 +114,21 @@ class CompanySerializer(serializers.ModelSerializer):
         return [role.get_name() for role in roles]
 
 
-class MemberSerializer(serializers.ModelSerializer):
-    groups = GroupsListField()
+class MemberSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+    roles = GroupsListField(source='groups')
     user_permissions = PermissionListField()
+    user = UserSerializer()
+    login_activities = serializers.SerializerMethodField()
+
+    def get_login_activities(self, obj):
+        return UserLoginActivitySerializer(obj.user.get_recent_logged_in_activities(),
+                                           many=True).data
 
     class Meta:
         model = Member
         fields = (
             "id",
-            "is_superuser",
-            "groups",
+            "roles",
             "user_permissions",
             "job_title",
             "user",
@@ -128,18 +137,16 @@ class MemberSerializer(serializers.ModelSerializer):
             "is_active",
             "invitation_accepted",
             "extra_data",
-            "last_login",
+            "login_activities",
         )
         read_only_fields = (
             "id",
-            "is_superuser",
             "user",
             "is_active",
             "invited_by",
             "is_admin",
             "invitation_accepted",
             "extra_data",
-            "last_login",
         )
 
 
@@ -216,11 +223,8 @@ class InvitationDataSerializer(serializers.Serializer):
                         email=email, company_detail__company_id=int(company_id)
                     )
                     if invitations.exists():
-                        msg = {
-                            "detail": _(
-                                "Invitation already sent for this email."
-                            )
-                        }
+                        msg = {"detail": _(
+                            "Invitation already sent for this email.")}
                         raise serializers.ValidationError(msg)
 
         return super().validate(data)
@@ -560,29 +564,6 @@ class TaxSerializer(ReversionSerializerMixin):
         )
 
 
-class FileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = File
-        fields = (
-            "id",
-            "company",
-            "title",
-            "version",
-            "file",
-            "note",
-            "content_type",
-            "object_id",
-            "is_active",
-        )
-        read_only_fields = (
-            "id",
-            "content_type",
-            "object_id",
-            "is_active",
-            "company",
-        )
-
-
 class CompanyContractSerializer(serializers.ModelSerializer):
     """Serializer for CompanyContract."""
 
@@ -726,7 +707,7 @@ class ComponentMeSerializer(serializers.ModelSerializer):
                 kwargs.get("company_pk", None)
             ):
                 errors = set_field_errors(
-                    errors, "component", _("Invalid product selected.")
+                    errors, "component", _("Invalid component selected.")
                 )
             if not component.productparent.is_component:
                 errors = set_field_errors(
@@ -773,7 +754,7 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         """
         validate that :
-            the selected company type must relate to the current company.
+            company type of selected componentme must relate to the current company.
         """
         kwargs = self.context["request"].resolver_match.kwargs
         componentme = attrs.get("componentme", None)
