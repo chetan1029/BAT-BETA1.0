@@ -23,7 +23,7 @@ def get_list_of_roles_permissions():
         role_name = role.get_name()
 
         all_roles[role_name] = {
-            "permissions": list(role.permission_names_list())
+            "permissions": [{'name': name, 'default': value} for name, value in getattr(role, 'available_permissions', {}).items()]
         }
     return all_roles
 
