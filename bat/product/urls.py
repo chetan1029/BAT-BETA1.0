@@ -4,7 +4,7 @@ from rest_framework_nested import routers
 from bat.company.urls import router
 from bat.product.views.component import ProductViewSet
 from bat.product.views.product import (
-    ProductVariationViewSet, ProductComponentViewSet, ProductRrpViewSet, ProductPackingBoxViewSet, ProductRrpExportXLSViewSet)
+    ProductVariationViewSet, ProductComponentViewSet, ProductRrpViewSet, ProductPackingBoxViewSet)
 from bat.product.views.image import ProductImagesViewSet, ProductVariationImagesViewSet
 
 
@@ -65,15 +65,6 @@ product_rrp_router.register(
     "rrps", ProductRrpViewSet, basename="company-product-rrps"
 )
 
-product_rrp_export_router = routers.NestedSimpleRouter(
-    product_router, "products", lookup="product"
-)
-
-product_rrp_export_router.register(
-    "rrps-export", ProductRrpExportXLSViewSet, basename="company-product-rrps-export"
-)
-
-
 product_packingbox_router = routers.NestedSimpleRouter(
     product_router, "products", lookup="product"
 )
@@ -92,6 +83,5 @@ urlpatterns = [
     path("", include(product_variation_image_router.urls)),
     path("", include(product_component_router.urls)),
     path("", include(product_rrp_router.urls)),
-    path("", include(product_rrp_export_router.urls)),
     path("", include(product_packingbox_router.urls)),
 ]

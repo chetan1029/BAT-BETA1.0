@@ -10,6 +10,8 @@ from rest_framework.exceptions import ValidationError
 from djmoney.contrib.django_rest_framework import MoneyField
 from djmoney.settings import CURRENCY_CHOICES
 from invitations.utils import get_invitation_model
+from rolepermissions.roles import get_user_roles
+
 
 
 from bat.company.models import (
