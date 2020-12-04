@@ -152,10 +152,12 @@ class QueryFieldsMixin(object):
             query_params = getattr(request, 'QUERY_PARAMS', request.GET)
 
         includes = query_params.getlist(self.include_arg_name)
-        include_field_names = {name for names in includes for name in names.split(self.delimiter) if name}
+        include_field_names = {
+            name for names in includes for name in names.split(self.delimiter) if name}
 
         excludes = query_params.getlist(self.exclude_arg_name)
-        exclude_field_names = {name for names in excludes for name in names.split(self.delimiter) if name}
+        exclude_field_names = {
+            name for names in excludes for name in names.split(self.delimiter) if name}
 
         if not include_field_names and not exclude_field_names:
             # No user fields filtering was requested, we have nothing to do here.

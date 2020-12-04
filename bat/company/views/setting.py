@@ -8,8 +8,10 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 from drf_yasg2.utils import swagger_auto_schema
+from drf_yasg2 import openapi
 
 from rolepermissions.checkers import has_permission
 from rolepermissions.permissions import revoke_permission
@@ -32,6 +34,7 @@ from bat.company.models import (
 )
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+from bat.users.serializers import InvitationSerializer
 
 
 Invitation = get_invitation_model()
@@ -239,6 +242,45 @@ class InvitationCreate(viewsets.ViewSet):
             {"message": _("Invitation was successfully sent.")},
             status=status.HTTP_200_OK,
         )
+
+is_accepted_param = openapi.Parameter(
+    'is_accepted', openapi.IN_QUERY, description="Filters by status", type=openapi.TYPE_BOOLEAN, required=False)
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="Returns all the invitations",
+    responses={200: InvitationSerializer(many=True)},
+    manual_parameters=[is_accepted_param]
+))
+class CompanyInvitationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Invitation.objects.all()
+    serializer_class = InvitationSerializer
+
+    def filter_queryset(self, queryset):
+        """
+        filter invitations for current user.
+        return pending invitations
+        """
+        queryset = queryset.filter(
+            company_detail__company_id=int(self.kwargs.get("company_pk", None))
+        )
+
+        is_accepted = self.request.GET.get('is_accepted', None)
+        if is_accepted:
+            queryset = queryset.filter(accepted=is_accepted == 'true')
+        return queryset
+
+    @action(detail=True, methods=["post"])
+    def resend(self, request, company_pk=None, pk=None):
+        """
+        Allows to resend the invite
+        """
+        instance = self.get_object()
+        if instance.accepted == True:
+            return Response({"detail": _("Accepted successfully")}, status=status.HTTP_400_BAD_REQUEST)
+        
+        instance.send_invitation(request)
+
+        return Response({"detail": _("Invitations resent successfully")}, status=status.HTTP_200_OK)
 
 # Member
 

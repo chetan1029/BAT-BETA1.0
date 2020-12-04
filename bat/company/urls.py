@@ -4,8 +4,11 @@ from rest_framework_nested import routers
 from bat.company.views.company import (
     CompanyContractViewSet,
     CompanyCredentialViewSet,
+    CompanyOrderViewSet,
+    CompanyProductViewSet,
     ComponentGoldenSampleViewSet,
-    ComponentMeViewSet
+    ComponentMeViewSet,
+    ComponentPriceViewSet,
 )
 from bat.company.views.setting import (
     BankViewSet,
@@ -17,6 +20,7 @@ from bat.company.views.setting import (
     MemberViewSet,
     PackingBoxViewSet,
     TaxBoxViewSet,
+    CompanyInvitationViewSet,
 )
 
 from bat.company.views.file import (
@@ -42,6 +46,8 @@ member_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 member_router.register("members", MemberViewSet, basename="company-members")
+member_router.register(
+    "invitations", CompanyInvitationViewSet, basename="company-invitations")
 
 
 payment_terms_router = routers.NestedSimpleRouter(
@@ -147,6 +153,27 @@ componentgoldensample_file_router.register(
     "files", ComponentGoldenSampleFilesViewSet, basename="company-component-golden-sample-files"
 )
 
+componentprice_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+componentprice_router.register(
+    "component-price", ComponentPriceViewSet, basename="component-price"
+)
+
+companyproduct_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+companyproduct_router.register(
+    "company-product", CompanyProductViewSet, basename="company-product"
+)
+
+companyorder_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+companyorder_router.register(
+    "company-order", CompanyOrderViewSet, basename="company-order"
+)
+
 app_name = "company"
 urlpatterns = router.urls
 
@@ -167,4 +194,7 @@ urlpatterns += [
     path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
     path("", include(componentgoldensample_file_router.urls)),
+    path("", include(componentprice_router.urls)),
+    path("", include(companyproduct_router.urls)),
+    path("", include(companyorder_router.urls)),
 ]
