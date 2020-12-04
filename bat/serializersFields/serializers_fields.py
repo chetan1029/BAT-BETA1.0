@@ -19,7 +19,7 @@ class WeightField(JSONField):
         '''
         represent weight object to json data
         '''
-        if isinstance(value, Decimal):
+        if not isinstance(value, Money):
             return value
         ret = {"value": value.value, "unit": value.unit}
         return ret
