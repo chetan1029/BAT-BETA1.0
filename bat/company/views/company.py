@@ -1,27 +1,19 @@
-from decimal import Decimal
-
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
-from invitations.utils import get_invitation_model
-from notifications.signals import notify
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rolepermissions.checkers import has_permission
-from rolepermissions.permissions import revoke_permission
-from rolepermissions.roles import RolesManager, assign_role, clear_roles
 
 from bat.company import serializers
 from bat.company.models import (
     CompanyContract,
     CompanyCredential,
     CompanyOrder,
-    CompanyOrderProduct,
+    CompanyOrderDelivery,
     CompanyProduct,
     ComponentGoldenSample,
     ComponentMe,
@@ -220,50 +212,30 @@ class CompanyOrderViewSet(
         context["user"] = self.request.user
         return context
 
-    def perform_create(self, serializer):
-        """
-        save company order with the products and related objects.
-        """
-        try:
-            with transaction.atomic():
-                orderproducts = serializer.validated_data.get(
-                    "orderproducts", None
-                )
-                serializer.validated_data.pop("orderproducts")
-                # order_status = get_status("Basic", PRODUCT_STATUS_DRAFT)
-                # # Draft, Active, Archived
-                # companyorder = serializer.save(status=order_status)
-                # # save order products
-                # total_quantity = 0
-                # total_amount = 0
-                # for orderproduct in orderproducts or []:
-                #     quantity = orderproduct.validated_data.get(
-                #         "quantity", None
-                #     )
-                #     remaining_quantity = quantity
-                #     componentprice_id = orderproduct.validated_data.get(
-                #         "componentprice", None
-                #     )
-                #     componentprice = ComponentPrice.objects.get(
-                #         pk=componentprice_id
-                #     )
-                #     price = componentprice.price
-                #     amount = Decimal(price) * Decimal(quantity)
-                #     total_quantity = total_quantity + quantity
-                #     total_amount = Decimal(amount) + Decimal(total_amount)
-                #     CompanyOrderProduct.objects.create(
-                #         companyorder=companyorder,
-                #         price=price,
-                #         amount=amount,
-                #         remaining_quantity=remaining_quantity,
-                #         **orderproduct
-                #     )
-                # companyorder.sub_amount = total_amount
-                # companyorder.total_amount = total_amount
-                # companyorder.quantity = total_quantity
-                # companyorder.save()
-        except IntegrityError:
-            return Response(
-                {"detail": _("Can't have to same product in the same order")},
-                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
+
+class CompanyOrderDeliveryViewSet(
+    ArchiveMixin,
+    RestoreMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Operations on Company Delivery Order."""
+
+    serializer_class = serializers.CompanyOrderDeliverySerializer
+    queryset = CompanyOrderDelivery.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ["status"]
+    search_fields = ["batch_id"]
+
+    archive_message = _("Order Delivery is archived")
+    restore_message = _("Order Delivery is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context

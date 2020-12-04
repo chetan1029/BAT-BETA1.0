@@ -22,7 +22,8 @@ from rest_auth.registration.views import VerifyEmailView
 
 from rest_framework_jwt import views as jwt_views
 
-from bat.users.views import InvitationViewSet, RolesandPermissionsViewSet, UserViewSet
+from bat.users.views import InvitationViewSet, RolesandPermissionsViewSet, UserViewSet, \
+    UserLoginActivityViewSet
 
 app_name = "users"
 
@@ -30,6 +31,7 @@ router = DefaultRouter()
 
 router.register("user", UserViewSet)
 router.register("invitations", InvitationViewSet)
+router.register("login-activities", UserLoginActivityViewSet)
 router.register(
     "role-permissions", RolesandPermissionsViewSet, basename="role-permissions"
 )

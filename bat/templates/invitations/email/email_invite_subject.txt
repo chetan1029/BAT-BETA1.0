@@ -1,0 +1,4 @@
+{% load i18n %}
+{% autoescape off %}
+{% blocktrans %}Invitation to join {{company_name}} on {{ site_name }}{% endblocktrans %}
+{% endautoescape %}

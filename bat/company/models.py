@@ -28,6 +28,7 @@ from multiselectfield import MultiSelectField
 from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles
 
+from bat.comments.models import Comment
 from bat.company.constants import *
 from bat.globalprop.validator import validator
 from bat.globalutils.utils import pdf_file_from_html
@@ -52,7 +53,6 @@ def get_member_from_request(request):
     return member
 
 
-# Create your models here.
 def companylogo_name(instance, filename):
     """Manage path and name for vendor logo."""
     name, extension = os.path.splitext(filename)
@@ -280,10 +280,6 @@ class File(models.Model):
     is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
-
-    # def delete(self, *args, **kwargs):
-    #     print("\n\n inside delete \n\n ")
-    #     super(Image, self).delete(*args, **kwargs)
 
     def archive(self):
         """
@@ -1201,6 +1197,7 @@ class CompanyContract(models.Model):
     # like inventory rotations, margins etc for the sales channels that we will save in extra_data.
     # Extra field for Sales Channel contracts :
     # (inventory_rotation, rotation_percentage, retail_margin, distributor_margin, air_freight, sea_freight, air_misc, sea_misc)
+    comments = GenericRelation(Comment)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
@@ -1299,6 +1296,17 @@ class CompanyContract(models.Model):
     def has_object_restore_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_company_contract")
+
+    @staticmethod
+    def has_comment_permission(request):
+        member = get_member_from_request(request)
+        print("\n\n\ncomment_company_contract\n\n\n")
+        return has_permission(member, "comment_company_contract")
+
+    def has_object_comment_permission(self, request):
+        member = get_member_from_request(request)
+        print("\n\n\ncomment_company_contract2\n\n\n")
+        return has_permission(member, "comment_company_contract")
 
 
 class CompanyCredential(models.Model):
@@ -1917,6 +1925,26 @@ class CompanyOrder(models.Model):
         """Return Value."""
         return str(self.batch_id)
 
+    def save_pdf_file(self):
+        """
+        docstring
+        """
+        data = {"data": "I am variable"}
+        name = "company_order_" + str(self.batch_id)
+        po_file = pdf_file_from_html(
+            data,
+            "company/order_po.html",
+            "company_order_" + str(self.batch_id),
+        )
+        f = File(
+            content_object=self,
+            company=self.companytype.company,
+            note=self.note,
+            title="company_order_" + str(self.batch_id),
+        )
+        f.save()
+        f.file.save(name + ".pdf", po_file)
+
     @staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
@@ -2128,7 +2156,9 @@ class CompanyOrderDeliveryProduct(models.Model):
     """
 
     companyorderdelivery = models.ForeignKey(
-        CompanyOrderDelivery, on_delete=models.CASCADE
+        CompanyOrderDelivery,
+        on_delete=models.CASCADE,
+        related_name="orderdeliveryproducts",
     )
     companyorderproduct = models.ForeignKey(
         CompanyOrderProduct, on_delete=models.CASCADE

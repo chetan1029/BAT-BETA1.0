@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from bat.company.utils import get_list_of_roles_permissions
 from bat.users import serializers
 
+from bat.users.models import UserLoginActivity
+
 User = get_user_model()
 Invitation = get_invitation_model()
 
@@ -54,6 +56,10 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = queryset.filter(
             accepted=False, email=self.request.user.email
         )
+
+        invite_key = self.request.GET.get('inviteKey', None)
+        if invite_key:
+            queryset = queryset.filter(key=invite_key)
         return queryset
 
     @action(detail=True, methods=["post"])
@@ -89,3 +95,14 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(
             {"detail": _("Rejected successfully")}, status=status.HTTP_200_OK
         )
+
+
+class UserLoginActivityViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = UserLoginActivity.objects.all()
+    serializer_class = serializers.UserLoginActivitySerializer
+
+    def get_queryset(self, *args, **kwargs):
+        """
+        filter query for current user
+        """
+        return self.queryset.filter(user=self.request.user)
