@@ -56,7 +56,6 @@ class RestAuthRegisterSerializer(RegisterSerializer):
         user.save()
 
 
-
 class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
