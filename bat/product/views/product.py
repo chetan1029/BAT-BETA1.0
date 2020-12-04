@@ -1,9 +1,18 @@
 from django.utils.translation import ugettext_lazy as _
+from django.utils.decorators import method_decorator
+
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import viewsets, mixins
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import action
+
+
+from drf_yasg2.utils import swagger_auto_schema
+from drf_yasg2 import openapi
 
 from bat.product import serializers
 from bat.product.models import (
@@ -57,6 +66,18 @@ class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     restore_message = _("Product component is restored")
 
 
+country_field = openapi.Parameter(
+    'country', openapi.IN_QUERY, description="Filters by country", type=openapi.TYPE_STRING, required=False)
+
+currency_field = openapi.Parameter('rrp_currency', openapi.IN_QUERY,
+                                   description="Filters by currency", type=openapi.TYPE_STRING, required=False)
+
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="Returns all the Product rrps",
+    responses={200: serializers.ProductRrpSerializer(many=True)},
+    manual_parameters=[country_field, currency_field]
+))
 class ProductRrpViewSet(ExportMixin, ProductMetadatMxin):
     """Operations on ProductRrp."""
 
@@ -64,12 +85,29 @@ class ProductRrpViewSet(ExportMixin, ProductMetadatMxin):
     queryset = ProductRrp.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["is_active"]
-    csv_export_fields = ["id", "product__id", "product__model_number", "rrp",
-                         "country", "is_active", "create_date", "update_date"]
-    csv_field_header_map = {"product__id": "product id",
-                            "product__model_number": "model number for product"}
+    filterset_fields = ["is_active", "rrp_currency", "country"]
+    csv_export_fields = ["id", "product__title", "product__sku", "product__productparent__series", "rrp",
+                         "country", "is_active"]
+    csv_field_header_map = {"product__title": "title",
+                            "product__sku": "sku", "product__productparent__series": "series"}
+    # import_serializer_class =
 
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        if self.request.GET.get("rrp_currency", None):
+            queryset = queryset.filter(
+                rrp_currency=self.request.GET.get("rrp_currency"))
+        if self.request.GET.get("country", None):
+            queryset = queryset.filter(
+                country=self.request.GET.get("country"))
+        return queryset
+
+    @action(detail=False, methods=["post"])
+    def xlsximportfile(self, request, *args, **kwargs):
+        file = request.data.get("file")
+        print("file...... :", type(file))
+
+        return Response({"detail": _("file")}, status=status.HTTP_200_OK)
 
 
 class ProductPackingBoxViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
