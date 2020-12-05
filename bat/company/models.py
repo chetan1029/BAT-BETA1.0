@@ -244,6 +244,9 @@ class CompanyType(models.Model):
         """Return Value."""
         return self.company.name
 
+    def get_company(self):
+        return self.company
+
 
 def file_name(instance, filename):
     """Change name of image."""
@@ -606,7 +609,8 @@ class Bank(Address):
     Model to store information for bank detail.
     """
 
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="banks")
     name = models.CharField(max_length=200, verbose_name=_("Bank Name"))
     benificary = models.CharField(
         max_length=100, verbose_name=_("Benificary Name")
@@ -1300,12 +1304,10 @@ class CompanyContract(models.Model):
     @staticmethod
     def has_comment_permission(request):
         member = get_member_from_request(request)
-        print("\n\n\ncomment_company_contract\n\n\n")
         return has_permission(member, "comment_company_contract")
 
     def has_object_comment_permission(self, request):
         member = get_member_from_request(request)
-        print("\n\n\ncomment_company_contract2\n\n\n")
         return has_permission(member, "comment_company_contract")
 
 
@@ -1925,6 +1927,9 @@ class CompanyOrder(models.Model):
         """Return Value."""
         return str(self.batch_id)
 
+    def get_company(self):
+        return self.companytype.get_company()
+
     def save_pdf_file(self):
         """
         docstring
@@ -2296,12 +2301,12 @@ class CompanyOrderPayment(models.Model):
     paid_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD", default=0
     )
-    adjustment_type = models.CharField(max_length=100, blank=True)
+    adjustment_type = models.CharField(max_length=100, blank=True, null=True)
     adjustment_percentage = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0
+        max_digits=5, decimal_places=2, null=True, blank=True
     )
     adjustment_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD", default=0
+        max_digits=14, decimal_places=2, default_currency="USD", blank=True, null=True
     )
     payment_date = models.DateTimeField(blank=True, null=True)
     status = models.ForeignKey(
@@ -2397,7 +2402,6 @@ class CompanyOrderPaymentPaid(models.Model):
         CompanyOrderPayment, on_delete=models.CASCADE
     )
     payment_id = models.CharField(max_length=200, blank=True)
-    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
     invoice_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD"
     )
@@ -2499,8 +2503,6 @@ class CompanyOrderCase(models.Model):
 
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
-        if not self.is_active:
-            return False
         return has_permission(member, "change_order_case")
 
     @staticmethod
@@ -2593,8 +2595,6 @@ class CompanyOrderInspection(models.Model):
 
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
-        if not self.is_active:
-            return False
         return has_permission(member, "change_order_inspection")
 
     @staticmethod

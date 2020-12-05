@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from djmoney.contrib.django_rest_framework import MoneyField
 from djmoney.settings import CURRENCY_CHOICES
+from djmoney.money import Money
 from invitations.utils import get_invitation_model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -33,6 +34,9 @@ from bat.company.models import (
     Member,
     PackingBox,
     Tax,
+    CompanyOrderCase,
+    CompanyOrderInspection,
+    CompanyOrderPayment
 )
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, set_field_errors
@@ -42,10 +46,12 @@ from bat.serializersFields.serializers_fields import (
     MoneySerializerField,
     QueryFieldsMixin,
     WeightField,
+    StatusField,
 )
 from bat.setting.models import Category
 from bat.setting.utils import get_status
 from bat.users.serializers import UserLoginActivitySerializer, UserSerializer
+from bat.globalutils.utils import get_status_object
 
 Invitation = get_invitation_model()
 
@@ -894,6 +900,8 @@ class CompanyProductSerializer(serializers.ModelSerializer):
 
 class CompanyOrderProductSerializer(serializers.ModelSerializer):
     """Serializer for Company Order Product."""
+    price = MoneySerializerField(required=False)
+    amount = MoneySerializerField(required=False)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -930,12 +938,13 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
 
     orderproducts = CompanyOrderProductSerializer(many=True, read_only=False)
     sub_amount = MoneySerializerField(default=0)
-    vat_amount = MoneySerializerField(default=0)
-    tax_amount = MoneySerializerField(default=0)
+    vat_amount = MoneySerializerField(required=False)
+    tax_amount = MoneySerializerField(required=False)
     total_amount = MoneySerializerField(default=0)
-    return_amount = MoneySerializerField(default=0)
+    return_amount = MoneySerializerField(required=False)
     deposit_amount = MoneySerializerField(default=0)
     files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -981,6 +990,10 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
         validate that :
             the selected company type must relate to the current company.
         """
+        member = get_member(
+            company_id=self.context.get("company_id", None),
+            user_id=self.context.get("user_id", None),
+        )
         company_id = self.context.get("company_id", None)
         companytype = attrs.get("companytype", None)
         orderproducts = attrs.get("orderproducts", [])
@@ -995,16 +1008,28 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"orderproducts": msg})
         if errors:
             raise serializers.ValidationError(errors)
+
+        attrs["vat_amount"] = attrs.get(
+            'vat_amount', Money(0, member.company.currency))
+        attrs["tax_amount"] = attrs.get(
+            'tax_amount', Money(0, member.company.currency))
+        attrs["return_amount"] = attrs.get(
+            'return_amount', Money(0, member.company.currency))
+
         attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
 
     def create(self, validated_data):
         """Create function."""
+        member = get_member(
+            company_id=self.context.get("company_id", None),
+            user_id=self.context.get("user_id", None),
+        )
         with transaction.atomic():
             data = validated_data.copy()
+            data['status'] = get_status_object(validated_data)
             orderproducts = data.get("orderproducts", None)
             data.pop("orderproducts")
-
             # save order
             companyorder = CompanyOrder.objects.create(**data)
 
@@ -1012,11 +1037,16 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             quantity = companyorder.quantity or 0
             total_amount = 0
             deposit_amount = 0
+            currency = member.company.currency
             for orderproduct in orderproducts or []:
+                componentprice_obj = orderproduct.get(
+                    "componentprice", None
+                )
+                currency = componentprice_obj.price.currency
                 product_quantity = orderproduct.get("quantity", 0)
                 quantity += product_quantity
                 amount = Decimal(
-                    orderproduct.get("componentprice", None).price.amount
+                    componentprice_obj.price.amount
                 ) * Decimal(product_quantity)
 
                 if orderproduct.get("companypaymentterms", None).deposit:
@@ -1032,18 +1062,18 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
                     product_deposit_amount = 0
                 deposit_amount += product_deposit_amount
                 total_amount += amount
+                orderproduct.pop("price", None)
+                orderproduct.pop("amount", None)
                 CompanyOrderProduct.objects.create(
                     companyorder=companyorder,
-                    price=orderproduct.get(
-                        "componentprice", None
-                    ).price.amount,
-                    amount=amount,
+                    price=Money(componentprice_obj.price.amount, currency),
+                    amount=Money(amount, currency),
                     remaining_quantity=product_quantity,
                     **orderproduct
                 )
-            companyorder.sub_amount = total_amount
-            companyorder.total_amount = total_amount
-            companyorder.deposit_amount = deposit_amount
+            companyorder.sub_amount = Money(total_amount, currency)
+            companyorder.total_amount = Money(total_amount, currency)
+            companyorder.deposit_amount = Money(deposit_amount, currency)
             companyorder.quantity = quantity
             companyorder.save()
             companyorder.save_pdf_file()
@@ -1053,7 +1083,7 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
 class CompanyOrderDeliveryProductSerializer(serializers.ModelSerializer):
     """Serializer for Company Order Delivery Product."""
 
-    amount = MoneySerializerField(default=0)
+    amount = MoneySerializerField(required=False)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -1082,6 +1112,8 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
         many=True, read_only=False
     )
     amount = MoneySerializerField(default=0)
+    quantity = serializers.IntegerField(default=0)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -1111,6 +1143,7 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
         validate that :
             the selected company type must relate to the current company.
         """
+
         company_id = self.context.get("company_id", None)
         companyorder = attrs.get("companyorder", None)
         orderdeliveryproducts = attrs.get("orderdeliveryproducts", [])
@@ -1120,20 +1153,32 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
                 errors = set_field_errors(
                     errors, "companyorder", _("Invalid order selected.")
                 )
+            bank = companyorder.companytype.partner.banks.filter(
+                is_active=True)
+            if not bank.exists():
+                errors = set_field_errors(
+                    errors, "companyorder", _(
+                        "There is no bank registered for selected order.")
+                )
         if len(orderdeliveryproducts) <= 0:
             msg = _(
                 "At Least one product required to create an order delivery."
             )
             raise serializers.ValidationError({"orderdeliveryproducts": msg})
+
         if errors:
             raise serializers.ValidationError(errors)
-        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
 
     def create(self, validated_data):
         """Create function."""
+        member = get_member(
+            company_id=self.context.get("company_id", None),
+            user_id=self.context.get("user_id", None),
+        )
         with transaction.atomic():
             data = validated_data.copy()
+            data['status'] = get_status_object(validated_data)
             orderdeliveryproducts = data.get("orderdeliveryproducts", None)
             data.pop("orderdeliveryproducts")
 
@@ -1143,31 +1188,148 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
             # save order products
             quantity = companyorderdelivery.quantity or 0
             total_amount = 0
+            currency = member.company.currency
             for orderdeliveryproduct in orderdeliveryproducts or []:
                 orderproduct = orderdeliveryproduct.get(
                     "companyorderproduct", None
                 )
-                orderproduct_quantity = orderdeliveryproduct.get("quantity", 0)
+                currency = orderproduct.price.currency
+                orderproduct_quantity = orderdeliveryproduct.pop("quantity", 0)
                 quantity += orderproduct_quantity
-                orderproduct.remaining_quantity = (
-                    orderproduct.remaining_quantity - orderproduct_quantity
-                )
-                orderproduct.shipped_quantity = (
-                    orderproduct.shipped_quantity + orderproduct_quantity
-                )
+                remaining_quantity = (
+                    orderproduct.remaining_quantity - orderproduct_quantity)
+                if remaining_quantity < 0:
+                    remaining_quantity = 0
+                orderproduct.remaining_quantity = remaining_quantity
+                shipped_quantity = (
+                    orderproduct.shipped_quantity + orderproduct_quantity)
+                if shipped_quantity < 0:
+                    shipped_quantity = 0
+                orderproduct.shipped_quantity = shipped_quantity
                 orderproduct.save()
-                amount = Decimal(orderproduct.price) * Decimal(
+                amount = Decimal(orderproduct.price.amount) * Decimal(
                     orderproduct_quantity
                 )
 
                 total_amount += amount
                 CompanyOrderDeliveryProduct.objects.create(
                     companyorderdelivery=companyorderdelivery,
-                    amount=amount,
+                    amount=Money(amount, currency),
                     quantity=orderproduct_quantity,
                     **orderdeliveryproduct
                 )
-            companyorderdelivery.amount = total_amount
+            companyorderdelivery.amount = Money(total_amount, currency)
             companyorderdelivery.quantity = quantity
             companyorderdelivery.save()
+            # create company order payment object
+            company_order_payment_data = {}
+            company_order_payment_data['companyorderdelivery'] = companyorderdelivery
+            company_order_payment_data['type'] = "type"
+            # TODO how to get bank for company_order_payment_data
+
+            companyorder = validated_data.get("companyorder", None)
+            company_order_payment_data['bank'] = companyorder.companytype.partner.banks.filter(
+                is_active=True).first()
+            company_order_payment_data['invoice_amount'] = companyorderdelivery.amount
+            company_order_payment_data['amount'] = companyorderdelivery.amount
+            company_order_payment_data['paid_amount'] = 0
+            company_order_payment_data['payment_date'] = companyorderdelivery.delivery_date
+            company_order_payment_data['status'] = companyorderdelivery.status
+            CompanyOrderPayment.objects.create(**company_order_payment_data)
         return companyorderdelivery
+
+
+class CompanyOrderCaseSerializers(serializers.ModelSerializer):
+
+    files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
+
+    class Meta:
+        model = CompanyOrderCase
+        fields = ("id", "companyorder", "files", "note", "importance",
+                  "units_affected", "status", "extra_data")
+        read_only_fields = (
+            "id",
+            "files",
+            "extra_data",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            company type of selected Company Order Case must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companyorder = attrs.get("companyorder", None)
+        errors = {}
+        if companyorder:
+            if str(companyorder.get_company().id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companyorder", _(
+                        "Invalid Company order selected.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        if not attrs.get("status", None):
+            attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
+
+
+class CompanyOrderInspectionSerializers(serializers.ModelSerializer):
+
+    files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
+
+    class Meta:
+        model = CompanyOrderInspection
+        fields = ("id", "companyorder", "inspection_date", "note", "inspector",
+                  "files", "status", "extra_data")
+        read_only_fields = (
+            "id",
+            "inspector",
+            "files",
+            "extra_data",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            company type of selected Company Order Inspection must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companyorder = attrs.get("companyorder", None)
+        errors = {}
+        if companyorder:
+            if str(companyorder.get_company().id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companyorder", _(
+                        "Invalid Company order selected.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        member = get_member(
+            company_id=self.context.get("company_id", None),
+            user_id=self.context.get("user_id", None),
+        )
+        validated_data["inspector"] = member
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
