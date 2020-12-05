@@ -85,7 +85,7 @@ class ProductRrpViewSet(ExportMixin, ProductMetadatMxin):
     queryset = ProductRrp.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["is_active", "rrp_currency", "country"]
+    filterset_fields = ["is_active"]
     csv_export_fields = ["id", "product__title", "product__sku", "product__productparent__series", "rrp",
                          "country", "is_active"]
     csv_field_header_map = {"product__title": "title",
