@@ -10,8 +10,8 @@ from measurement.measures import Weight
 from djmoney.money import Money
 
 from bat.company import constants
-
 from bat.globalconstants.constants import CURRENCY_CODE_CHOICES
+from bat.product.constants import PRODUCT_STATUS_CHOICE
 
 
 class WeightField(JSONField):
@@ -175,3 +175,18 @@ class QueryFieldsMixin(object):
 
         for field in fields_to_drop:
             self.fields.pop(field)
+
+
+class StatusField(ChoiceField):
+
+    def __init__(self, **kwargs):
+        choices = list(PRODUCT_STATUS_CHOICE)
+        super().__init__(choices=choices, **kwargs)
+
+    def to_representation(self, value):
+        """
+        give id of Status.
+        """
+        if isinstance(value, str):
+            return value
+        return value.id

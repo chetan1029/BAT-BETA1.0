@@ -11,8 +11,11 @@ from bat.company.views.company import (
     ComponentGoldenSampleViewSet,
     ComponentMeViewSet,
     ComponentPriceViewSet,
+    CompanyOrderCaseViewSet,
+    CompanyOrderInspectionViewSet
 )
-from bat.company.views.file import CompanyContractFilesViewSet, ComponentMeFilesViewSet
+from bat.company.views.file import (CompanyContractFilesViewSet, ComponentMeFilesViewSet,
+                                    CompanyOrderCaseFilesViewSet, CompanyOrderInspectionFilesViewSet)
 from bat.company.views.setting import (
     BankViewSet,
     CompanyPaymentTermsViewSet,
@@ -42,7 +45,8 @@ member_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 member_router.register("members", MemberViewSet, basename="company-members")
-member_router.register("invitations", CompanyInvitationViewSet, basename="company-invitations")
+member_router.register(
+    "invitations", CompanyInvitationViewSet, basename="company-invitations")
 
 
 payment_terms_router = routers.NestedSimpleRouter(
@@ -172,6 +176,42 @@ companyorderdelivery_router.register(
     basename="company-orderdelivery",
 )
 
+
+company_order_case_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+company_order_case_router.register(
+    "company-order-case",
+    CompanyOrderCaseViewSet,
+    basename="company-order-case",
+)
+
+company_order_case_file_router = routers.NestedSimpleRouter(
+    company_order_case_router, "company-order-case", lookup="object"
+)
+
+company_order_case_file_router.register(
+    "files", CompanyOrderCaseFilesViewSet, basename="company-order-case-files"
+)
+
+
+company_order_inspection_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+company_order_inspection_router.register(
+    "company-order-inspection",
+    CompanyOrderInspectionViewSet,
+    basename="company-order-inspection",
+)
+
+company_order_inspection_file_router = routers.NestedSimpleRouter(
+    company_order_inspection_router, "company-order-inspection", lookup="object"
+)
+
+company_order_inspection_file_router.register(
+    "files", CompanyOrderInspectionFilesViewSet, basename="company-order-inspection-files"
+)
+
 app_name = "company"
 urlpatterns = router.urls
 
@@ -195,4 +235,8 @@ urlpatterns += [
     path("", include(companyproduct_router.urls)),
     path("", include(companyorder_router.urls)),
     path("", include(companyorderdelivery_router.urls)),
+    path("", include(company_order_case_router.urls)),
+    path("", include(company_order_case_file_router.urls)),
+    path("", include(company_order_inspection_router.urls)),
+    path("", include(company_order_inspection_file_router.urls)),
 ]

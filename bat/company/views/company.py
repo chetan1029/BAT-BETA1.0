@@ -18,6 +18,8 @@ from bat.company.models import (
     ComponentGoldenSample,
     ComponentMe,
     ComponentPrice,
+    CompanyOrderCase,
+    CompanyOrderInspection
 )
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
@@ -239,3 +241,71 @@ class CompanyOrderDeliveryViewSet(
         context["company_id"] = company_id
         context["user_id"] = self.request.user.id
         return context
+
+
+class CompanyOrderCaseViewSet(
+    ArchiveMixin,
+    RestoreMixin,
+    viewsets.ModelViewSet,
+):
+    """Operations on Company Order Case."""
+
+    serializer_class = serializers.CompanyOrderCaseSerializers
+    queryset = CompanyOrderCase.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status"]
+
+    archive_message = _("Order Case is archived")
+    restore_message = _("Order Case is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user_id"] = self.request.user.id
+        return context
+
+    def filter_queryset(self, queryset):
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        queryset = queryset.filter(
+            companyorder__companytype__company=member.company
+        ).order_by("-create_date")
+        return super().filter_queryset(queryset)
+
+
+class CompanyOrderInspectionViewSet(
+    ArchiveMixin,
+    RestoreMixin,
+    viewsets.ModelViewSet,
+):
+    """Operations on Company Order Inspection."""
+
+    serializer_class = serializers.CompanyOrderInspectionSerializers
+    queryset = CompanyOrderInspection.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status"]
+
+    archive_message = _("Order Inspection is archived")
+    restore_message = _("Order Inspection is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user_id"] = self.request.user.id
+        return context
+
+    def filter_queryset(self, queryset):
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        queryset = queryset.filter(
+            companyorder__companytype__company=member.company
+        ).order_by("-create_date")
+        return super().filter_queryset(queryset)
