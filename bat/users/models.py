@@ -50,7 +50,7 @@ class User(AbstractUser):
         max_length=50,
         verbose_name=_("Language"),
         choices=settings.LANGUAGES,
-        default=settings.LANGUAGE_CODE,
+        default='en',
     )
     timezone = CharField(
         max_length=50,
