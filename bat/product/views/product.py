@@ -90,7 +90,6 @@ class ProductRrpViewSet(ExportMixin, ProductMetadatMxin):
                          "country", "is_active"]
     csv_field_header_map = {"product__title": "title",
                             "product__sku": "sku", "product__productparent__series": "series"}
-    # import_serializer_class =
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
@@ -101,13 +100,6 @@ class ProductRrpViewSet(ExportMixin, ProductMetadatMxin):
             queryset = queryset.filter(
                 country=self.request.GET.get("country"))
         return queryset
-
-    @action(detail=False, methods=["post"])
-    def xlsximportfile(self, request, *args, **kwargs):
-        file = request.data.get("file")
-        print("file...... :", type(file))
-
-        return Response({"detail": _("file")}, status=status.HTTP_200_OK)
 
 
 class ProductPackingBoxViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):

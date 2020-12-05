@@ -102,13 +102,3 @@ class ExportMixin:
             return response
         except Exception:
             return Response({"detail": _("Can't generate file")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-
-# class ImportMixin:
-
-#     @action(detail=False, methods=["post"])
-#     def xlsximportfile(self, request, *args, **kwargs):
-#         file = request.data.get("file")
-#         print("file...... :", type(file))
-
-#         return Response({"detail": _("file")}, status=status.HTTP_200_OK)
