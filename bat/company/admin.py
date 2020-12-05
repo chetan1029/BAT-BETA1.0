@@ -12,7 +12,8 @@ from bat.company.models import (
     Tax,
     CompanyContract,
     File,
-    ComponentMe
+    ComponentMe,
+    ComponentPrice,
 )
 
 admin.site.register(Bank)
@@ -27,3 +28,4 @@ admin.site.register(Tax)
 admin.site.register(CompanyContract)
 admin.site.register(File)
 admin.site.register(ComponentMe)
+admin.site.register(ComponentPrice)

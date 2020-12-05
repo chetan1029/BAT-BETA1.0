@@ -209,7 +209,7 @@ class CompanyOrderViewSet(
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
         context["company_id"] = company_id
-        context["user"] = self.request.user
+        context["user_id"] = self.request.user.id
         return context
 
 
@@ -237,5 +237,5 @@ class CompanyOrderDeliveryViewSet(
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
         context["company_id"] = company_id
-        context["user"] = self.request.user
+        context["user_id"] = self.request.user.id
         return context
