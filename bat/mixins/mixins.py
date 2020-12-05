@@ -5,7 +5,7 @@ from shutil import copyfile
 
 from django.db import IntegrityError, transaction
 from django.utils.translation import ugettext_lazy as _
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import HttpResponse
 
 from rest_framework.decorators import action
 from rest_framework.response import Response
