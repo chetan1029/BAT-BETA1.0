@@ -10,6 +10,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rolepermissions.roles import get_user_roles
 
+
 from bat.company.file_serializers import FileSerializer
 from bat.company.models import (
     Bank,

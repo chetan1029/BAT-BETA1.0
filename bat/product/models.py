@@ -602,6 +602,12 @@ class ProductRrp(ProductpermissionsModelmixin, models.Model):
         """Return Value."""
         return self.product.title
 
+    
+    @staticmethod
+    def has_importfile_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
 
 class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
     """

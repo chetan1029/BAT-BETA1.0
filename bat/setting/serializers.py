@@ -25,7 +25,6 @@ class StatusSerializer(serializers.ModelSerializer):
             "is_active",
         )
 
-
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
