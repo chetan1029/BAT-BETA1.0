@@ -1,23 +1,25 @@
 from decimal import Decimal
 
 from django.contrib.auth.models import Group, Permission
-from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
-
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-
+from django.utils.translation import ugettext_lazy as _
 from djmoney.contrib.django_rest_framework import MoneyField
 from djmoney.settings import CURRENCY_CHOICES
 from invitations.utils import get_invitation_model
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rolepermissions.roles import get_user_roles
 
+
+from bat.company.file_serializers import FileSerializer
 from bat.company.models import (
     Bank,
     Company,
     CompanyContract,
     CompanyCredential,
     CompanyOrder,
+    CompanyOrderDelivery,
+    CompanyOrderDeliveryProduct,
     CompanyOrderProduct,
     CompanyPaymentTerms,
     CompanyProduct,
@@ -36,12 +38,14 @@ from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_me
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import (
-    CountrySerializerField, WeightField, MoneySerializerField, QueryFieldsMixin)
+    CountrySerializerField,
+    MoneySerializerField,
+    QueryFieldsMixin,
+    WeightField,
+)
 from bat.setting.models import Category
 from bat.setting.utils import get_status
-from bat.users.serializers import UserSerializer, UserLoginActivitySerializer
-from bat.company.file_serializers import FileSerializer
-
+from bat.users.serializers import UserLoginActivitySerializer, UserSerializer
 
 Invitation = get_invitation_model()
 
@@ -115,14 +119,15 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class MemberSerializer(QueryFieldsMixin, serializers.ModelSerializer):
-    roles = GroupsListField(source='groups')
+    roles = GroupsListField(source="groups")
     user_permissions = PermissionListField()
     user = UserSerializer()
     login_activities = serializers.SerializerMethodField()
 
     def get_login_activities(self, obj):
-        return UserLoginActivitySerializer(obj.user.get_recent_logged_in_activities(),
-                                           many=True).data
+        return UserLoginActivitySerializer(
+            obj.user.get_recent_logged_in_activities(), many=True
+        ).data
 
     class Meta:
         model = Member
@@ -223,8 +228,11 @@ class InvitationDataSerializer(serializers.Serializer):
                         email=email, company_detail__company_id=int(company_id)
                     )
                     if invitations.exists():
-                        msg = {"detail": _(
-                            "Invitation already sent for this email.")}
+                        msg = {
+                            "detail": _(
+                                "Invitation already sent for this email."
+                            )
+                        }
                         raise serializers.ValidationError(msg)
 
         return super().validate(data)
@@ -775,7 +783,7 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
 class ComponentPriceSerializer(serializers.ModelSerializer):
     """Serializer for Component Price."""
 
-    price = MoneyField(max_digits=14, decimal_places=2)
+    price = MoneySerializerField()
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -824,7 +832,7 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
 class CompanyProductSerializer(serializers.ModelSerializer):
     """Serializer for Company Product."""
 
-    price = MoneyField(max_digits=14, decimal_places=2)
+    price = MoneySerializerField()
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -841,7 +849,6 @@ class CompanyProductSerializer(serializers.ModelSerializer):
             "model_number",
             "manufacturer_part_number",
             "price",
-            "price_currency",
             "status",
             "is_active",
         )
@@ -928,6 +935,7 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
     total_amount = MoneySerializerField(default=0)
     return_amount = MoneySerializerField(default=0)
     deposit_amount = MoneySerializerField(default=0)
+    files = FileSerializer(many=True, required=False)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -949,6 +957,7 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             "deposit_amount",
             "quantity",
             "note",
+            "files",
             "status",
             "orderproducts",
         )
@@ -962,6 +971,7 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             "return_amount",
             "deposit_amount",
             "quantity",
+            "files",
             "create_date",
             "update_date",
         )
@@ -989,37 +999,175 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
+        """Create function."""
         with transaction.atomic():
             data = validated_data.copy()
-            orderproducts = data.get(
-                "orderproducts", None
-            )
+            orderproducts = data.get("orderproducts", None)
             data.pop("orderproducts")
 
             # save order
-            companyorder = CompanyOrder.objects.create(
-                **data)
+            companyorder = CompanyOrder.objects.create(**data)
 
             # save order products
             quantity = companyorder.quantity or 0
             total_amount = 0
+            deposit_amount = 0
             for orderproduct in orderproducts or []:
                 product_quantity = orderproduct.get("quantity", 0)
                 quantity += product_quantity
-                amount = Decimal(orderproduct.get(
-                    "componentprice", None).price.amount) * \
-                    Decimal(quantity)
+                amount = Decimal(
+                    orderproduct.get("componentprice", None).price.amount
+                ) * Decimal(product_quantity)
+
+                if orderproduct.get("companypaymentterms", None).deposit:
+                    product_deposit_amount = (
+                        Decimal(
+                            orderproduct.get(
+                                "companypaymentterms", None
+                            ).deposit
+                        )
+                        * Decimal(amount)
+                    ) / Decimal(100)
+                else:
+                    product_deposit_amount = 0
+                deposit_amount += product_deposit_amount
                 total_amount += amount
                 CompanyOrderProduct.objects.create(
                     companyorder=companyorder,
                     price=orderproduct.get(
-                        "componentprice", None).price.amount,
+                        "componentprice", None
+                    ).price.amount,
                     amount=amount,
-                    remaining_quantity=quantity,
+                    remaining_quantity=product_quantity,
                     **orderproduct
                 )
             companyorder.sub_amount = total_amount
             companyorder.total_amount = total_amount
+            companyorder.deposit_amount = deposit_amount
             companyorder.quantity = quantity
             companyorder.save()
+            companyorder.save_pdf_file()
         return companyorder
+
+
+class CompanyOrderDeliveryProductSerializer(serializers.ModelSerializer):
+    """Serializer for Company Order Delivery Product."""
+
+    amount = MoneySerializerField(default=0)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyOrderDeliveryProduct
+        fields = (
+            "id",
+            "companyorderdelivery",
+            "companyorderproduct",
+            "quantity",
+            "amount",
+        )
+        read_only_fields = (
+            "id",
+            "companyorderdelivery",
+            "amount",
+            "create_date",
+            "update_date",
+        )
+
+
+class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
+    """Serializer for Company Order Delivery."""
+
+    orderdeliveryproducts = CompanyOrderDeliveryProductSerializer(
+        many=True, read_only=False
+    )
+    amount = MoneySerializerField(default=0)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = CompanyOrderDelivery
+        fields = (
+            "id",
+            "batch_id",
+            "companyorder",
+            "quantity",
+            "amount",
+            "delivery_date",
+            "status",
+            "extra_data",
+            "orderdeliveryproducts",
+        )
+        read_only_fields = (
+            "id",
+            "amount",
+            "status",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companyorder = attrs.get("companyorder", None)
+        orderdeliveryproducts = attrs.get("orderdeliveryproducts", [])
+        errors = {}
+        if companyorder:
+            if str(companyorder.companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companyorder", _("Invalid order selected.")
+                )
+        if len(orderdeliveryproducts) <= 0:
+            msg = _(
+                "At Least one product required to create an order delivery."
+            )
+            raise serializers.ValidationError({"orderdeliveryproducts": msg})
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        """Create function."""
+        with transaction.atomic():
+            data = validated_data.copy()
+            orderdeliveryproducts = data.get("orderdeliveryproducts", None)
+            data.pop("orderdeliveryproducts")
+
+            # save order
+            companyorderdelivery = CompanyOrderDelivery.objects.create(**data)
+
+            # save order products
+            quantity = companyorderdelivery.quantity or 0
+            total_amount = 0
+            for orderdeliveryproduct in orderdeliveryproducts or []:
+                orderproduct = orderdeliveryproduct.get(
+                    "companyorderproduct", None
+                )
+                orderproduct_quantity = orderdeliveryproduct.get("quantity", 0)
+                quantity += orderproduct_quantity
+                orderproduct.remaining_quantity = (
+                    orderproduct.remaining_quantity - orderproduct_quantity
+                )
+                orderproduct.shipped_quantity = (
+                    orderproduct.shipped_quantity + orderproduct_quantity
+                )
+                orderproduct.save()
+                amount = Decimal(orderproduct.price) * Decimal(
+                    orderproduct_quantity
+                )
+
+                total_amount += amount
+                CompanyOrderDeliveryProduct.objects.create(
+                    companyorderdelivery=companyorderdelivery,
+                    amount=amount,
+                    quantity=orderproduct_quantity,
+                    **orderdeliveryproduct
+                )
+            companyorderdelivery.amount = total_amount
+            companyorderdelivery.quantity = quantity
+            companyorderdelivery.save()
+        return companyorderdelivery

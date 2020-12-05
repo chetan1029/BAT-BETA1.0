@@ -1,15 +1,18 @@
 from django.urls import include, path
 from rest_framework_nested import routers
 
+from bat.company.views.comment import CompanyContractCommentsViewSet
 from bat.company.views.company import (
     CompanyContractViewSet,
     CompanyCredentialViewSet,
+    CompanyOrderDeliveryViewSet,
     CompanyOrderViewSet,
     CompanyProductViewSet,
     ComponentGoldenSampleViewSet,
     ComponentMeViewSet,
     ComponentPriceViewSet,
 )
+from bat.company.views.file import CompanyContractFilesViewSet, ComponentMeFilesViewSet
 from bat.company.views.setting import (
     BankViewSet,
     CompanyPaymentTermsViewSet,
@@ -22,13 +25,6 @@ from bat.company.views.setting import (
     TaxBoxViewSet,
     CompanyInvitationViewSet,
 )
-
-from bat.company.views.file import (
-    CompanyContractFilesViewSet, ComponentMeFilesViewSet)
-
-from bat.company.views.comment import (
-    CompanyContractCommentsViewSet, )
-
 
 router = routers.SimpleRouter()
 
@@ -59,7 +55,7 @@ payment_terms_router.register(
 )
 
 bank_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
-bank_router.register("banks", BankViewSet, basename="company-bank")
+bank_router.register("bank", BankViewSet, basename="company-bank")
 
 location_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
@@ -109,7 +105,9 @@ contract_comment_router = routers.NestedSimpleRouter(
 )
 
 contract_comment_router.register(
-    "comments", CompanyContractCommentsViewSet, basename="company-contract-comments"
+    "comments",
+    CompanyContractCommentsViewSet,
+    basename="company-contract-comments",
 )
 
 
@@ -165,6 +163,15 @@ companyorder_router.register(
     "company-order", CompanyOrderViewSet, basename="company-order"
 )
 
+companyorderdelivery_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+companyorderdelivery_router.register(
+    "company-orderdelivery",
+    CompanyOrderDeliveryViewSet,
+    basename="company-orderdelivery",
+)
+
 app_name = "company"
 urlpatterns = router.urls
 
@@ -187,4 +194,5 @@ urlpatterns += [
     path("", include(componentprice_router.urls)),
     path("", include(companyproduct_router.urls)),
     path("", include(companyorder_router.urls)),
+    path("", include(companyorderdelivery_router.urls)),
 ]

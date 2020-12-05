@@ -88,7 +88,9 @@ class User(AbstractUser):
         return reverse("users:detail", kwargs={"username": self.username})
 
     def get_recent_logged_in_activities(self, no_of_activities=5):
-        return UserLoginActivity.objects.filter(user=self).order_by('-logged_in_at')[:no_of_activities]
+        return UserLoginActivity.objects.filter(user=self).order_by(
+            "-logged_in_at"
+        )[:no_of_activities]
 
 
 class InvitationDetail(AbstractBaseInvitation):
@@ -145,11 +147,20 @@ class InvitationDetail(AbstractBaseInvitation):
         current_site = kwargs.pop("site", Site.objects.get_current())
 
         existing_user = User.objects.filter(email=self.email).first()
-        
-        invite_url = (settings.EXISTING_INVITE_LINK  if existing_user else settings.INVITE_LINK) + \
-            '?inviteKey=' + self.key + "&e=" + self.email
 
-        company_name = self.company_detail.get('company_name')
+        invite_url = (
+            (
+                settings.EXISTING_INVITE_LINK
+                if existing_user
+                else settings.INVITE_LINK
+            )
+            + "?inviteKey="
+            + self.key
+            + "&e="
+            + self.email
+        )
+
+        company_name = self.company_detail.get("company_name")
 
         ctx = kwargs
         ctx.update(
@@ -160,7 +171,8 @@ class InvitationDetail(AbstractBaseInvitation):
                 "key": self.key,
                 "inviter": self.inviter,
                 "company_name": company_name,
-                'inviter_name': self.inviter.get_full_name() or self.inviter.username
+                "inviter_name": self.inviter.get_full_name()
+                or self.inviter.username,
             }
         )
 
@@ -183,11 +195,21 @@ class InvitationDetail(AbstractBaseInvitation):
 
 
 class UserLoginActivity(models.Model):
-    ip = models.GenericIPAddressField(verbose_name=_('IP address'), null=True, blank=True)
-    logged_in_at = models.DateTimeField(verbose_name=_('logged in date'), auto_now=True)
-    user = models.ForeignKey(User, verbose_name=_("User"), on_delete=models.CASCADE)
-    agent_info = models.CharField(verbose_name=_('Agent info'), max_length=2096, null=True, blank=True)
-    location = models.CharField(verbose_name=_('location'), max_length=2096, null=True, blank=True)
+    ip = models.GenericIPAddressField(
+        verbose_name=_("IP address"), null=True, blank=True
+    )
+    logged_in_at = models.DateTimeField(
+        verbose_name=_("logged in date"), auto_now=True
+    )
+    user = models.ForeignKey(
+        User, verbose_name=_("User"), on_delete=models.CASCADE
+    )
+    agent_info = models.CharField(
+        verbose_name=_("Agent info"), max_length=2096, null=True, blank=True
+    )
+    location = models.CharField(
+        verbose_name=_("location"), max_length=2096, null=True, blank=True
+    )
 
     def __str__(self):
-        return self(user.id) + " = " + str(self.ip)
+        return str(self.user.id) + " = " + str(self.ip)

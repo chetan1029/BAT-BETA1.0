@@ -28,12 +28,11 @@ from multiselectfield import MultiSelectField
 from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles
 
+from bat.comments.models import Comment
 from bat.company.constants import *
 from bat.globalprop.validator import validator
 from bat.globalutils.utils import pdf_file_from_html
 from bat.setting.models import Category, Status
-from bat.comments.models import Comment
-
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -1926,6 +1925,26 @@ class CompanyOrder(models.Model):
         """Return Value."""
         return str(self.batch_id)
 
+    def save_pdf_file(self):
+        """
+        docstring
+        """
+        data = {"data": "I am variable"}
+        name = "company_order_" + str(self.batch_id)
+        po_file = pdf_file_from_html(
+            data,
+            "company/order_po.html",
+            "company_order_" + str(self.batch_id),
+        )
+        f = File(
+            content_object=self,
+            company=self.companytype.company,
+            note=self.note,
+            title="company_order_" + str(self.batch_id),
+        )
+        f.save()
+        f.file.save(name + ".pdf", po_file)
+
     @staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
@@ -2137,7 +2156,9 @@ class CompanyOrderDeliveryProduct(models.Model):
     """
 
     companyorderdelivery = models.ForeignKey(
-        CompanyOrderDelivery, on_delete=models.CASCADE
+        CompanyOrderDelivery,
+        on_delete=models.CASCADE,
+        related_name="orderdeliveryproducts",
     )
     companyorderproduct = models.ForeignKey(
         CompanyOrderProduct, on_delete=models.CASCADE

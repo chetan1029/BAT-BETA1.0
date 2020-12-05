@@ -1,23 +1,19 @@
-
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
-
-from rest_framework import viewsets, mixins
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.filters import SearchFilter
-
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
-
+from rest_framework import mixins, viewsets
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
 
 from bat.company import serializers
 from bat.company.models import (
     CompanyContract,
     CompanyCredential,
     CompanyOrder,
-    CompanyOrderProduct,
+    CompanyOrderDelivery,
     CompanyProduct,
     ComponentGoldenSample,
     ComponentMe,
@@ -78,7 +74,7 @@ class CompanyCredentialViewSet(CompanySettingBaseViewSet):
 
     serializer_class = serializers.CompanyCredentialSerializer
     queryset = CompanyCredential.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions,)
+    permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
 
@@ -208,6 +204,34 @@ class CompanyOrderViewSet(
 
     archive_message = _("Order is archived")
     restore_message = _("Order is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
+
+
+class CompanyOrderDeliveryViewSet(
+    ArchiveMixin,
+    RestoreMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Operations on Company Delivery Order."""
+
+    serializer_class = serializers.CompanyOrderDeliverySerializer
+    queryset = CompanyOrderDelivery.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ["status"]
+    search_fields = ["batch_id"]
+
+    archive_message = _("Order Delivery is archived")
+    restore_message = _("Order Delivery is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
