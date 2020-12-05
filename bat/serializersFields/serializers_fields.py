@@ -19,6 +19,8 @@ class WeightField(JSONField):
         '''
         represent weight object to json data
         '''
+        if not isinstance(value, Weight):
+            return value
         ret = {"value": value.value, "unit": value.unit}
         return ret
 
@@ -89,6 +91,8 @@ class MoneySerializerField(JSONField):
         '''
         represent money object to json data
         '''
+        if not isinstance(value, Money):
+            return value
         ret = {"amount": value.amount, "currency": value.currency.code}
         return ret
 
