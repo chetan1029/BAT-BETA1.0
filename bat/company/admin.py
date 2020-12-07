@@ -10,10 +10,20 @@ from bat.company.models import (
     Member,
     PackingBox,
     Tax,
-    CompanyContract,
     File,
+    CompanyContract,
+    CompanyCredential,
+    CompanyOrder,
+    CompanyOrderDelivery,
+    CompanyProduct,
+    ComponentGoldenSample,
     ComponentMe,
     ComponentPrice,
+    CompanyOrderCase,
+    CompanyOrderInspection,
+    CompanyOrderDeliveryTestReport,
+    CompanyOrderPaymentPaid,
+    CompanyOrderPayment
 )
 
 admin.site.register(Bank)
@@ -25,7 +35,17 @@ admin.site.register(Location)
 admin.site.register(PackingBox)
 admin.site.register(HsCode)
 admin.site.register(Tax)
-admin.site.register(CompanyContract)
 admin.site.register(File)
+admin.site.register(CompanyContract)
+admin.site.register(CompanyCredential)
+admin.site.register(CompanyOrder)
+admin.site.register(CompanyOrderDelivery)
+admin.site.register(CompanyProduct)
+admin.site.register(ComponentGoldenSample)
 admin.site.register(ComponentMe)
 admin.site.register(ComponentPrice)
+admin.site.register(CompanyOrderCase)
+admin.site.register(CompanyOrderInspection)
+admin.site.register(CompanyOrderDeliveryTestReport)
+admin.site.register(CompanyOrderPaymentPaid)
+admin.site.register(CompanyOrderPayment)

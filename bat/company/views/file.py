@@ -66,6 +66,29 @@ class ComponentMeFilesViewSet(BaseFilesViewSet):
             app_label='company', model='componentme')
 
 
+class ComponentGoldenSampleFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of ComponentGoldenSample
+    """
+    permission_list = ["add_component_golden_sample",
+                       "change_component_golden_sample"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='componentgoldensample')
+
+
+class ComponentPriceFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of ComponentPrice
+    """
+    permission_list = ["add_component_price", "change_component_price"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='componentprice')
+
+
 class CompanyOrderCaseFilesViewSet(BaseFilesViewSet):
     """
     View set to save files of CompanyOrderCase
@@ -86,3 +109,34 @@ class CompanyOrderInspectionFilesViewSet(BaseFilesViewSet):
     def get_content_type(self):
         return ContentType.objects.get(
             app_label='company', model='companyorderinspection')
+
+class CompanyOrderDeliveryTestReportFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of CompanyOrderDeliveryTestReport
+    """
+    permission_list = ["add_order_inspection", "change_order_inspection"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='companyorderdeliverytestreport')
+
+
+class CompanyOrderPaymentPaidFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of CompanyOrderPaymentPaid
+    """
+    permission_list = ["add_order_payment", "change_order_payment"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='companyorderpaymentpaid')
+
+class ComponentPriceFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of ComponentPrice
+    """
+    permission_list = ["add_component_price", "change_component_price"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='componentprice')

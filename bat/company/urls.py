@@ -12,10 +12,15 @@ from bat.company.views.company import (
     ComponentMeViewSet,
     ComponentPriceViewSet,
     CompanyOrderCaseViewSet,
-    CompanyOrderInspectionViewSet
+    CompanyOrderInspectionViewSet,
+    CompanyOrderDeliveryTestReportViewSet,
+    CompanyOrderPaymentPaidViewSet,
+    CompanyOrderPaymentViewSet
 )
 from bat.company.views.file import (CompanyContractFilesViewSet, ComponentMeFilesViewSet,
-                                    CompanyOrderCaseFilesViewSet, CompanyOrderInspectionFilesViewSet)
+                                    CompanyOrderCaseFilesViewSet, CompanyOrderInspectionFilesViewSet,
+                                    CompanyOrderDeliveryTestReportFilesViewSet, CompanyOrderPaymentPaidFilesViewSet,
+                                    ComponentPriceFilesViewSet)
 from bat.company.views.setting import (
     BankViewSet,
     CompanyPaymentTermsViewSet,
@@ -28,6 +33,13 @@ from bat.company.views.setting import (
     TaxBoxViewSet,
     CompanyInvitationViewSet,
 )
+
+from bat.company.views.file import (
+    CompanyContractFilesViewSet, ComponentMeFilesViewSet, ComponentGoldenSampleFilesViewSet)
+
+from bat.company.views.comment import (
+    CompanyContractCommentsViewSet, )
+
 
 router = routers.SimpleRouter()
 
@@ -141,9 +153,17 @@ componentgoldesample_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 componentgoldesample_router.register(
-    "component-golden-sample",
+    "component-golden-samples",
     ComponentGoldenSampleViewSet,
     basename="company-golden-sample",
+)
+
+componentgoldensample_file_router = routers.NestedSimpleRouter(
+    componentgoldesample_router, "component-golden-samples", lookup="object"
+)
+
+componentgoldensample_file_router.register(
+    "files", ComponentGoldenSampleFilesViewSet, basename="company-component-golden-sample-files"
 )
 
 componentprice_router = routers.NestedSimpleRouter(
@@ -152,6 +172,15 @@ componentprice_router = routers.NestedSimpleRouter(
 componentprice_router.register(
     "component-price", ComponentPriceViewSet, basename="component-price"
 )
+
+componentprice_file_router = routers.NestedSimpleRouter(
+    componentprice_router, "component-price", lookup="object"
+)
+
+componentprice_file_router.register(
+    "files", ComponentPriceFilesViewSet, basename="company-component-price-files"
+)
+
 
 companyproduct_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
@@ -212,6 +241,51 @@ company_order_inspection_file_router.register(
     "files", CompanyOrderInspectionFilesViewSet, basename="company-order-inspection-files"
 )
 
+
+company_order_delivery_testreport_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+company_order_delivery_testreport_router.register(
+    "company-order-delivery-testreport",
+    CompanyOrderDeliveryTestReportViewSet,
+    basename="company-order-delivery-testreport",
+)
+
+company_order_delivery_testreport_file_router = routers.NestedSimpleRouter(
+    company_order_delivery_testreport_router, "company-order-delivery-testreport", lookup="object"
+)
+
+company_order_delivery_testreport_file_router.register(
+    "files", CompanyOrderDeliveryTestReportFilesViewSet, basename="company-order-delivery-testreport-files"
+)
+
+
+company_order_payment_paid_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+company_order_payment_paid_router.register(
+    "company-order-payment-paid",
+    CompanyOrderPaymentPaidViewSet,
+    basename="company-order-payment-paid",
+)
+
+company_order_payment_paid_file_router = routers.NestedSimpleRouter(
+    company_order_payment_paid_router, "company-order-payment-paid", lookup="object"
+)
+
+company_order_payment_paid_file_router.register(
+    "files", CompanyOrderPaymentPaidFilesViewSet, basename="company-order-payment-paid-files"
+)
+
+company_order_payment_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+company_order_payment_router.register(
+    "company-order-payment",
+    CompanyOrderPaymentViewSet,
+    basename="company-order-payment",
+)
+
 app_name = "company"
 urlpatterns = router.urls
 
@@ -231,7 +305,9 @@ urlpatterns += [
     path("", include(componentme_file_router.urls)),
     path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
+    path("", include(componentgoldensample_file_router.urls)),
     path("", include(componentprice_router.urls)),
+    path("", include(componentprice_file_router.urls)),
     path("", include(companyproduct_router.urls)),
     path("", include(companyorder_router.urls)),
     path("", include(companyorderdelivery_router.urls)),
@@ -239,4 +315,9 @@ urlpatterns += [
     path("", include(company_order_case_file_router.urls)),
     path("", include(company_order_inspection_router.urls)),
     path("", include(company_order_inspection_file_router.urls)),
+    path("", include(company_order_delivery_testreport_router.urls)),
+    path("", include(company_order_delivery_testreport_file_router.urls)),
+    path("", include(company_order_payment_paid_router.urls)),
+    path("", include(company_order_payment_paid_file_router.urls)),
+    path("", include(company_order_payment_router.urls)),
 ]
