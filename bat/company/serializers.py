@@ -793,6 +793,7 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
     """Serializer for Component Price."""
 
     price = MoneySerializerField()
+    files = FileSerializer(many=True, required=False)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -801,6 +802,7 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "componentgoldensample",
+            "files",
             "price",
             "start_date",
             "end_date",
@@ -809,6 +811,7 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "id",
+            "files",
             "is_active",
             "status",
             "create_date",

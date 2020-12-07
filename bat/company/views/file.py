@@ -66,6 +66,29 @@ class ComponentMeFilesViewSet(BaseFilesViewSet):
             app_label='company', model='componentme')
 
 
+class ComponentGoldenSampleFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of ComponentGoldenSample
+    """
+    permission_list = ["add_component_golden_sample",
+                       "change_component_golden_sample"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='componentgoldensample')
+
+
+class ComponentPriceFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of ComponentPrice
+    """
+    permission_list = ["add_component_price", "change_component_price"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='componentprice')
+
+
 class CompanyOrderCaseFilesViewSet(BaseFilesViewSet):
     """
     View set to save files of CompanyOrderCase
@@ -107,3 +130,13 @@ class CompanyOrderPaymentPaidFilesViewSet(BaseFilesViewSet):
     def get_content_type(self):
         return ContentType.objects.get(
             app_label='company', model='companyorderpaymentpaid')
+
+class ComponentPriceFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of ComponentPrice
+    """
+    permission_list = ["add_component_price", "change_component_price"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='componentprice')

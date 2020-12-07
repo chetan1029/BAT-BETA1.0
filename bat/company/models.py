@@ -1648,6 +1648,7 @@ class ComponentPrice(models.Model):
     componentgoldensample = models.ForeignKey(
         ComponentGoldenSample, on_delete=models.CASCADE
     )
+    files = GenericRelation(File)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(default=timezone.now)

@@ -19,7 +19,8 @@ from bat.company.views.company import (
 )
 from bat.company.views.file import (CompanyContractFilesViewSet, ComponentMeFilesViewSet,
                                     CompanyOrderCaseFilesViewSet, CompanyOrderInspectionFilesViewSet,
-                                    CompanyOrderDeliveryTestReportFilesViewSet, CompanyOrderPaymentPaidFilesViewSet)
+                                    CompanyOrderDeliveryTestReportFilesViewSet, CompanyOrderPaymentPaidFilesViewSet,
+                                    ComponentPriceFilesViewSet)
 from bat.company.views.setting import (
     BankViewSet,
     CompanyPaymentTermsViewSet,
@@ -32,6 +33,13 @@ from bat.company.views.setting import (
     TaxBoxViewSet,
     CompanyInvitationViewSet,
 )
+
+from bat.company.views.file import (
+    CompanyContractFilesViewSet, ComponentMeFilesViewSet, ComponentGoldenSampleFilesViewSet)
+
+from bat.company.views.comment import (
+    CompanyContractCommentsViewSet, )
+
 
 router = routers.SimpleRouter()
 
@@ -145,9 +153,17 @@ componentgoldesample_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 componentgoldesample_router.register(
-    "component-golden-sample",
+    "component-golden-samples",
     ComponentGoldenSampleViewSet,
     basename="company-golden-sample",
+)
+
+componentgoldensample_file_router = routers.NestedSimpleRouter(
+    componentgoldesample_router, "component-golden-samples", lookup="object"
+)
+
+componentgoldensample_file_router.register(
+    "files", ComponentGoldenSampleFilesViewSet, basename="company-component-golden-sample-files"
 )
 
 componentprice_router = routers.NestedSimpleRouter(
@@ -156,6 +172,15 @@ componentprice_router = routers.NestedSimpleRouter(
 componentprice_router.register(
     "component-price", ComponentPriceViewSet, basename="component-price"
 )
+
+componentprice_file_router = routers.NestedSimpleRouter(
+    componentprice_router, "component-price", lookup="object"
+)
+
+componentprice_file_router.register(
+    "files", ComponentPriceFilesViewSet, basename="company-component-price-files"
+)
+
 
 companyproduct_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
@@ -280,7 +305,9 @@ urlpatterns += [
     path("", include(componentme_file_router.urls)),
     path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
+    path("", include(componentgoldensample_file_router.urls)),
     path("", include(componentprice_router.urls)),
+    path("", include(componentprice_file_router.urls)),
     path("", include(companyproduct_router.urls)),
     path("", include(companyorder_router.urls)),
     path("", include(companyorderdelivery_router.urls)),
