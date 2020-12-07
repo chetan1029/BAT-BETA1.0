@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db.models import Sum
 from django.contrib.auth.models import Group, Permission
 from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
@@ -36,7 +37,9 @@ from bat.company.models import (
     Tax,
     CompanyOrderCase,
     CompanyOrderInspection,
-    CompanyOrderPayment
+    CompanyOrderPayment,
+    CompanyOrderDeliveryTestReport,
+    CompanyOrderPaymentPaid
 )
 from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, set_field_errors
@@ -839,6 +842,7 @@ class CompanyProductSerializer(serializers.ModelSerializer):
     """Serializer for Company Product."""
 
     price = MoneySerializerField()
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -894,8 +898,15 @@ class CompanyProductSerializer(serializers.ModelSerializer):
                 )
         if errors:
             raise serializers.ValidationError(errors)
-        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
 
 
 class CompanyOrderProductSerializer(serializers.ModelSerializer):
@@ -1016,7 +1027,6 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
         attrs["return_amount"] = attrs.get(
             'return_amount', Money(0, member.company.currency))
 
-        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
 
     def create(self, validated_data):
@@ -1285,7 +1295,7 @@ class CompanyOrderCaseSerializers(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class CompanyOrderInspectionSerializers(serializers.ModelSerializer):
+class CompanyOrderInspectionSerializer(serializers.ModelSerializer):
 
     files = FileSerializer(many=True, required=False)
     status = StatusField(default=PRODUCT_STATUS_DRAFT)
@@ -1306,7 +1316,7 @@ class CompanyOrderInspectionSerializers(serializers.ModelSerializer):
     def validate(self, attrs):
         """
         validate that :
-            company type of selected Company Order Inspection must relate to the current company.
+            company type of selected Company Order must relate to the current company.
         """
         company_id = self.context.get("company_id", None)
         companyorder = attrs.get("companyorder", None)
@@ -1333,3 +1343,129 @@ class CompanyOrderInspectionSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data["status"] = get_status_object(validated_data)
         return super().update(instance, validated_data)
+
+
+class CompanyOrderDeliveryTestReportSerializer(serializers.ModelSerializer):
+    files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
+
+    class Meta:
+        model = CompanyOrderDeliveryTestReport
+        fields = ("id", "companyorderdelivery", "inspector",
+                  "files", "note", "status", "extra_data")
+
+        read_only_fields = (
+            "id",
+            "inspector",
+            "files",
+            "extra_data",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            company type of selected companyorderdelivery must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companyorderdelivery = attrs.get("companyorderdelivery", None)
+        errors = {}
+        if companyorderdelivery:
+            if str(companyorderdelivery.get_company().id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companyorderdelivery", _(
+                        "Invalid company order delivery selected.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        member = get_member(
+            company_id=self.context.get("company_id", None),
+            user_id=self.context.get("user_id", None),
+        )
+        validated_data["inspector"] = member
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
+
+
+class CompanyOrderPaymentPaidSerializer(serializers.ModelSerializer):
+    files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
+    invoice_amount = MoneySerializerField()
+    paid_amount = MoneySerializerField()
+
+    class Meta:
+        model = CompanyOrderPaymentPaid
+        fields = ("id", "companyorderpayment", "payment_id", "invoice_amount", "paid_amount",
+                  "files", "payment_date", "status", "extra_data")
+
+        read_only_fields = (
+            "id",
+            "files",
+            "extra_data",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            company type of selected company order payment must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companyorderpayment = attrs.get("companyorderpayment", None)
+        errors = {}
+        if companyorderpayment:
+            if str(companyorderpayment.get_company().id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companyorderpayment", _(
+                        "Invalid company company order payment selected.")
+                )
+        invoice_amount = attrs.get("invoice_amount", None)
+        paid_amount = attrs.get("paid_amount", None)
+        if invoice_amount and paid_amount:
+            if invoice_amount.amount < paid_amount.amount:
+                errors = set_field_errors(
+                    errors, "paid_amount", _(
+                        "paid amount can't be more than invoice amount.")
+                )
+            total_paid_amount = companyorderpayment.orderpaymentpaid.aggregate(
+                total_paid_amount=Sum("paid_amount"))["total_paid_amount"] + paid_amount.amount
+            if total_paid_amount > invoice_amount.amount:
+                errors = set_field_errors(
+                    errors, "paid_amount", _(
+                        "total paid amount can't be more than invoice amount.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
+
+
+class CompanyOrderPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyOrderPayment
+        fields = ("id", "companyorderdelivery", "type", "bank", "invoice_amount", "amount", "paid_amount",
+                  "adjustment_type", "adjustment_percentage", "adjustment_amount", "payment_date", "status")
+
+        read_only_fields = (
+            "id",
+            "files",
+            "extra_data",
+            "create_date",
+            "update_date",
+        )

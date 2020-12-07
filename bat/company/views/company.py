@@ -19,7 +19,10 @@ from bat.company.models import (
     ComponentMe,
     ComponentPrice,
     CompanyOrderCase,
-    CompanyOrderInspection
+    CompanyOrderInspection,
+    CompanyOrderDeliveryTestReport,
+    CompanyOrderPaymentPaid,
+    CompanyOrderPayment
 )
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
@@ -106,9 +109,6 @@ class ComponentGoldenSampleViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
 
-    archive_message = _("Component Golden Sample is archived")
-    restore_message = _("Component Golden Sample is restored")
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
@@ -135,9 +135,6 @@ class ComponentPriceViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
-
-    archive_message = _("Component Price is archived")
-    restore_message = _("Component Price is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -166,9 +163,6 @@ class CompanyProductViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
 
-    archive_message = _("Company Product is archived")
-    restore_message = _("Company Product is restored")
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
@@ -188,8 +182,6 @@ class CompanyProductViewSet(viewsets.ModelViewSet):
 
 
 class CompanyOrderViewSet(
-    ArchiveMixin,
-    RestoreMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -204,9 +196,6 @@ class CompanyOrderViewSet(
     filterset_fields = ["status"]
     search_fields = ["batch_id"]
 
-    archive_message = _("Order is archived")
-    restore_message = _("Order is restored")
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
@@ -216,8 +205,6 @@ class CompanyOrderViewSet(
 
 
 class CompanyOrderDeliveryViewSet(
-    ArchiveMixin,
-    RestoreMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -232,9 +219,6 @@ class CompanyOrderDeliveryViewSet(
     filterset_fields = ["status"]
     search_fields = ["batch_id"]
 
-    archive_message = _("Order Delivery is archived")
-    restore_message = _("Order Delivery is restored")
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
@@ -244,8 +228,6 @@ class CompanyOrderDeliveryViewSet(
 
 
 class CompanyOrderCaseViewSet(
-    ArchiveMixin,
-    RestoreMixin,
     viewsets.ModelViewSet,
 ):
     """Operations on Company Order Case."""
@@ -255,9 +237,6 @@ class CompanyOrderCaseViewSet(
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["status"]
-
-    archive_message = _("Order Case is archived")
-    restore_message = _("Order Case is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -278,20 +257,15 @@ class CompanyOrderCaseViewSet(
 
 
 class CompanyOrderInspectionViewSet(
-    ArchiveMixin,
-    RestoreMixin,
     viewsets.ModelViewSet,
 ):
     """Operations on Company Order Inspection."""
 
-    serializer_class = serializers.CompanyOrderInspectionSerializers
+    serializer_class = serializers.CompanyOrderInspectionSerializer
     queryset = CompanyOrderInspection.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["status"]
-
-    archive_message = _("Order Inspection is archived")
-    restore_message = _("Order Inspection is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -309,3 +283,69 @@ class CompanyOrderInspectionViewSet(
             companyorder__companytype__company=member.company
         ).order_by("-create_date")
         return super().filter_queryset(queryset)
+
+
+class CompanyOrderDeliveryTestReportViewSet(
+    viewsets.ModelViewSet,
+):
+    """Operations on Company Order Delivery TestReport."""
+
+    serializer_class = serializers.CompanyOrderDeliveryTestReportSerializer
+    queryset = CompanyOrderDeliveryTestReport.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status"]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user_id"] = self.request.user.id
+        return context
+
+    def filter_queryset(self, queryset):
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        queryset = queryset.filter(
+            companyorderdelivery__companyorder__companytype__company=member.company
+        ).order_by("-create_date")
+        return super().filter_queryset(queryset)
+
+
+class CompanyOrderPaymentPaidViewSet(
+    viewsets.ModelViewSet,
+):
+    """Operations on Company order payment paid."""
+
+    serializer_class = serializers.CompanyOrderPaymentPaidSerializer
+    queryset = CompanyOrderPaymentPaid.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status"]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user_id"] = self.request.user.id
+        return context
+
+    def filter_queryset(self, queryset):
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        queryset = queryset.filter(
+            companyorderpayment__companyorderdelivery__companyorder__companytype__company=member.company
+        ).order_by("-create_date")
+        return super().filter_queryset(queryset)
+
+
+class CompanyOrderPaymentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    serializer_class = serializers.CompanyOrderPaymentSerializer
+    queryset = CompanyOrderPayment.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status"]

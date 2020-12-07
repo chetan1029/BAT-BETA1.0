@@ -1993,27 +1993,7 @@ class CompanyOrder(models.Model):
 
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
-        if not self.is_active:
-            return False
         return has_permission(member, "change_order")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order")
 
 
 class CompanyOrderProduct(models.Model):
@@ -2087,6 +2067,9 @@ class CompanyOrderDelivery(models.Model):
         """Return Value."""
         return self.batch_id
 
+    def get_company(self):
+        return self.companyorder.get_company()
+
     @staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
@@ -2130,27 +2113,7 @@ class CompanyOrderDelivery(models.Model):
 
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
-        if not self.is_active:
-            return False
         return has_permission(member, "change_order_delivery")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_delivery")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_delivery")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_delivery")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_delivery")
 
 
 class CompanyOrderDeliveryProduct(models.Model):
@@ -2257,27 +2220,7 @@ class CompanyOrderDeliveryTestReport(models.Model):
 
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
-        if not self.is_active:
-            return False
         return has_permission(member, "change_order_inspection")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_inspection")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_inspection")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_inspection")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_inspection")
 
 
 class CompanyOrderPayment(models.Model):
@@ -2325,6 +2268,9 @@ class CompanyOrderPayment(models.Model):
         """Return Value."""
         return self.companyorderdelivery.batch_id
 
+    def get_company(self):
+        return self.companyorderdelivery.get_company()
+
     @staticmethod
     def has_read_permission(request):
         member = get_member_from_request(request)
@@ -2368,27 +2314,7 @@ class CompanyOrderPayment(models.Model):
 
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
-        if not self.is_active:
-            return False
         return has_permission(member, "change_order_payment")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_payment")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_payment")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_payment")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_payment")
 
 
 class CompanyOrderPaymentPaid(models.Model):
@@ -2399,7 +2325,7 @@ class CompanyOrderPaymentPaid(models.Model):
     """
 
     companyorderpayment = models.ForeignKey(
-        CompanyOrderPayment, on_delete=models.CASCADE
+        CompanyOrderPayment, on_delete=models.CASCADE, related_name="orderpaymentpaid"
     )
     payment_id = models.CharField(max_length=200, blank=True)
     invoice_amount = MoneyField(
@@ -2425,6 +2351,51 @@ class CompanyOrderPaymentPaid(models.Model):
     def __str__(self):
         """Return Value."""
         return self.companyorderpayment.companyorderdelivery.batch_id
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_payment")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_payment")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_payment")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_payment")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_payment")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_payment")
 
 
 class CompanyOrderCase(models.Model):
@@ -2596,24 +2567,6 @@ class CompanyOrderInspection(models.Model):
     def has_object_update_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "change_order_inspection")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_inspection")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_order_inspection")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_inspection")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_order_inspection")
 
 
 class CompanyInventory(models.Model):
