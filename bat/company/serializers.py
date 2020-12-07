@@ -10,7 +10,7 @@ from djmoney.money import Money
 from invitations.utils import get_invitation_model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rolepermissions.roles import get_user_roles
+from rolepermissions.roles import get_user_roles, assign_role
 
 
 from bat.company.file_serializers import FileSerializer
@@ -1472,3 +1472,67 @@ class CompanyOrderPaymentSerializer(serializers.ModelSerializer):
             "create_date",
             "update_date",
         )
+
+class CompanyTypeSerializerField(serializers.Field):
+    def to_representation(self, value):
+        return { "category": value.first().category_id if value.first() else None}
+
+    def to_internal_value(self, data):
+        category = data.get('category')
+        if not Category.objects.vendor_categories().filter(pk=category).exists():
+            raise serializers.ValidationError(
+                    {"company_type": _("Category is not valid")}
+                )
+        return Category.objects.filter(pk=category).first()
+
+
+class VendorCompanySerializer(serializers.ModelSerializer):
+    country = CountrySerializerField()
+    company_type = CompanyTypeSerializerField(source='companytype_company')
+
+    def create(self, validated_data):
+        data = validated_data.copy()
+        company_type = data.pop('companytype_company', None)
+
+        vendor = super().create(data)
+
+        request = self.context.get('request')
+
+        company_id = self.context.get('company_id')
+
+        companytype = CompanyType(
+            partner=vendor,
+            company_id=company_id,
+            category=company_type,
+        )
+        companytype.save()
+
+        extra_data = {}
+        extra_data["user_role"] = "vendor_admin"
+        member, create = Member.objects.get_or_create(
+            job_title="Admin",
+            user=request.user,
+            company=vendor,
+            invited_by=request.user,
+            is_admin=True,
+            is_active=True,
+            invitation_accepted=True,
+            extra_data=extra_data,
+        )
+        
+        if create:
+            # fetch user role from the User and assign after signup.
+            assign_role(member, member.extra_data["user_role"])
+
+        return vendor
+
+
+    class Meta:
+        model = Company
+        fields = (
+            "id", "address1",  "address2", "zip", "city", "region", "country",
+            "name", "abbreviation", "email", "logo", "phone_number", "organization_number",
+            "currency", "unit_system", "weight_unit", "language", "time_zone",
+            "is_active", "extra_data", 'company_type', )
+        read_only_fields = ("id", "is_active", "extra_data")
+

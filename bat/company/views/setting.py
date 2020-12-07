@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
+from django.conf import settings
+from django.db.models import Q
 
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
@@ -32,6 +34,7 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
+from bat.setting.models import Category
 from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 from bat.users.serializers import InvitationSerializer
@@ -485,3 +488,34 @@ class TaxBoxViewSet(CompanySettingBaseViewSet):
 
     archive_message = _("Tax is archived")
     restore_message = _("Tax is restored")
+
+
+class VendorCompanyViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+): 
+    queryset = Company.objects.all()
+    serializer_class = serializers.VendorCompanySerializer
+    permission_classes = (IsAuthenticated, DRYPermissions)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+        return context
+
+    def filter_queryset(self, queryset):
+        request = self.request
+        
+        company_id = self.kwargs.get("company_pk", None)
+
+        # get vendor category
+        vendor_categories = Category.objects.vendor_categories().values_list('id', flat=True)
+
+        queryset = queryset.filter(
+            companytype_company__category__id__in=vendor_categories,
+            companytype_company__company_id=company_id)
+        return queryset
