@@ -87,6 +87,8 @@ class ComponentPriceFilesViewSet(BaseFilesViewSet):
     def get_content_type(self):
         return ContentType.objects.get(
             app_label='company', model='componentprice')
+
+
 class CompanyOrderCaseFilesViewSet(BaseFilesViewSet):
     """
     View set to save files of CompanyOrderCase
@@ -107,3 +109,14 @@ class CompanyOrderInspectionFilesViewSet(BaseFilesViewSet):
     def get_content_type(self):
         return ContentType.objects.get(
             app_label='company', model='companyorderinspection')
+
+
+class ComponentPriceFilesViewSet(BaseFilesViewSet):
+    """
+    View set to save files of ComponentPrice
+    """
+    permission_list = ["add_component_price", "change_component_price"]
+
+    def get_content_type(self):
+        return ContentType.objects.get(
+            app_label='company', model='componentprice')

@@ -15,7 +15,8 @@ from bat.company.views.company import (
     CompanyOrderInspectionViewSet
 )
 from bat.company.views.file import (CompanyContractFilesViewSet, ComponentMeFilesViewSet,
-                                    CompanyOrderCaseFilesViewSet, CompanyOrderInspectionFilesViewSet)
+                                    CompanyOrderCaseFilesViewSet, CompanyOrderInspectionFilesViewSet,
+                                    ComponentPriceFilesViewSet)
 from bat.company.views.setting import (
     BankViewSet,
     CompanyPaymentTermsViewSet,
@@ -168,6 +169,15 @@ componentprice_router.register(
     "component-price", ComponentPriceViewSet, basename="component-price"
 )
 
+componentprice_file_router = routers.NestedSimpleRouter(
+    componentprice_router, "component-price", lookup="object"
+)
+
+componentprice_file_router.register(
+    "files", ComponentPriceFilesViewSet, basename="company-component-price-files"
+)
+
+
 companyproduct_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
@@ -248,6 +258,7 @@ urlpatterns += [
     path("", include(componentgoldesample_router.urls)),
     path("", include(componentgoldensample_file_router.urls)),
     path("", include(componentprice_router.urls)),
+    path("", include(componentprice_file_router.urls)),
     path("", include(companyproduct_router.urls)),
     path("", include(companyorder_router.urls)),
     path("", include(companyorderdelivery_router.urls)),
