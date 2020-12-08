@@ -2622,6 +2622,20 @@ class CompanyInventory(models.Model):
 
         verbose_name_plural = _("Company Inventory")
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
     def __str__(self):
         """Return Value."""
         return self.companyproduct.title
