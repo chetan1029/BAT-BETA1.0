@@ -1,5 +1,6 @@
 """Model classes for setting."""
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -11,6 +12,10 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 User = get_user_model()
 
+
+class CategoryManager(models.Manager):
+    def vendor_categories(self):
+        return self.filter(is_vendor_category=True)
 
 class Category(MPTTModel):
     """
@@ -34,6 +39,9 @@ class Category(MPTTModel):
     is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+    is_vendor_category = models.BooleanField(_("Is Vendor Category?"), default=False)
+
+    objects = CategoryManager()
 
     class MPTTMeta:
         """Meta class for MPTT with some special functions."""
