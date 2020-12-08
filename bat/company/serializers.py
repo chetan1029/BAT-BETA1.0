@@ -1490,6 +1490,11 @@ class VendorCompanySerializer(serializers.ModelSerializer):
     country = CountrySerializerField()
     company_type = CompanyTypeSerializerField(source='companytype_company')
 
+    address = serializers.SerializerMethodField()
+
+    def get_address(self, obj):
+        return obj.get_formatted_address()
+
     def create(self, validated_data):
         data = validated_data.copy()
         company_type = data.pop('companytype_company', None)
@@ -1533,6 +1538,6 @@ class VendorCompanySerializer(serializers.ModelSerializer):
             "id", "address1",  "address2", "zip", "city", "region", "country",
             "name", "abbreviation", "email", "logo", "phone_number", "organization_number",
             "currency", "unit_system", "weight_unit", "language", "time_zone",
-            "is_active", "extra_data", 'company_type', )
-        read_only_fields = ("id", "is_active", "extra_data")
+            "is_active", "extra_data", 'company_type', 'create_date', 'address', )
+        read_only_fields = ("id", "is_active", "extra_data", "create_date",)
 

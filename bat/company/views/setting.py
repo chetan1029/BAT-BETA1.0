@@ -5,6 +5,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db.models import Q
+from drf_yasg2.utils import swagger_auto_schema
+from drf_yasg2 import openapi
 
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
@@ -33,6 +35,7 @@ from bat.company.models import (
     Member,
     PackingBox,
     Tax,
+    CompanyType
 )
 from bat.setting.models import Category
 from bat.company.utils import get_member
@@ -490,6 +493,14 @@ class TaxBoxViewSet(CompanySettingBaseViewSet):
     restore_message = _("Tax is restored")
 
 
+category_param = openapi.Parameter(
+    'category', openapi.IN_QUERY, description="Returns vendors belong to this category", type=openapi.TYPE_INTEGER, required=False)
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="Returns all the vendors",
+    responses={200: serializers.VendorCompanySerializer(many=True)},
+    manual_parameters=[category_param]
+))
 class VendorCompanyViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -512,10 +523,17 @@ class VendorCompanyViewSet(
         
         company_id = self.kwargs.get("company_pk", None)
 
-        # get vendor category
-        vendor_categories = Category.objects.vendor_categories().values_list('id', flat=True)
+        category = self.request.GET.get('category', False)
+        if category:
+            vendor_categories = [category]
+        else:
+            # get vendor category
+            vendor_categories = Category.objects.vendor_categories().values_list('id', flat=True)
+
+        vendor_companies = CompanyType.objects.filter(category__id__in=vendor_categories, company_id=company_id).values_list('partner', flat=True)
 
         queryset = queryset.filter(
-            companytype_company__category__id__in=vendor_categories,
-            companytype_company__company_id=company_id)
+            pk__in=vendor_companies
+        )
+        
         return queryset

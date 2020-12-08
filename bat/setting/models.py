@@ -15,7 +15,7 @@ User = get_user_model()
 
 class CategoryManager(models.Manager):
     def vendor_categories(self):
-        return self.filter(models.Q(parent_id=settings.VENDOR_CATEGORY_ID) | models.Q(id=settings.VENDOR_CATEGORY_ID))
+        return self.filter(is_vendor_category=True)
 
 class Category(MPTTModel):
     """
@@ -39,6 +39,7 @@ class Category(MPTTModel):
     is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+    is_vendor_category = models.BooleanField(_("Is Vendor Category?"), default=False)
 
     objects = CategoryManager()
 
