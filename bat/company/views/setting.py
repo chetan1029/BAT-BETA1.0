@@ -501,6 +501,9 @@ category_param = openapi.Parameter(
     responses={200: serializers.VendorCompanySerializer(many=True)},
     manual_parameters=[category_param]
 ))
+@method_decorator(name='create', decorator=swagger_auto_schema(
+    auto_schema=None
+))
 class VendorCompanyViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
