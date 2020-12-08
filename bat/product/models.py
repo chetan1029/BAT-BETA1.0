@@ -13,6 +13,7 @@ from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
 from djmoney.models.fields import MoneyField
@@ -182,9 +183,9 @@ class Image(models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
-    # def delete(self, *args, **kwargs):
-    #     print("\n\n inside delete \n\n ")
-    #     super(Image, self).delete(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        self.image.delete(save=False)  # delete image
+        super(Image, self).delete(*args, **kwargs)
 
     def archive(self):
         """
@@ -602,7 +603,6 @@ class ProductRrp(ProductpermissionsModelmixin, models.Model):
         """Return Value."""
         return self.product.title
 
-    
     @staticmethod
     def has_importfile_permission(request):
         member = get_member_from_request(request)
