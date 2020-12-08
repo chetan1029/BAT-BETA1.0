@@ -1178,7 +1178,8 @@ class CompanyContract(models.Model):
     intiated and updated.
     """
 
-    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    companytype = models.ForeignKey(
+        CompanyType, on_delete=models.CASCADE, related_name="company_contracts")
     title = models.CharField(max_length=200, verbose_name=_("Contract Title"))
     files = GenericRelation(File)
     note = models.TextField(blank=True)
@@ -1319,7 +1320,8 @@ class CompanyCredential(models.Model):
     shopify like stores.
     """
 
-    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    companytype = models.ForeignKey(
+        CompanyType, on_delete=models.CASCADE, related_name="company_credentials")
     region = models.CharField(max_length=300, blank=True)
     seller_id = models.CharField(max_length=300, blank=True)
     auth_token = models.CharField(max_length=300, blank=True)
@@ -1451,6 +1453,10 @@ class ComponentMe(models.Model):
         """
         self.is_active = False
         self.save()
+        for f in self.files.all():
+            f.archive()
+        for golden_sample in self.golden_samples.all():
+            golden_sample.archive()
 
     def restore(self):
         """
@@ -1458,6 +1464,10 @@ class ComponentMe(models.Model):
         """
         self.is_active = True
         self.save()
+        for f in self.files.all():
+            f.restore()
+        for golden_sample in self.golden_samples.all():
+            golden_sample.restore()
 
     def __str__(self):
         """Return Value."""
@@ -1537,7 +1547,8 @@ class ComponentGoldenSample(models.Model):
     company and vendor before finalize.
     """
 
-    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
+    componentme = models.ForeignKey(
+        ComponentMe, on_delete=models.CASCADE, related_name="golden_samples")
     batch_id = models.CharField(max_length=100)
     files = GenericRelation(File)
     note = models.TextField(blank=True)
@@ -1559,6 +1570,10 @@ class ComponentGoldenSample(models.Model):
         """
         self.is_active = False
         self.save()
+        for f in self.files.all():
+            f.archive()
+        for component_price in self.component_prices.all():
+            component_price.archive()
 
     def restore(self):
         """
@@ -1566,10 +1581,14 @@ class ComponentGoldenSample(models.Model):
         """
         self.is_active = True
         self.save()
+        for f in self.files.all():
+            f.restore()
+        for component_price in self.component_prices.all():
+            component_price.restore()
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return self.batch_id + " - " + str(self.id)
 
     @staticmethod
     def has_read_permission(request):
@@ -1639,15 +1658,11 @@ class ComponentGoldenSample(models.Model):
 
 class ComponentPrice(models.Model):
     """
-    Component Golden Sample.
-
-    Component Golden sample will be for the final component ME and sign by both
-    company and vendor before finalize.
+    Component Component Price.
     """
 
     componentgoldensample = models.ForeignKey(
-        ComponentGoldenSample, on_delete=models.CASCADE
-    )
+        ComponentGoldenSample, on_delete=models.CASCADE, related_name="component_prices")
     files = GenericRelation(File)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     start_date = models.DateTimeField(default=timezone.now)
@@ -1670,6 +1685,8 @@ class ComponentPrice(models.Model):
         """
         self.is_active = False
         self.save()
+        for f in self.files.all():
+            f.archive()
 
     def restore(self):
         """
@@ -1677,6 +1694,8 @@ class ComponentPrice(models.Model):
         """
         self.is_active = True
         self.save()
+        for f in self.files.all():
+            f.restore()
 
     def __str__(self):
         """Return Value."""
@@ -1750,7 +1769,7 @@ class ComponentPrice(models.Model):
 
 class CompanyProduct(models.Model):
     """
-    COmpany Product Model.
+    Company Product Model.
 
     We will use this model to save all the products related to company like
     vendor and sales channel products.
@@ -1758,7 +1777,8 @@ class CompanyProduct(models.Model):
 
     from bat.product.models import Product
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="company_products")
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
     title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
@@ -1791,6 +1811,8 @@ class CompanyProduct(models.Model):
         """
         self.is_active = False
         self.save()
+        for company_inventory in self.company_inventories.all():
+            company_inventory.archive()
 
     def restore(self):
         """
@@ -1798,6 +1820,8 @@ class CompanyProduct(models.Model):
         """
         self.is_active = True
         self.save()
+        for company_inventory in self.company_inventories.all():
+            company_inventory.restore()
 
     def __str__(self):
         """Return Value."""
@@ -2578,8 +2602,7 @@ class CompanyInventory(models.Model):
     """
 
     companyproduct = models.ForeignKey(
-        CompanyProduct, on_delete=models.CASCADE
-    )
+        CompanyProduct, on_delete=models.CASCADE, related_name="company_inventories")
     date = models.DateField(default=timezone.now)
     quantity = models.IntegerField(default=0)
     weeks_of_supply = models.IntegerField(default=0)

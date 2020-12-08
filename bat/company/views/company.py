@@ -100,7 +100,7 @@ class ComponentMeViewSet(CompanySettingBaseViewSet):
     restore_message = _("Component ME is restored")
 
 
-class ComponentGoldenSampleViewSet(viewsets.ModelViewSet):
+class ComponentGoldenSampleViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """Operations on Component Golden Sample."""
 
     serializer_class = serializers.ComponentGoldenSampleSerializer
@@ -108,6 +108,9 @@ class ComponentGoldenSampleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+
+    archive_message = _("Component golden sample is archived")
+    restore_message = _("Component golden sample is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -127,7 +130,7 @@ class ComponentGoldenSampleViewSet(viewsets.ModelViewSet):
         return super().filter_queryset(queryset)
 
 
-class ComponentPriceViewSet(viewsets.ModelViewSet):
+class ComponentPriceViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """Operations on Component Price."""
 
     serializer_class = serializers.ComponentPriceSerializer
@@ -135,6 +138,9 @@ class ComponentPriceViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+
+    archive_message = _("Component Price is archived")
+    restore_message = _("Component Price is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -154,7 +160,7 @@ class ComponentPriceViewSet(viewsets.ModelViewSet):
         return super().filter_queryset(queryset)
 
 
-class CompanyProductViewSet(viewsets.ModelViewSet):
+class CompanyProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """Operations on Company Product."""
 
     serializer_class = serializers.CompanyProductSerializer
@@ -162,6 +168,9 @@ class CompanyProductViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+
+    archive_message = _("Company product is archived")
+    restore_message = _("Company product is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
