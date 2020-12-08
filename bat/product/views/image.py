@@ -54,12 +54,12 @@ class BaseImagesViewSet(viewsets.ViewSet):
             company__id=company_pk, object_id=object_pk, id__in=ids)
         if not images.exists():
             return Response({_("images not found")}, status=status.HTTP_404_NOT_FOUND)
-        # try:
-        for image in images:
-            image.delete()
-        return Response({_("deleted successfully")}, status=status.HTTP_204_NO_CONTENT)
-        # except Exception:
-        return Response({_("can't deleted")}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            for image in images:
+                image.delete()
+            return Response({_("deleted successfully")}, status=status.HTTP_204_NO_CONTENT)
+        except Exception:
+            return Response({_("can't deleted")}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductImagesViewSet(BaseImagesViewSet):
