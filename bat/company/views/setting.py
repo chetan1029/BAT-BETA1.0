@@ -512,6 +512,10 @@ class VendorCompanyViewSet(
     serializer_class = serializers.VendorCompanySerializer
     permission_classes = (IsAuthenticated, DRYPermissions)
 
+    def get_serializer_class(self):
+        return serializers.CreateVendorCompanySerializer if self.action == 'create' \
+             else serializers.VendorCompanySerializer
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["user_id"] = self.request.user.id
@@ -537,3 +541,11 @@ class VendorCompanyViewSet(
         )
         
         return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        data = serializers.VendorCompanySerializer(instance=instance).data
+        headers = self.get_success_headers(data)
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
