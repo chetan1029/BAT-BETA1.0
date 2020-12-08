@@ -184,9 +184,7 @@ class Image(models.Model):
     update_date = models.DateTimeField(default=timezone.now)
 
     def delete(self, *args, **kwargs):
-        print("\n\n inside delete \n\n ")
-        # print(os.path.join(settings.MEDIA_ROOT, self.image.name), "\n\n\n")
-        # os.remove(os.path.join(settings.MEDIA_ROOT, self.image.name))
+        self.image.delete(save=False)  # delete image
         super(Image, self).delete(*args, **kwargs)
 
     def archive(self):
