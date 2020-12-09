@@ -177,6 +177,16 @@ class QueryFieldsMixin(object):
             self.fields.pop(field)
 
 
+def get_status_json(obj):
+    if obj.parent:
+        json_status = {"id": obj.id,
+                       "name": obj.name, "user": obj.user.id, "parent": get_status_json(obj.parent)}
+    else:
+        json_status = {"id": obj.id,
+                       "name": obj.name, "user": obj.user.id}
+    return json_status
+
+
 class StatusField(ChoiceField):
 
     def __init__(self, **kwargs):
@@ -185,8 +195,9 @@ class StatusField(ChoiceField):
 
     def to_representation(self, value):
         """
-        give id of Status.
+        give json of Status with all parents.
         """
         if isinstance(value, str):
             return value
-        return value.id
+        json_status = get_status_json(value)
+        return json_status
