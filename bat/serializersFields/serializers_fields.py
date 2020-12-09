@@ -8,6 +8,8 @@ from rest_framework.serializers import Field, ChoiceField, JSONField
 from django_countries import countries
 from measurement.measures import Weight
 from djmoney.money import Money
+from drf_yasg2.utils import swagger_auto_schema
+from drf_yasg2 import openapi
 
 from bat.company import constants
 from bat.globalconstants.constants import CURRENCY_CODE_CHOICES
@@ -15,6 +17,23 @@ from bat.product.constants import PRODUCT_STATUS_CHOICE
 
 
 class WeightField(JSONField):
+    class Meta:
+        swagger_schema_fields = {
+            "type": openapi.TYPE_OBJECT,
+            "title": "Weight",
+            "properties": {
+                "value": openapi.Schema(
+                    title="value",
+                    type=openapi.TYPE_NUMBER,
+                ),
+                "unit": openapi.Schema(
+                    title="unit",
+                    type=openapi.TYPE_STRING,
+                ),
+            },
+            "required": ["value", "unit"],
+        }
+
     def to_representation(self, value):
         '''
         represent weight object to json data
@@ -86,6 +105,23 @@ class TagField(Field):
 
 
 class MoneySerializerField(JSONField):
+
+    class Meta:
+        swagger_schema_fields = {
+            "type": openapi.TYPE_OBJECT,
+            "title": "Money",
+            "properties": {
+                "amount": openapi.Schema(
+                    title="amount",
+                    type=openapi.TYPE_NUMBER,
+                ),
+                "currency": openapi.Schema(
+                    title="currency",
+                    type=openapi.TYPE_STRING,
+                ),
+            },
+            "required": ["amount", "currency"],
+        }
 
     def to_representation(self, value):
         '''
