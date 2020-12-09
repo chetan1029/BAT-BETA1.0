@@ -10,7 +10,13 @@ from djmoney.money import Money
 from invitations.utils import get_invitation_model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rolepermissions.roles import get_user_roles
+from rolepermissions.roles import get_user_roles, assign_role
+from django.conf import settings
+
+from allauth.account import app_settings as allauth_settings
+from allauth.utils import (email_address_exists, get_username_max_length)
+from allauth.account.adapter import get_adapter
+from allauth.account.utils import setup_user_email
 
 
 from bat.company.file_serializers import FileSerializer
@@ -1499,3 +1505,120 @@ class CompanyOrderPaymentSerializer(serializers.ModelSerializer):
             "create_date",
             "update_date",
         )
+
+class CompanyTypeSerializerField(serializers.Field):
+    def to_representation(self, value):
+        return { "category": value.first().category_id if value.first() else None}
+
+    def to_internal_value(self, data):
+        category = data.get('category')
+        if not Category.objects.vendor_categories().filter(pk=category).exists():
+            raise serializers.ValidationError(
+                    {"company_type": _("Category is not valid")}
+                )
+        return Category.objects.filter(pk=category).first()
+
+
+class VendorCompanyUserSerializer(serializers.Serializer):
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    username = serializers.CharField(
+        max_length=get_username_max_length(),
+        min_length=allauth_settings.USERNAME_MIN_LENGTH,
+        required=allauth_settings.USERNAME_REQUIRED
+    )
+    email = serializers.EmailField(required=True)
+
+    def get_cleaned_data(self):
+        return {
+            'username': self.validated_data.get('username', ''),
+            'password1': settings.VENDOR_DEFAULT_PASSWORD,
+            'email': self.validated_data.get('email', '')
+        }
+
+    def validate_username(self, username):
+        username = get_adapter().clean_username(username)
+        return username
+
+    def validate_email(self, email):
+        email = get_adapter().clean_email(email)
+        if allauth_settings.UNIQUE_EMAIL:
+            if email and email_address_exists(email):
+                raise serializers.ValidationError(
+                    _("A user is already registered with this e-mail address."))
+        return email
+
+    def save(self, request):
+        adapter = get_adapter()
+        user = adapter.new_user(request)
+        self.cleaned_data = self.get_cleaned_data()
+        adapter.save_user(request, user, self)
+        setup_user_email(request, user, [])
+        return user
+
+
+class VendorCompanySerializer(serializers.ModelSerializer):
+    country = CountrySerializerField()
+    address = serializers.SerializerMethodField()
+
+    def get_address(self, obj):
+        return obj.get_formatted_address()
+
+    class Meta:
+        model = Company
+        fields = (
+            "id", "address1",  "address2", "zip", "city", "region", "country",
+            "name", "abbreviation", "email", "logo", "phone_number", "organization_number",
+            "currency", "unit_system", "weight_unit", "language", "time_zone",
+            "is_active", "extra_data", 'create_date', 'address', 'update_date', )
+        read_only_fields = ("id", "is_active", "extra_data", "create_date", "update_date", )
+
+
+class CreateVendorCompanySerializer(VendorCompanySerializer):
+    user = VendorCompanyUserSerializer(required=True)
+
+    def create(self, validated_data):
+        data = validated_data.copy()
+        company_type = data.pop('companytype_company', None)
+        user = data.pop('user', None)
+        
+        request = self.context.get('request')
+
+        user_serializer = VendorCompanyUserSerializer(data=user)
+        user_serializer.is_valid(raise_exception=True)
+        user = user_serializer.save(request)
+
+        vendor = super().create(data)
+
+        company_id = self.context.get('company_id')
+
+        companytype = CompanyType(
+            partner=vendor,
+            company_id=company_id,
+            category=company_type,
+        )
+        companytype.save()
+        
+        member, _c = Member.objects.get_or_create(
+                    job_title="Admin",
+                    user=user,
+                    company=vendor,
+                    invited_by=request.user,
+                    is_admin=True,
+                    is_active=True,
+                    invitation_accepted=True,
+        )
+        
+        if _c:
+            # fetch user role from the User and assign after signup.
+            assign_role(member, "vendor_admin")
+        return vendor
+
+    class Meta:
+        model = Company
+        fields = (
+            "id", "address1",  "address2", "zip", "city", "region", "country",
+            "name", "abbreviation", "email", "logo", "phone_number", "organization_number",
+            "currency", "unit_system", "weight_unit", "language", "time_zone",
+            "is_active", "extra_data", 'company_type', 'create_date', 'address', 'user')
+        read_only_fields = ("id", "is_active", "extra_data", "create_date",)

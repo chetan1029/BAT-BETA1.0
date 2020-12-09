@@ -66,7 +66,7 @@ class CountrySerializerField(ChoiceField):
         """
         if isinstance(value, str):
             return value
-        return value.code + " - " + value.name
+        return value.code
 
 
 class TagField(Field):

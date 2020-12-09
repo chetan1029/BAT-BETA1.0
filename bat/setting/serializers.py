@@ -26,6 +26,10 @@ class StatusSerializer(serializers.ModelSerializer):
         )
 
 class CategorySerializer(serializers.ModelSerializer):
+    parent_details = serializers.SerializerMethodField()
+
+    def get_parent_details(self, obj):
+        return CategorySerializer(obj.parent).data if obj.parent else {}
 
     class Meta:
         model = Category
@@ -36,6 +40,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "parent",
             "user",
             "is_active",
+            "parent_details",
         )
         read_only_fields = (
             "id",
