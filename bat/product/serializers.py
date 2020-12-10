@@ -138,7 +138,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         products = attrs.get("products", [])
-        if len(products) <= 1:
+        if len(products) < 1:
             msg = _("At Least one child product required.")
             raise serializers.ValidationError({"products": msg})
         return super().validate(attrs)
