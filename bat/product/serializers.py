@@ -264,7 +264,7 @@ class ProductRrpSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductRrp
         fields = ("id", "product", "rrp", "country", "is_active")
-        read_only_fields = ("id", "is_active", "product")
+        read_only_fields = ("id", "is_active")
 
     def validate(self, attrs):
         """

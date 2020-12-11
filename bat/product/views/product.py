@@ -45,6 +45,7 @@ class ProductVariationViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet
 class ProductMetadatMxin(viewsets.ModelViewSet):
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         product_id = self.kwargs.get("product_pk", None)
         company_id = self.kwargs.get("company_pk", None)
         return queryset.filter(
@@ -86,10 +87,10 @@ class ProductRrpViewSet(ExportMixin, ProductMetadatMxin):
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
-    csv_export_fields = ["id", "product__title", "product__sku", "product__productparent__series", "rrp",
-                         "country", "is_active"]
-    csv_field_header_map = {"product__title": "title",
-                            "product__sku": "sku", "product__productparent__series": "series"}
+    export_fields = ["id", "product__title", "product__sku", "product__productparent__series", "rrp",
+                     "country", "is_active"]
+    field_header_map = {"product__title": "title",
+                        "product__sku": "sku", "product__productparent__series": "series"}
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
