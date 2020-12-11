@@ -141,7 +141,7 @@ class ComponentPriceViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
         return context
 
     def filter_queryset(self, queryset):
-        company_id = self.kwargs.get("company_pk", None),
+        company_id = self.kwargs.get("company_pk", None)
         queryset = queryset.filter(
             componentgoldensample__componentme__companytype__company__id=company_id
         ).order_by("-create_date")
