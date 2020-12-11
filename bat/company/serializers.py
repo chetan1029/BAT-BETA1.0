@@ -591,6 +591,7 @@ class CompanyContractSerializer(serializers.ModelSerializer):
     """Serializer for CompanyContract."""
 
     files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -613,7 +614,6 @@ class CompanyContractSerializer(serializers.ModelSerializer):
             "id",
             "files",
             "is_active",
-            "status",
             "company_member",
         )
 
@@ -644,8 +644,15 @@ class CompanyContractSerializer(serializers.ModelSerializer):
         attrs["company_member"] = get_member(
             company_id=self.context["company_id"], user_id=self.context["user"]
         )
-        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
 
 
 class CompanyCredentialSerializer(serializers.ModelSerializer):
@@ -691,6 +698,7 @@ class ComponentMeSerializer(serializers.ModelSerializer):
     """Serializer for Component ME."""
 
     files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -710,7 +718,6 @@ class ComponentMeSerializer(serializers.ModelSerializer):
             "id",
             "is_active",
             "files",
-            "status",
             "create_date",
             "update_date",
         )
@@ -743,14 +750,22 @@ class ComponentMeSerializer(serializers.ModelSerializer):
                 )
         if errors:
             raise serializers.ValidationError(errors)
-        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
 
 
 class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
     """Serializer for Component Golden Sample."""
 
     files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -769,7 +784,6 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
             "id",
             "is_active",
             "files",
-            "status",
             "create_date",
             "update_date",
         )
@@ -791,8 +805,15 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
                 )
         if errors:
             raise serializers.ValidationError(errors)
-        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
 
 
 class ComponentPriceSerializer(serializers.ModelSerializer):
@@ -800,6 +821,7 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
 
     price = MoneySerializerField()
     files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -819,7 +841,6 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
             "id",
             "files",
             "is_active",
-            "status",
             "create_date",
             "update_date",
         )
@@ -843,8 +864,15 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
                 )
         if errors:
             raise serializers.ValidationError(errors)
-        attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)
 
 
 class CompanyProductSerializer(serializers.ModelSerializer):
@@ -874,7 +902,6 @@ class CompanyProductSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "is_active",
-            "status",
             "create_date",
             "update_date",
         )
@@ -992,7 +1019,6 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "id",
-            "status",
             "sub_amount",
             "vat_amount",
             "tax_amount",
@@ -1152,7 +1178,6 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "amount",
-            "status",
             "create_date",
             "update_date",
         )
@@ -1466,6 +1491,8 @@ class CompanyOrderPaymentPaidSerializer(serializers.ModelSerializer):
 
 
 class CompanyOrderPaymentSerializer(serializers.ModelSerializer):
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
+
     class Meta:
         model = CompanyOrderPayment
         fields = ("id", "companyorderdelivery", "type", "bank", "invoice_amount", "amount", "paid_amount",
