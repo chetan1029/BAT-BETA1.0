@@ -70,7 +70,7 @@ product_packingbox_router = routers.NestedSimpleRouter(
 )
 
 product_packingbox_router.register(
-    "packingboxs", ProductPackingBoxViewSet, basename="company-product-packingboxs"
+    "packingboxes", ProductPackingBoxViewSet, basename="company-product-packingboxes"
 )
 
 
