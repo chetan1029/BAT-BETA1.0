@@ -13,7 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
 
 from bat.company.utils import get_member
-from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+from bat.mixins.mixins import ArchiveMixin, RestoreMixin, ExportMixin
 from bat.company.models import HsCode
 from bat.product import serializers
 from bat.product.models import ProductParent, Product, ProductOption, ProductVariationOption
@@ -23,6 +23,7 @@ from bat.product.constants import PRODUCT_STATUS_ACTIVE, PRODUCT_STATUS_DRAFT
 
 class ProductViewSet(ArchiveMixin,
                      RestoreMixin,
+                     ExportMixin,
                      mixins.RetrieveModelMixin,
                      mixins.ListModelMixin,
                      mixins.CreateModelMixin,
@@ -60,3 +61,7 @@ class ProductViewSet(ArchiveMixin,
             return Response({"detail": self.archive_message}, status=status.HTTP_200_OK)
         except IntegrityError:
             return Response({"detail": _("Can't activate")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        return queryset.filter(company__pk=company_id)

@@ -61,7 +61,8 @@ member_router.register("members", MemberViewSet, basename="company-members")
 member_router.register(
     "invitations", CompanyInvitationViewSet, basename="company-invitations")
 
-member_router.register("vendors", VendorCompanyViewSet, basename="company-vendors")
+member_router.register("vendors", VendorCompanyViewSet,
+                       basename="company-vendors")
 
 payment_terms_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
@@ -87,7 +88,7 @@ packingbox_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 packingbox_router.register(
-    "packing-boxs", PackingBoxViewSet, basename="company-packingbox"
+    "packing-boxes", PackingBoxViewSet, basename="company-packingbox"
 )
 
 hscode_router = routers.NestedSimpleRouter(

@@ -617,9 +617,9 @@ class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
     """
 
     product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="product_packingboxs")
+        Product, on_delete=models.CASCADE, related_name="product_packingboxes")
     packingbox = models.ForeignKey(
-        PackingBox, on_delete=models.CASCADE, related_name="product_packingboxs")
+        PackingBox, on_delete=models.CASCADE, related_name="product_packingboxes")
     weight = MeasurementField(
         measurement=Weight,
         unit_choices=(("g", "g"), ("kg", "kg"), ("oz", "oz"), ("lb", "lb")),
