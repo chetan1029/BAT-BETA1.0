@@ -504,7 +504,7 @@ category_param = openapi.Parameter(
     manual_parameters=[category_param]
 ))
 @method_decorator(name='create', decorator=swagger_auto_schema(
-    auto_schema=None
+    reqeust={serializers.CreateVendorCompanySerializer()},
 ))
 class VendorCompanyViewSet(
     mixins.ListModelMixin,
@@ -516,10 +516,6 @@ class VendorCompanyViewSet(
     queryset = Company.objects.all()
     serializer_class = serializers.VendorCompanySerializer
     permission_classes = (IsAuthenticated, DRYPermissions)
-
-    def get_serializer_class(self):
-        return serializers.CreateVendorCompanySerializer if self.action == 'create' \
-            else serializers.VendorCompanySerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -549,7 +545,11 @@ class VendorCompanyViewSet(
         return queryset
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        context = {'request': request}
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+
+        serializer = serializers.CreateVendorCompanySerializer(data=request.data, context=context)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         data = serializers.VendorCompanySerializer(instance=instance).data

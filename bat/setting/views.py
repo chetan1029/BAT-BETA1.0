@@ -34,20 +34,6 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
     filterset_fields = ["is_active"]
 
     def filter_queryset(self, queryset):
-        company_id = self.kwargs.get("company_pk", None)
-
-        # TODO - permission check?
-        member = get_member(
-            company_id=company_id,
-            user_id=self.request.user.id,
-        )
-
-        all_users = Member.objects.filter(company=company_id).values_list('user', flat=True)
-
-        queryset = queryset.filter(user__id__in=all_users).order_by(
-            "-create_date"
-        )
-
         only_vendor_categories = self.request.GET.get('vendors_only', False)
         if only_vendor_categories:
             queryset = queryset.filter(is_vendor_category=True if only_vendor_categories == 'true' else False)

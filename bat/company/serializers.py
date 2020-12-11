@@ -1576,6 +1576,7 @@ class VendorCompanySerializer(serializers.ModelSerializer):
 
 class CreateVendorCompanySerializer(VendorCompanySerializer):
     user = VendorCompanyUserSerializer(required=True)
+    company_type = CompanyTypeSerializerField(source='companytype_company')
 
     def create(self, validated_data):
         data = validated_data.copy()
@@ -1584,7 +1585,7 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
         
         request = self.context.get('request')
 
-        user_serializer = VendorCompanyUserSerializer(data=user)
+        user_serializer = VendorCompanyUserSerializer(data=user, context={'request': self.context['request']})
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save(request)
 
@@ -1592,12 +1593,22 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
 
         company_id = self.context.get('company_id')
 
-        companytype = CompanyType(
+        companytypes = [CompanyType(
             partner=vendor,
             company_id=company_id,
-            category=company_type,
-        )
-        companytype.save()
+            category=company_type
+        )]
+
+        partner_category = company_type.extra_data.get('partner_category')
+        
+        if partner_category:
+            companytypes.append(CompanyType(
+            partner_id=company_id,
+            company=vendor,
+            category_id=partner_category
+        ))
+
+        CompanyType.objects.bulk_create(companytypes)
         
         member, _c = Member.objects.get_or_create(
                     job_title="Admin",
