@@ -1,11 +1,12 @@
+import datetime
 import tempfile
 import djqscsv
-import pandas as pd
-from shutil import copyfile
+from openpyxl import Workbook
 
 from django.db import IntegrityError, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.http import HttpResponse
+from django.utils.text import slugify
 
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -49,12 +50,12 @@ class ExportMixin:
     def csvexport(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
             self.get_queryset())
-        if getattr(self, "csv_export_fields", None):
-            queryset = queryset.values(*self.csv_export_fields)
+        if getattr(self, "export_fields", None):
+            queryset = queryset.values(*self.export_fields)
 
-        if getattr(self, "csv_field_header_map", None):
+        if getattr(self, "field_header_map", None):
             return djqscsv.render_to_csv_response(
-                queryset, append_datestamp=True, field_header_map=self.csv_field_header_map)
+                queryset, append_datestamp=True, field_header_map=self.field_header_map)
         else:
             return djqscsv.render_to_csv_response(
                 queryset, append_datestamp=True)
@@ -63,33 +64,52 @@ class ExportMixin:
     def xlsxeport(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
             self.get_queryset())
-        if getattr(self, "csv_export_fields", None):
-            queryset = queryset.values(*self.csv_export_fields)
+        if getattr(self, "export_fields", None):
+            queryset = queryset.values(*self.export_fields)
 
-        try:
-            # get filenames
-            filename_csv = djqscsv.generate_filename(queryset,
-                                                     append_datestamp=True)
-            filename_xlsx = ".".join(filename_csv.split(".")[:-1]) + ".xlsx"
+        # get filenames
+        formatted_datestring = datetime.date.today().strftime("%Y%m%d")
+        filename_xlsx = slugify(queryset.model.__name__) + \
+            "_" + formatted_datestring + '_export.xlsx'
 
-            # Temporary files
-            tmp_dir = tempfile.TemporaryDirectory()
-            tmp_csv_file_path = tmp_dir.name + filename_csv
-            tmp_xlsx_file_path = tmp_dir.name + filename_xlsx
+        # Temporary files
+        tmp_dir = tempfile.TemporaryDirectory()
+        tmp_xlsx_file_path = tmp_dir.name + "/" + filename_xlsx
+        
+        # create Workbook
+        wb = Workbook()
+        ws = wb.active
 
-            # create csv file
-            csv_file = open(tmp_csv_file_path, "wb")
-            if getattr(self, "csv_field_header_map", None):
-                djqscsv.write_csv(queryset, csv_file,
-                                  field_header_map=self.csv_field_header_map)
+        # header mapping
+        if type(queryset).__name__ == 'ValuesQuerySet':
+            values_qs = queryset
+        else:
+            # could be a non-values qs, or could be django 1.9+
+            iterable_class = getattr(queryset, '_iterable_class', object)
+            if iterable_class.__name__ == 'ValuesIterable':
+                values_qs = queryset
             else:
-                djqscsv.write_csv(queryset, csv_file)
-            csv_file.close()
-
-            # convert csv file to xlsx file
-            csv_file2 = open(tmp_csv_file_path, "r")
-            df_new = pd.read_csv(csv_file2)
-            df_new.to_excel(tmp_xlsx_file_path, index=False)
+                values_qs = queryset.values()
+        qs_header = list(values_qs.query.values_select)
+        header_map = getattr(self, "field_header_map", None)
+        if header_map:
+            header = qs_header.copy()
+            for key, value in header_map.items():
+                header[header.index(key)] = value
+            ws.append(header)
+        else:
+            ws.append(qs_header)
+        
+        try:
+            # write data
+            if queryset.exists():
+                if not isinstance(queryset.first(), dict):
+                    queryset = queryset.values(*qs_header)
+                for row in queryset:
+                    row2 = [value for key, value in row.items()]
+                    ws.append(row2)
+            wb.save(tmp_xlsx_file_path)
+            wb.close()
 
             # response
             f = open(tmp_xlsx_file_path, "rb")
