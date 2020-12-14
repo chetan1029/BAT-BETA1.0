@@ -40,6 +40,12 @@ class ProductViewSet(ArchiveMixin,
     archive_message = _("Product parent is archived")
     restore_message = _("Product parent is restored")
 
+    export_fields = ["id", "company", "is_component", "title", "type", "sku",
+                     "bullet_points", "description", "tags", "is_active", "status__name", "products__title",
+                     "products__sku", "extra_data", "series", "hscode"]
+    field_header_map = {"status__name": "status",
+                        "products__title": "veriation title", "products__sku": "veriation sku"}
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
@@ -63,5 +69,6 @@ class ProductViewSet(ArchiveMixin,
             return Response({"detail": _("Can't activate")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         company_id = self.kwargs.get("company_pk", None)
         return queryset.filter(company__pk=company_id)
