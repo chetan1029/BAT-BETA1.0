@@ -40,5 +40,4 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         if only_vendor_categories:
             queryset = queryset.filter(
                 is_vendor_category=True if only_vendor_categories == 'true' else False)
-        print("\n\n", queryset, "\n\n")
         return queryset

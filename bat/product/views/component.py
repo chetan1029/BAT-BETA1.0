@@ -57,7 +57,6 @@ class ProductViewSet(ArchiveMixin,
     def active(self, request, *args, **kwargs):
         """Set the active action."""
         instance = self.get_object()
-        print("instance.get_status_name : ", instance.get_status_name)
         if instance.get_status_name == PRODUCT_STATUS_ACTIVE:
             return Response({"detail": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
         try:
