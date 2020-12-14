@@ -13,7 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
 
 from bat.company.utils import get_member
-from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+from bat.mixins.mixins import ArchiveMixin, RestoreMixin, ExportMixin
 from bat.company.models import HsCode
 from bat.product import serializers
 from bat.product.models import ProductParent, Product, ProductOption, ProductVariationOption
@@ -23,6 +23,7 @@ from bat.product.constants import PRODUCT_STATUS_ACTIVE, PRODUCT_STATUS_DRAFT
 
 class ProductViewSet(ArchiveMixin,
                      RestoreMixin,
+                     ExportMixin,
                      mixins.RetrieveModelMixin,
                      mixins.ListModelMixin,
                      mixins.CreateModelMixin,
@@ -39,6 +40,12 @@ class ProductViewSet(ArchiveMixin,
     archive_message = _("Product parent is archived")
     restore_message = _("Product parent is restored")
 
+    export_fields = ["id", "company", "is_component", "title", "type", "sku",
+                     "bullet_points", "description", "tags", "is_active", "status__name", "products__title",
+                     "products__sku", "extra_data", "series", "hscode"]
+    field_header_map = {"status__name": "status",
+                        "products__title": "veriation title", "products__sku": "veriation sku"}
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
@@ -50,7 +57,6 @@ class ProductViewSet(ArchiveMixin,
     def active(self, request, *args, **kwargs):
         """Set the active action."""
         instance = self.get_object()
-        print("instance.get_status_name : ", instance.get_status_name)
         if instance.get_status_name == PRODUCT_STATUS_ACTIVE:
             return Response({"detail": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
         try:
@@ -60,3 +66,8 @@ class ProductViewSet(ArchiveMixin,
             return Response({"detail": self.archive_message}, status=status.HTTP_200_OK)
         except IntegrityError:
             return Response({"detail": _("Can't activate")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        company_id = self.kwargs.get("company_pk", None)
+        return queryset.filter(company__pk=company_id)

@@ -5,8 +5,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db.models import Q
-from drf_yasg2.utils import swagger_auto_schema
-from drf_yasg2 import openapi
 
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
@@ -90,8 +88,8 @@ class CompanyViewSet(
 
     def filter_queryset(self, queryset):
         request = self.request
-        queryset = queryset.filter(member_company__user__id=request.user.id)
-        return queryset
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(member_company__user__id=request.user.id)
 
 
 """
@@ -116,6 +114,7 @@ input to content
 "vendor_type":{"id":1,"name":"test"}
 }
 """
+
 
 @method_decorator(name='create', decorator=swagger_auto_schema(
     operation_description="Allows to invite member or vendor or other users",
@@ -222,7 +221,7 @@ class InvitationCreate(viewsets.ViewSet):
 
         user = User.objects.filter(email=email).first()
         # url to accept invitation
-       
+
         if user:
             actions = [
                 {
@@ -249,8 +248,10 @@ class InvitationCreate(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
+
 is_accepted_param = openapi.Parameter(
     'is_accepted', openapi.IN_QUERY, description="Filters by status", type=openapi.TYPE_BOOLEAN, required=False)
+
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_description="Returns all the invitations",
@@ -266,6 +267,7 @@ class CompanyInvitationViewSet(viewsets.ReadOnlyModelViewSet):
         filter invitations for current user.
         return pending invitations
         """
+        queryset = super().filter_queryset(queryset)
         queryset = queryset.filter(
             company_detail__company_id=int(self.kwargs.get("company_pk", None))
         )
@@ -283,7 +285,7 @@ class CompanyInvitationViewSet(viewsets.ReadOnlyModelViewSet):
         instance = self.get_object()
         if instance.accepted == True:
             return Response({"detail": _("Accepted successfully")}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         instance.send_invitation(request)
 
         return Response({"detail": _("Invitations resent successfully")}, status=status.HTTP_200_OK)
@@ -316,16 +318,14 @@ class MemberViewSet(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        queryset = queryset.filter(company=member.company).order_by(
-            "-create_date"
-        )
-        return super().filter_queryset(queryset)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(company=member.company).order_by("-create_date")
 
     def perform_update(self, serializer):
         """ update member with given roles and permissions """
         instance = self.get_object()
         data = serializer.validated_data.copy()
-        
+
         clear_roles(instance)
         for group in data.get("groups", []):
             assign_role(instance, group.name)
@@ -353,10 +353,8 @@ class CompanySettingBaseViewSet(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        queryset = queryset.filter(company=member.company).order_by(
-            "-create_date"
-        )
-        return super().filter_queryset(queryset)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(company=member.company).order_by("-create_date")
 
     def perform_create(self, serializer):
         """Set the data for who is the owner or creater."""
@@ -496,13 +494,14 @@ class TaxBoxViewSet(CompanySettingBaseViewSet):
 category_param = openapi.Parameter(
     'category', openapi.IN_QUERY, description="Returns vendors belong to this category", type=openapi.TYPE_INTEGER, required=False)
 
+
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_description="Returns all the vendors",
     responses={200: serializers.VendorCompanySerializer(many=True)},
     manual_parameters=[category_param]
 ))
 @method_decorator(name='create', decorator=swagger_auto_schema(
-    auto_schema=None
+    reqeust={serializers.CreateVendorCompanySerializer()},
 ))
 class VendorCompanyViewSet(
     mixins.ListModelMixin,
@@ -510,14 +509,10 @@ class VendorCompanyViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
-): 
+):
     queryset = Company.objects.all()
     serializer_class = serializers.VendorCompanySerializer
     permission_classes = (IsAuthenticated, DRYPermissions)
-
-    def get_serializer_class(self):
-        return serializers.CreateVendorCompanySerializer if self.action == 'create' \
-             else serializers.VendorCompanySerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -526,8 +521,9 @@ class VendorCompanyViewSet(
         return context
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         request = self.request
-        
+
         company_id = self.kwargs.get("company_pk", None)
 
         category = self.request.GET.get('category', False)
@@ -537,16 +533,21 @@ class VendorCompanyViewSet(
             # get vendor category
             vendor_categories = Category.objects.vendor_categories().values_list('id', flat=True)
 
-        vendor_companies = CompanyType.objects.filter(category__id__in=vendor_categories, company_id=company_id).values_list('partner', flat=True)
+        vendor_companies = CompanyType.objects.filter(
+            category__id__in=vendor_categories, company_id=company_id).values_list('partner', flat=True)
 
         queryset = queryset.filter(
             pk__in=vendor_companies
         )
-        
         return queryset
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        context = {'request': request}
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+
+        serializer = serializers.CreateVendorCompanySerializer(
+            data=request.data, context=context)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         data = serializers.VendorCompanySerializer(instance=instance).data

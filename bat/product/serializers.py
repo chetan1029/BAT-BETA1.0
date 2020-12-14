@@ -16,12 +16,13 @@ from bat.product.models import (
     ProductRrp,
     ProductVariationOption,
 )
-from bat.serializersFields.serializers_fields import CountrySerializerField, WeightField, TagField, MoneySerializerField
-from bat.setting.serializers import StatusSerializer
+from bat.serializersFields.serializers_fields import (
+    CountrySerializerField, WeightField, TagField, MoneySerializerField, StatusField)
 from bat.company.utils import get_member
 from bat.company.models import HsCode
 from bat.setting.utils import get_status
 from bat.product.constants import PRODUCT_STATUS_DRAFT
+from bat.globalutils.utils import get_status_object
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -104,7 +105,7 @@ class ProductSerializer(serializers.ModelSerializer):
     """
 
     tags = TagField(required=False)
-    status = StatusSerializer(required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
     products = ProductVariationSerializer(many=True, read_only=False)
     images = ImageSerializer(many=True, read_only=True, required=False)
 
@@ -138,7 +139,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         products = attrs.get("products", [])
-        if len(products) <= 1:
+        if len(products) < 1:
             msg = _("At Least one child product required.")
             raise serializers.ValidationError({"products": msg})
         return super().validate(attrs)
@@ -152,6 +153,7 @@ class ProductSerializer(serializers.ModelSerializer):
             user_id=self.context.get("user_id", None),
         )
         data = validated_data.copy()
+        data['status'] = get_status_object(validated_data)
         with transaction.atomic():
             hscode = data.get("hscode", None)
             if hscode:
@@ -163,10 +165,8 @@ class ProductSerializer(serializers.ModelSerializer):
             data.pop("tags", None)
             products = data.get("products", None)
             data.pop("products")
-            product_status = get_status("Basic", PRODUCT_STATUS_DRAFT)
-            # Draft, Active, Archived
             product_parent = ProductParent.objects.create(
-                company=member.company, status=product_status, **data)
+                company=member.company, **data)
             if tags:
                 # set tags
                 product_parent.tags.set(*tags)
@@ -264,7 +264,7 @@ class ProductRrpSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductRrp
         fields = ("id", "product", "rrp", "country", "is_active")
-        read_only_fields = ("id", "is_active", "product")
+        read_only_fields = ("id", "is_active")
 
     def validate(self, attrs):
         """

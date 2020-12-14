@@ -24,10 +24,7 @@ from bat.company.models import (
     CompanyOrderPaymentPaid,
     CompanyOrderPayment
 )
-from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
-from bat.product.constants import PRODUCT_STATUS_ACTIVE, PRODUCT_STATUS_DRAFT
-from bat.setting.utils import get_status
 
 
 # Company base view set.
@@ -47,14 +44,11 @@ class CompanySettingBaseViewSet(
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            companytype__company=member.company
+        queryset = super().filter_queryset(queryset)
+        company_id = self.kwargs.get("company_pk", None)
+        return queryset.filter(
+            companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyContractViewSet(CompanySettingBaseViewSet):
@@ -120,14 +114,11 @@ class ComponentGoldenSampleViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelVie
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            componentme__companytype__company=member.company
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            componentme__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class ComponentPriceViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
@@ -150,14 +141,11 @@ class ComponentPriceViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            componentgoldensample__componentme__companytype__company=member.company
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            componentgoldensample__componentme__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
@@ -180,14 +168,11 @@ class CompanyProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            companytype__company=member.company
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderViewSet(
@@ -212,6 +197,13 @@ class CompanyOrderViewSet(
         context["user_id"] = self.request.user.id
         return context
 
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companytype__company__id=company_id
+        ).order_by("-create_date")
+
 
 class CompanyOrderDeliveryViewSet(
     mixins.RetrieveModelMixin,
@@ -235,6 +227,13 @@ class CompanyOrderDeliveryViewSet(
         context["user_id"] = self.request.user.id
         return context
 
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companyorder__companytype__company__id=company_id
+        ).order_by("-create_date")
+
 
 class CompanyOrderCaseViewSet(
     viewsets.ModelViewSet,
@@ -255,14 +254,11 @@ class CompanyOrderCaseViewSet(
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            companyorder__companytype__company=member.company
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderInspectionViewSet(
@@ -284,14 +280,11 @@ class CompanyOrderInspectionViewSet(
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            companyorder__companytype__company=member.company
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderDeliveryTestReportViewSet(
@@ -313,14 +306,11 @@ class CompanyOrderDeliveryTestReportViewSet(
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            companyorderdelivery__companyorder__companytype__company=member.company
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companyorderdelivery__companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderPaymentPaidViewSet(
@@ -342,14 +332,11 @@ class CompanyOrderPaymentPaidViewSet(
         return context
 
     def filter_queryset(self, queryset):
-        member = get_member(
-            company_id=self.kwargs.get("company_pk", None),
-            user_id=self.request.user.id,
-        )
-        queryset = queryset.filter(
-            companyorderpayment__companyorderdelivery__companyorder__companytype__company=member.company
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companyorderpayment__companyorderdelivery__companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderPaymentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -358,3 +345,10 @@ class CompanyOrderPaymentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixi
     permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["status"]
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            companyorderdelivery__companyorder__companytype__company__id=company_id
+        ).order_by("-create_date")

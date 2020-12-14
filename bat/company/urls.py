@@ -275,7 +275,6 @@ company_order_delivery_testreport_file_router.register(
     basename="company-order-delivery-testreport-files",
 )
 
-
 company_order_payment_paid_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
