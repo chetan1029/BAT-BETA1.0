@@ -1598,15 +1598,16 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
             company_id=company_id,
             category=company_type
         )]
-
-        partner_category = company_type.extra_data.get('partner_category')
         
-        if partner_category:
-            companytypes.append(CompanyType(
-            partner_id=company_id,
-            company=vendor,
-            category_id=partner_category
-        ))
+        if company_type.extra_data:
+            partner_category = company_type.extra_data.get('partner_category')
+            
+            if partner_category:
+                companytypes.append(CompanyType(
+                partner_id=company_id,
+                company=vendor,
+                category_id=partner_category
+            ))
 
         CompanyType.objects.bulk_create(companytypes)
         
