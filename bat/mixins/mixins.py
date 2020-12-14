@@ -1,6 +1,7 @@
 import datetime
 import tempfile
 import djqscsv
+import json
 from openpyxl import Workbook
 
 from django.db import IntegrityError, transaction
@@ -75,7 +76,7 @@ class ExportMixin:
         # Temporary files
         tmp_dir = tempfile.TemporaryDirectory()
         tmp_xlsx_file_path = tmp_dir.name + "/" + filename_xlsx
-        
+
         # create Workbook
         wb = Workbook()
         ws = wb.active
@@ -99,14 +100,18 @@ class ExportMixin:
             ws.append(header)
         else:
             ws.append(qs_header)
-        
+
         try:
             # write data
             if queryset.exists():
                 if not isinstance(queryset.first(), dict):
                     queryset = queryset.values(*qs_header)
                 for row in queryset:
-                    row2 = [value for key, value in row.items()]
+                    row2 = []
+                    for key, value in row.items():
+                        if isinstance(value, dict):
+                            value = json.dumps(value)
+                        row2.append(value)
                     ws.append(row2)
             wb.save(tmp_xlsx_file_path)
             wb.close()
