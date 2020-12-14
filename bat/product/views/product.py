@@ -35,9 +35,8 @@ class ProductVariationViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        return queryset.filter(
-            productparent__company__pk=company_id,
-        )
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(productparent__company__pk=company_id)
 
 
 class ProductMetadatMxin(viewsets.ModelViewSet):
