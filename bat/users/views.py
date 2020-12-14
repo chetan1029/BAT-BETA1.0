@@ -53,6 +53,7 @@ class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
         filter invitations for current user.
         return pending invitations
         """
+        queryset = super().filter_queryset(queryset)
         queryset = queryset.filter(
             accepted=False, email=self.request.user.email
         )

@@ -44,11 +44,11 @@ class CompanySettingBaseViewSet(
         return context
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        return queryset.filter(
             companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyContractViewSet(CompanySettingBaseViewSet):
@@ -115,10 +115,10 @@ class ComponentGoldenSampleViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelVie
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             componentme__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class ComponentPriceViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
@@ -142,10 +142,10 @@ class ComponentPriceViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             componentgoldensample__componentme__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
@@ -169,10 +169,10 @@ class CompanyProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderViewSet(
@@ -199,10 +199,10 @@ class CompanyOrderViewSet(
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderDeliveryViewSet(
@@ -229,10 +229,10 @@ class CompanyOrderDeliveryViewSet(
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderCaseViewSet(
@@ -255,10 +255,10 @@ class CompanyOrderCaseViewSet(
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderInspectionViewSet(
@@ -281,10 +281,10 @@ class CompanyOrderInspectionViewSet(
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderDeliveryTestReportViewSet(
@@ -307,10 +307,10 @@ class CompanyOrderDeliveryTestReportViewSet(
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companyorderdelivery__companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderPaymentPaidViewSet(
@@ -333,10 +333,10 @@ class CompanyOrderPaymentPaidViewSet(
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companyorderpayment__companyorderdelivery__companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)
 
 
 class CompanyOrderPaymentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -348,7 +348,7 @@ class CompanyOrderPaymentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixi
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        queryset = queryset.filter(
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
             companyorderdelivery__companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
-        return super().filter_queryset(queryset)

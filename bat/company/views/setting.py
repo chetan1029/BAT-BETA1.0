@@ -88,8 +88,8 @@ class CompanyViewSet(
 
     def filter_queryset(self, queryset):
         request = self.request
-        queryset = queryset.filter(member_company__user__id=request.user.id)
-        return queryset
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(member_company__user__id=request.user.id)
 
 
 """
@@ -267,6 +267,7 @@ class CompanyInvitationViewSet(viewsets.ReadOnlyModelViewSet):
         filter invitations for current user.
         return pending invitations
         """
+        queryset = super().filter_queryset(queryset)
         queryset = queryset.filter(
             company_detail__company_id=int(self.kwargs.get("company_pk", None))
         )
@@ -317,10 +318,8 @@ class MemberViewSet(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        queryset = queryset.filter(company=member.company).order_by(
-            "-create_date"
-        )
-        return super().filter_queryset(queryset)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(company=member.company).order_by("-create_date")
 
     def perform_update(self, serializer):
         """ update member with given roles and permissions """
@@ -354,10 +353,8 @@ class CompanySettingBaseViewSet(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        queryset = queryset.filter(company=member.company).order_by(
-            "-create_date"
-        )
-        return super().filter_queryset(queryset)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(company=member.company).order_by("-create_date")
 
     def perform_create(self, serializer):
         """Set the data for who is the owner or creater."""
@@ -524,6 +521,7 @@ class VendorCompanyViewSet(
         return context
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         request = self.request
 
         company_id = self.kwargs.get("company_pk", None)
@@ -541,7 +539,6 @@ class VendorCompanyViewSet(
         queryset = queryset.filter(
             pk__in=vendor_companies
         )
-
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -549,7 +546,8 @@ class VendorCompanyViewSet(
         context["user_id"] = self.request.user.id
         context["company_id"] = self.kwargs.get("company_pk", None)
 
-        serializer = serializers.CreateVendorCompanySerializer(data=request.data, context=context)
+        serializer = serializers.CreateVendorCompanySerializer(
+            data=request.data, context=context)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         data = serializers.VendorCompanySerializer(instance=instance).data

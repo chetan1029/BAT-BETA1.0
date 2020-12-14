@@ -22,6 +22,7 @@ class BaseCommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, DRYPermissions,)
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         company_id = self.kwargs.get("company_pk", None)
         object_id = self.kwargs.get("object_pk", None)
         request = self.request
@@ -30,9 +31,8 @@ class BaseCommentViewSet(viewsets.ModelViewSet):
             user_id=request.user.id,
         )
         content_type = self.get_content_type()
-        queryset = queryset.filter(
+        return queryset.filter(
             content_type=content_type, object_id=object_id).order_by("posted")
-        return super().filter_queryset(queryset)
 
     def create(self, request, company_pk, object_pk):
         member = get_member(company_id=company_pk, user_id=request.user.id)

@@ -18,6 +18,7 @@ from bat.company.utils import get_member
 vendors_only_param = openapi.Parameter(
     'vendors_only', openapi.IN_QUERY, description="Returns only vendor categories", type=openapi.TYPE_BOOLEAN, required=False)
 
+
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_description="Returns all the categories",
     responses={200: serializers.CategorySerializer(many=True)},
@@ -34,8 +35,10 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
     filterset_fields = ["is_active"]
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         only_vendor_categories = self.request.GET.get('vendors_only', False)
         if only_vendor_categories:
-            queryset = queryset.filter(is_vendor_category=True if only_vendor_categories == 'true' else False)
-
-        return super().filter_queryset(queryset)
+            queryset = queryset.filter(
+                is_vendor_category=True if only_vendor_categories == 'true' else False)
+        print("\n\n", queryset, "\n\n")
+        return queryset
