@@ -5,24 +5,31 @@ from bat.company.views.comment import CompanyContractCommentsViewSet
 from bat.company.views.company import (
     CompanyContractViewSet,
     CompanyCredentialViewSet,
+    CompanyOrderCaseViewSet,
+    CompanyOrderDeliveryTestReportViewSet,
     CompanyOrderDeliveryViewSet,
+    CompanyOrderInspectionViewSet,
+    CompanyOrderPaymentPaidViewSet,
+    CompanyOrderPaymentViewSet,
     CompanyOrderViewSet,
     CompanyProductViewSet,
     ComponentGoldenSampleViewSet,
     ComponentMeViewSet,
     ComponentPriceViewSet,
-    CompanyOrderCaseViewSet,
-    CompanyOrderInspectionViewSet,
-    CompanyOrderDeliveryTestReportViewSet,
-    CompanyOrderPaymentPaidViewSet,
-    CompanyOrderPaymentViewSet
 )
-from bat.company.views.file import (CompanyContractFilesViewSet, ComponentMeFilesViewSet,
-                                    CompanyOrderCaseFilesViewSet, CompanyOrderInspectionFilesViewSet,
-                                    CompanyOrderDeliveryTestReportFilesViewSet, CompanyOrderPaymentPaidFilesViewSet,
-                                    ComponentPriceFilesViewSet)
+from bat.company.views.file import (
+    CompanyContractFilesViewSet,
+    CompanyOrderCaseFilesViewSet,
+    CompanyOrderDeliveryTestReportFilesViewSet,
+    CompanyOrderInspectionFilesViewSet,
+    CompanyOrderPaymentPaidFilesViewSet,
+    ComponentGoldenSampleFilesViewSet,
+    ComponentMeFilesViewSet,
+    ComponentPriceFilesViewSet,
+)
 from bat.company.views.setting import (
     BankViewSet,
+    CompanyInvitationViewSet,
     CompanyPaymentTermsViewSet,
     CompanyViewSet,
     HsCodeBoxViewSet,
@@ -31,16 +38,8 @@ from bat.company.views.setting import (
     MemberViewSet,
     PackingBoxViewSet,
     TaxBoxViewSet,
-    CompanyInvitationViewSet,
     VendorCompanyViewSet,
 )
-
-from bat.company.views.file import (
-    CompanyContractFilesViewSet, ComponentMeFilesViewSet, ComponentGoldenSampleFilesViewSet)
-
-from bat.company.views.comment import (
-    CompanyContractCommentsViewSet, )
-
 
 router = routers.SimpleRouter()
 
@@ -59,9 +58,12 @@ member_router = routers.NestedSimpleRouter(
 )
 member_router.register("members", MemberViewSet, basename="company-members")
 member_router.register(
-    "invitations", CompanyInvitationViewSet, basename="company-invitations")
+    "invitations", CompanyInvitationViewSet, basename="company-invitations"
+)
 
-member_router.register("vendors", VendorCompanyViewSet, basename="company-vendors")
+member_router.register(
+    "vendors", VendorCompanyViewSet, basename="company-vendors"
+)
 
 payment_terms_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
@@ -79,7 +81,7 @@ location_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 location_router.register(
-    "locations", LocationViewSet, basename="company-location"
+    "location", LocationViewSet, basename="company-location"
 )
 
 
@@ -87,16 +89,16 @@ packingbox_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 packingbox_router.register(
-    "packing-boxs", PackingBoxViewSet, basename="company-packingbox"
+    "packing-box", PackingBoxViewSet, basename="company-packingbox"
 )
 
 hscode_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
-hscode_router.register("hscodes", HsCodeBoxViewSet, basename="company-hscode")
+hscode_router.register("hscode", HsCodeBoxViewSet, basename="company-hscode")
 
 tax_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
-tax_router.register("taxes", TaxBoxViewSet, basename="company-tax")
+tax_router.register("tax", TaxBoxViewSet, basename="company-tax")
 
 
 # company
@@ -165,7 +167,9 @@ componentgoldensample_file_router = routers.NestedSimpleRouter(
 )
 
 componentgoldensample_file_router.register(
-    "files", ComponentGoldenSampleFilesViewSet, basename="company-component-golden-sample-files"
+    "files",
+    ComponentGoldenSampleFilesViewSet,
+    basename="company-component-golden-sample-files",
 )
 
 componentprice_router = routers.NestedSimpleRouter(
@@ -180,7 +184,9 @@ componentprice_file_router = routers.NestedSimpleRouter(
 )
 
 componentprice_file_router.register(
-    "files", ComponentPriceFilesViewSet, basename="company-component-price-files"
+    "files",
+    ComponentPriceFilesViewSet,
+    basename="company-component-price-files",
 )
 
 
@@ -236,11 +242,15 @@ company_order_inspection_router.register(
 )
 
 company_order_inspection_file_router = routers.NestedSimpleRouter(
-    company_order_inspection_router, "company-order-inspection", lookup="object"
+    company_order_inspection_router,
+    "company-order-inspection",
+    lookup="object",
 )
 
 company_order_inspection_file_router.register(
-    "files", CompanyOrderInspectionFilesViewSet, basename="company-order-inspection-files"
+    "files",
+    CompanyOrderInspectionFilesViewSet,
+    basename="company-order-inspection-files",
 )
 
 
@@ -254,11 +264,15 @@ company_order_delivery_testreport_router.register(
 )
 
 company_order_delivery_testreport_file_router = routers.NestedSimpleRouter(
-    company_order_delivery_testreport_router, "company-order-delivery-testreport", lookup="object"
+    company_order_delivery_testreport_router,
+    "company-order-delivery-testreport",
+    lookup="object",
 )
 
 company_order_delivery_testreport_file_router.register(
-    "files", CompanyOrderDeliveryTestReportFilesViewSet, basename="company-order-delivery-testreport-files"
+    "files",
+    CompanyOrderDeliveryTestReportFilesViewSet,
+    basename="company-order-delivery-testreport-files",
 )
 
 
@@ -272,11 +286,15 @@ company_order_payment_paid_router.register(
 )
 
 company_order_payment_paid_file_router = routers.NestedSimpleRouter(
-    company_order_payment_paid_router, "company-order-payment-paid", lookup="object"
+    company_order_payment_paid_router,
+    "company-order-payment-paid",
+    lookup="object",
 )
 
 company_order_payment_paid_file_router.register(
-    "files", CompanyOrderPaymentPaidFilesViewSet, basename="company-order-payment-paid-files"
+    "files",
+    CompanyOrderPaymentPaidFilesViewSet,
+    basename="company-order-payment-paid-files",
 )
 
 company_order_payment_router = routers.NestedSimpleRouter(
