@@ -119,6 +119,18 @@ class Address(models.Model):
         return address.strip(",")
 
 
+def license_file_name(instance, filename):
+    """Change name of license file."""
+    name, extension = os.path.splitext(filename)
+    return "company/{0}_{1}/{2}_{3}{4}".format(
+        "company",
+        "license",
+        str(name),
+        uuid.uuid4(),
+        extension,
+    )
+
+
 class Company(Address):
     """
     Company Model.
@@ -151,7 +163,7 @@ class Company(Address):
         max_length=50,
         choices=CURRENCY_CHOICES,
         verbose_name=_("Currency"),
-        default=DEFAULT_CURRENCY,
+        null=True, blank=True
     )
     unit_system = models.CharField(
         max_length=20,
@@ -175,7 +187,10 @@ class Company(Address):
         max_length=50,
         verbose_name=_("Time Zone"),
         choices=[(x, x) for x in pytz.common_timezones],
-        default=settings.TIME_ZONE,
+        blank=True, null=True
+    )
+    license_file = models.FileField(
+        upload_to=license_file_name, blank=True, verbose_name=_("File"),
     )
     is_active = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)

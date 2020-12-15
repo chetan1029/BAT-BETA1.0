@@ -97,7 +97,7 @@ class PermissionListField(serializers.ListField):
 
 class CompanySerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
-    country = CountrySerializerField()
+    country = CountrySerializerField(required=False)
 
     class Meta:
         model = Company
@@ -123,6 +123,7 @@ class CompanySerializer(serializers.ModelSerializer):
             "is_active",
             "extra_data",
             "roles",
+            "license_file",
         )
         read_only_fields = ("id", "is_active", "extra_data", "roles")
 
@@ -1506,16 +1507,17 @@ class CompanyOrderPaymentSerializer(serializers.ModelSerializer):
             "update_date",
         )
 
+
 class CompanyTypeSerializerField(serializers.Field):
     def to_representation(self, value):
-        return { "category": value.first().category_id if value.first() else None}
+        return {"category": value.first().category_id if value.first() else None}
 
     def to_internal_value(self, data):
         category = data.get('category')
         if not Category.objects.vendor_categories().filter(pk=category).exists():
             raise serializers.ValidationError(
-                    {"company_type": _("Category is not valid")}
-                )
+                {"company_type": _("Category is not valid")}
+            )
         return Category.objects.filter(pk=category).first()
 
 
@@ -1571,7 +1573,8 @@ class VendorCompanySerializer(serializers.ModelSerializer):
             "name", "abbreviation", "email", "logo", "phone_number", "organization_number",
             "currency", "unit_system", "weight_unit", "language", "time_zone",
             "is_active", "extra_data", 'create_date', 'address', 'update_date', )
-        read_only_fields = ("id", "is_active", "extra_data", "create_date", "update_date", )
+        read_only_fields = ("id", "is_active", "extra_data",
+                            "create_date", "update_date", )
 
 
 class CreateVendorCompanySerializer(VendorCompanySerializer):
@@ -1582,10 +1585,11 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
         data = validated_data.copy()
         company_type = data.pop('companytype_company', None)
         user = data.pop('user', None)
-        
+
         request = self.context.get('request')
 
-        user_serializer = VendorCompanyUserSerializer(data=user, context={'request': self.context['request']})
+        user_serializer = VendorCompanyUserSerializer(
+            data=user, context={'request': self.context['request']})
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save(request)
 
@@ -1598,29 +1602,29 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
             company_id=company_id,
             category=company_type
         )]
-        
+
         if company_type.extra_data:
             partner_category = company_type.extra_data.get('partner_category')
-            
+
             if partner_category:
                 companytypes.append(CompanyType(
-                partner_id=company_id,
-                company=vendor,
-                category_id=partner_category
-            ))
+                    partner_id=company_id,
+                    company=vendor,
+                    category_id=partner_category
+                ))
 
         CompanyType.objects.bulk_create(companytypes)
-        
+
         member, _c = Member.objects.get_or_create(
-                    job_title="Admin",
-                    user=user,
-                    company=vendor,
-                    invited_by=request.user,
-                    is_admin=True,
-                    is_active=True,
-                    invitation_accepted=True,
+            job_title="Admin",
+            user=user,
+            company=vendor,
+            invited_by=request.user,
+            is_admin=True,
+            is_active=True,
+            invitation_accepted=True,
         )
-        
+
         if _c:
             # fetch user role from the User and assign after signup.
             assign_role(member, "vendor_admin")
