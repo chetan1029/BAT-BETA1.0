@@ -14,7 +14,7 @@ from rolepermissions.roles import get_user_roles, assign_role
 from django.conf import settings
 
 from allauth.account import app_settings as allauth_settings
-from allauth.utils import (email_address_exists, get_username_max_length)
+from allauth.utils import email_address_exists, get_username_max_length
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import setup_user_email
 
@@ -45,9 +45,14 @@ from bat.company.models import (
     CompanyOrderInspection,
     CompanyOrderPayment,
     CompanyOrderDeliveryTestReport,
-    CompanyOrderPaymentPaid
+    CompanyOrderPaymentPaid,
+    Mold,
 )
-from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
+from bat.company.utils import (
+    get_list_of_permissions,
+    get_list_of_roles,
+    get_member,
+)
 from bat.globalutils.utils import get_cbm, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import (
@@ -610,12 +615,7 @@ class CompanyContractSerializer(serializers.ModelSerializer):
             "status",
             "extra_data",
         )
-        read_only_fields = (
-            "id",
-            "files",
-            "is_active",
-            "company_member",
-        )
+        read_only_fields = ("id", "files", "is_active", "company_member")
 
     def validate(self, attrs):
         """
@@ -899,12 +899,7 @@ class CompanyProductSerializer(serializers.ModelSerializer):
             "status",
             "is_active",
         )
-        read_only_fields = (
-            "id",
-            "is_active",
-            "create_date",
-            "update_date",
-        )
+        read_only_fields = ("id", "is_active", "create_date", "update_date")
 
     def validate(self, attrs):
         """
@@ -945,8 +940,48 @@ class CompanyProductSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class MoldSerializer(serializers.ModelSerializer):
+    """Serializer for Mold."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = Mold
+        fields = (
+            "id",
+            "companytype",
+            "component",
+            "x_units",
+            "x_units_used",
+            "no_of_layers",
+            "paid_by",
+            "is_active",
+            "extra_data",
+        )
+        read_only_fields = ("id", "x_units_used", "create_date", "update_date")
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        company_id = self.context.get("company_id", None)
+        companytype = attrs.get("companytype", None)
+        errors = {}
+        if companytype:
+            if str(companytype.company.id) != str(company_id):
+                errors = set_field_errors(
+                    errors, "companytype", _("Invalid company type selected.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return super().validate(attrs)
+
+
 class CompanyOrderProductSerializer(serializers.ModelSerializer):
     """Serializer for Company Order Product."""
+
     price = MoneySerializerField(required=False)
     amount = MoneySerializerField(required=False)
 
@@ -1056,11 +1091,14 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
 
         attrs["vat_amount"] = attrs.get(
-            'vat_amount', Money(0, member.company.currency))
+            "vat_amount", Money(0, member.company.currency)
+        )
         attrs["tax_amount"] = attrs.get(
-            'tax_amount', Money(0, member.company.currency))
+            "tax_amount", Money(0, member.company.currency)
+        )
         attrs["return_amount"] = attrs.get(
-            'return_amount', Money(0, member.company.currency))
+            "return_amount", Money(0, member.company.currency)
+        )
 
         return super().validate(attrs)
 
@@ -1072,7 +1110,7 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
         )
         with transaction.atomic():
             data = validated_data.copy()
-            data['status'] = get_status_object(validated_data)
+            data["status"] = get_status_object(validated_data)
             orderproducts = data.get("orderproducts", None)
             data.pop("orderproducts")
             # save order
@@ -1084,15 +1122,13 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             deposit_amount = 0
             currency = member.company.currency
             for orderproduct in orderproducts or []:
-                componentprice_obj = orderproduct.get(
-                    "componentprice", None
-                )
+                componentprice_obj = orderproduct.get("componentprice", None)
                 currency = componentprice_obj.price.currency
                 product_quantity = orderproduct.get("quantity", 0)
                 quantity += product_quantity
-                amount = Decimal(
-                    componentprice_obj.price.amount
-                ) * Decimal(product_quantity)
+                amount = Decimal(componentprice_obj.price.amount) * Decimal(
+                    product_quantity
+                )
 
                 if orderproduct.get("companypaymentterms", None).deposit:
                     product_deposit_amount = (
@@ -1175,12 +1211,7 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
             "extra_data",
             "orderdeliveryproducts",
         )
-        read_only_fields = (
-            "id",
-            "amount",
-            "create_date",
-            "update_date",
-        )
+        read_only_fields = ("id", "amount", "create_date", "update_date")
 
     def validate(self, attrs):
         """
@@ -1198,11 +1229,13 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
                     errors, "companyorder", _("Invalid order selected.")
                 )
             bank = companyorder.companytype.partner.banks.filter(
-                is_active=True)
+                is_active=True
+            )
             if not bank.exists():
                 errors = set_field_errors(
-                    errors, "companyorder", _(
-                        "There is no bank registered for selected order.")
+                    errors,
+                    "companyorder",
+                    _("There is no bank registered for selected order."),
                 )
         if len(orderdeliveryproducts) <= 0:
             msg = _(
@@ -1222,7 +1255,7 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
         )
         with transaction.atomic():
             data = validated_data.copy()
-            data['status'] = get_status_object(validated_data)
+            data["status"] = get_status_object(validated_data)
             orderdeliveryproducts = data.get("orderdeliveryproducts", None)
             data.pop("orderdeliveryproducts")
 
@@ -1241,12 +1274,14 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
                 orderproduct_quantity = orderdeliveryproduct.pop("quantity", 0)
                 quantity += orderproduct_quantity
                 remaining_quantity = (
-                    orderproduct.remaining_quantity - orderproduct_quantity)
+                    orderproduct.remaining_quantity - orderproduct_quantity
+                )
                 if remaining_quantity < 0:
                     remaining_quantity = 0
                 orderproduct.remaining_quantity = remaining_quantity
                 shipped_quantity = (
-                    orderproduct.shipped_quantity + orderproduct_quantity)
+                    orderproduct.shipped_quantity + orderproduct_quantity
+                )
                 if shipped_quantity < 0:
                     shipped_quantity = 0
                 orderproduct.shipped_quantity = shipped_quantity
@@ -1267,18 +1302,27 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
             companyorderdelivery.save()
             # create company order payment object
             company_order_payment_data = {}
-            company_order_payment_data['companyorderdelivery'] = companyorderdelivery
-            company_order_payment_data['type'] = "type"
+            company_order_payment_data[
+                "companyorderdelivery"
+            ] = companyorderdelivery
+            company_order_payment_data["type"] = "type"
             # TODO how to get bank for company_order_payment_data
 
             companyorder = validated_data.get("companyorder", None)
-            company_order_payment_data['bank'] = companyorder.companytype.partner.banks.filter(
-                is_active=True).first()
-            company_order_payment_data['invoice_amount'] = companyorderdelivery.amount
-            company_order_payment_data['amount'] = companyorderdelivery.amount
-            company_order_payment_data['paid_amount'] = 0
-            company_order_payment_data['payment_date'] = companyorderdelivery.delivery_date
-            company_order_payment_data['status'] = companyorderdelivery.status
+            company_order_payment_data[
+                "bank"
+            ] = companyorder.companytype.partner.banks.filter(
+                is_active=True
+            ).first()
+            company_order_payment_data[
+                "invoice_amount"
+            ] = companyorderdelivery.amount
+            company_order_payment_data["amount"] = companyorderdelivery.amount
+            company_order_payment_data["paid_amount"] = 0
+            company_order_payment_data[
+                "payment_date"
+            ] = companyorderdelivery.delivery_date
+            company_order_payment_data["status"] = companyorderdelivery.status
             CompanyOrderPayment.objects.create(**company_order_payment_data)
         return companyorderdelivery
 
@@ -1290,8 +1334,16 @@ class CompanyOrderCaseSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyOrderCase
-        fields = ("id", "companyorder", "files", "note", "importance",
-                  "units_affected", "status", "extra_data")
+        fields = (
+            "id",
+            "companyorder",
+            "files",
+            "note",
+            "importance",
+            "units_affected",
+            "status",
+            "extra_data",
+        )
         read_only_fields = (
             "id",
             "files",
@@ -1311,8 +1363,9 @@ class CompanyOrderCaseSerializers(serializers.ModelSerializer):
         if companyorder:
             if str(companyorder.get_company().id) != str(company_id):
                 errors = set_field_errors(
-                    errors, "companyorder", _(
-                        "Invalid Company order selected.")
+                    errors,
+                    "companyorder",
+                    _("Invalid Company order selected."),
                 )
         if errors:
             raise serializers.ValidationError(errors)
@@ -1336,8 +1389,16 @@ class CompanyOrderInspectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyOrderInspection
-        fields = ("id", "companyorder", "inspection_date", "note", "inspector",
-                  "files", "status", "extra_data")
+        fields = (
+            "id",
+            "companyorder",
+            "inspection_date",
+            "note",
+            "inspector",
+            "files",
+            "status",
+            "extra_data",
+        )
         read_only_fields = (
             "id",
             "inspector",
@@ -1358,8 +1419,9 @@ class CompanyOrderInspectionSerializer(serializers.ModelSerializer):
         if companyorder:
             if str(companyorder.get_company().id) != str(company_id):
                 errors = set_field_errors(
-                    errors, "companyorder", _(
-                        "Invalid Company order selected.")
+                    errors,
+                    "companyorder",
+                    _("Invalid Company order selected."),
                 )
         if errors:
             raise serializers.ValidationError(errors)
@@ -1385,8 +1447,15 @@ class CompanyOrderDeliveryTestReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyOrderDeliveryTestReport
-        fields = ("id", "companyorderdelivery", "inspector",
-                  "files", "note", "status", "extra_data")
+        fields = (
+            "id",
+            "companyorderdelivery",
+            "inspector",
+            "files",
+            "note",
+            "status",
+            "extra_data",
+        )
 
         read_only_fields = (
             "id",
@@ -1408,8 +1477,9 @@ class CompanyOrderDeliveryTestReportSerializer(serializers.ModelSerializer):
         if companyorderdelivery:
             if str(companyorderdelivery.get_company().id) != str(company_id):
                 errors = set_field_errors(
-                    errors, "companyorderdelivery", _(
-                        "Invalid company order delivery selected.")
+                    errors,
+                    "companyorderdelivery",
+                    _("Invalid company order delivery selected."),
                 )
         if errors:
             raise serializers.ValidationError(errors)
@@ -1437,8 +1507,17 @@ class CompanyOrderPaymentPaidSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyOrderPaymentPaid
-        fields = ("id", "companyorderpayment", "payment_id", "invoice_amount", "paid_amount",
-                  "files", "payment_date", "status", "extra_data")
+        fields = (
+            "id",
+            "companyorderpayment",
+            "payment_id",
+            "invoice_amount",
+            "paid_amount",
+            "files",
+            "payment_date",
+            "status",
+            "extra_data",
+        )
 
         read_only_fields = (
             "id",
@@ -1459,23 +1538,30 @@ class CompanyOrderPaymentPaidSerializer(serializers.ModelSerializer):
         if companyorderpayment:
             if str(companyorderpayment.get_company().id) != str(company_id):
                 errors = set_field_errors(
-                    errors, "companyorderpayment", _(
-                        "Invalid company company order payment selected.")
+                    errors,
+                    "companyorderpayment",
+                    _("Invalid company company order payment selected."),
                 )
         invoice_amount = attrs.get("invoice_amount", None)
         paid_amount = attrs.get("paid_amount", None)
         if invoice_amount and paid_amount:
             if invoice_amount.amount < paid_amount.amount:
                 errors = set_field_errors(
-                    errors, "paid_amount", _(
-                        "paid amount can't be more than invoice amount.")
+                    errors,
+                    "paid_amount",
+                    _("paid amount can't be more than invoice amount."),
                 )
-            total_paid_amount = companyorderpayment.orderpaymentpaid.aggregate(
-                total_paid_amount=Sum("paid_amount"))["total_paid_amount"] + paid_amount.amount
+            total_paid_amount = (
+                companyorderpayment.orderpaymentpaid.aggregate(
+                    total_paid_amount=Sum("paid_amount")
+                )["total_paid_amount"]
+                + paid_amount.amount
+            )
             if total_paid_amount > invoice_amount.amount:
                 errors = set_field_errors(
-                    errors, "paid_amount", _(
-                        "total paid amount can't be more than invoice amount.")
+                    errors,
+                    "paid_amount",
+                    _("total paid amount can't be more than invoice amount."),
                 )
         if errors:
             raise serializers.ValidationError(errors)
@@ -1495,8 +1581,20 @@ class CompanyOrderPaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyOrderPayment
-        fields = ("id", "companyorderdelivery", "type", "bank", "invoice_amount", "amount", "paid_amount",
-                  "adjustment_type", "adjustment_percentage", "adjustment_amount", "payment_date", "status")
+        fields = (
+            "id",
+            "companyorderdelivery",
+            "type",
+            "bank",
+            "invoice_amount",
+            "amount",
+            "paid_amount",
+            "adjustment_type",
+            "adjustment_percentage",
+            "adjustment_amount",
+            "payment_date",
+            "status",
+        )
 
         read_only_fields = (
             "id",
@@ -1506,16 +1604,23 @@ class CompanyOrderPaymentSerializer(serializers.ModelSerializer):
             "update_date",
         )
 
+
 class CompanyTypeSerializerField(serializers.Field):
     def to_representation(self, value):
-        return { "category": value.first().category_id if value.first() else None}
+        return {
+            "category": value.first().category_id if value.first() else None
+        }
 
     def to_internal_value(self, data):
-        category = data.get('category')
-        if not Category.objects.vendor_categories().filter(pk=category).exists():
+        category = data.get("category")
+        if (
+            not Category.objects.vendor_categories()
+            .filter(pk=category)
+            .exists()
+        ):
             raise serializers.ValidationError(
-                    {"company_type": _("Category is not valid")}
-                )
+                {"company_type": _("Category is not valid")}
+            )
         return Category.objects.filter(pk=category).first()
 
 
@@ -1525,15 +1630,15 @@ class VendorCompanyUserSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=get_username_max_length(),
         min_length=allauth_settings.USERNAME_MIN_LENGTH,
-        required=allauth_settings.USERNAME_REQUIRED
+        required=allauth_settings.USERNAME_REQUIRED,
     )
     email = serializers.EmailField(required=True)
 
     def get_cleaned_data(self):
         return {
-            'username': self.validated_data.get('username', ''),
-            'password1': settings.VENDOR_DEFAULT_PASSWORD,
-            'email': self.validated_data.get('email', '')
+            "username": self.validated_data.get("username", ""),
+            "password1": settings.VENDOR_DEFAULT_PASSWORD,
+            "email": self.validated_data.get("email", ""),
         }
 
     def validate_username(self, username):
@@ -1545,7 +1650,8 @@ class VendorCompanyUserSerializer(serializers.Serializer):
         if allauth_settings.UNIQUE_EMAIL:
             if email and email_address_exists(email):
                 raise serializers.ValidationError(
-                    _("A user is already registered with this e-mail address."))
+                    _("A user is already registered with this e-mail address.")
+                )
         return email
 
     def save(self, request):
@@ -1567,60 +1673,90 @@ class VendorCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = (
-            "id", "address1",  "address2", "zip", "city", "region", "country",
-            "name", "abbreviation", "email", "logo", "phone_number", "organization_number",
-            "currency", "unit_system", "weight_unit", "language", "time_zone",
-            "is_active", "extra_data", 'create_date', 'address', 'update_date', )
-        read_only_fields = ("id", "is_active", "extra_data", "create_date", "update_date", )
+            "id",
+            "address1",
+            "address2",
+            "zip",
+            "city",
+            "region",
+            "country",
+            "name",
+            "abbreviation",
+            "email",
+            "logo",
+            "phone_number",
+            "organization_number",
+            "currency",
+            "unit_system",
+            "weight_unit",
+            "language",
+            "time_zone",
+            "is_active",
+            "extra_data",
+            "create_date",
+            "address",
+            "update_date",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "extra_data",
+            "create_date",
+            "update_date",
+        )
 
 
 class CreateVendorCompanySerializer(VendorCompanySerializer):
     user = VendorCompanyUserSerializer(required=True)
-    company_type = CompanyTypeSerializerField(source='companytype_company')
+    company_type = CompanyTypeSerializerField(source="companytype_company")
 
     def create(self, validated_data):
         data = validated_data.copy()
-        company_type = data.pop('companytype_company', None)
-        user = data.pop('user', None)
-        
-        request = self.context.get('request')
+        company_type = data.pop("companytype_company", None)
+        user = data.pop("user", None)
 
-        user_serializer = VendorCompanyUserSerializer(data=user, context={'request': self.context['request']})
+        request = self.context.get("request")
+
+        user_serializer = VendorCompanyUserSerializer(
+            data=user, context={"request": self.context["request"]}
+        )
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save(request)
 
         vendor = super().create(data)
 
-        company_id = self.context.get('company_id')
+        company_id = self.context.get("company_id")
 
-        companytypes = [CompanyType(
-            partner=vendor,
-            company_id=company_id,
-            category=company_type
-        )]
-        
+        companytypes = [
+            CompanyType(
+                partner=vendor, company_id=company_id, category=company_type
+            )
+        ]
+
         if company_type.extra_data:
-            partner_category = company_type.extra_data.get('partner_category')
-            
+            partner_category = company_type.extra_data.get("partner_category")
+
             if partner_category:
-                companytypes.append(CompanyType(
-                partner_id=company_id,
-                company=vendor,
-                category_id=partner_category
-            ))
+                companytypes.append(
+                    CompanyType(
+                        partner_id=company_id,
+                        company=vendor,
+                        category_id=partner_category,
+                    )
+                )
 
         CompanyType.objects.bulk_create(companytypes)
-        
+
         member, _c = Member.objects.get_or_create(
-                    job_title="Admin",
-                    user=user,
-                    company=vendor,
-                    invited_by=request.user,
-                    is_admin=True,
-                    is_active=True,
-                    invitation_accepted=True,
+            job_title="Admin",
+            user=user,
+            company=vendor,
+            invited_by=request.user,
+            is_admin=True,
+            is_active=True,
+            invitation_accepted=True,
         )
-        
+
         if _c:
             # fetch user role from the User and assign after signup.
             assign_role(member, "vendor_admin")
@@ -1629,8 +1765,29 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
     class Meta:
         model = Company
         fields = (
-            "id", "address1",  "address2", "zip", "city", "region", "country",
-            "name", "abbreviation", "email", "logo", "phone_number", "organization_number",
-            "currency", "unit_system", "weight_unit", "language", "time_zone",
-            "is_active", "extra_data", 'company_type', 'create_date', 'address', 'user')
-        read_only_fields = ("id", "is_active", "extra_data", "create_date",)
+            "id",
+            "address1",
+            "address2",
+            "zip",
+            "city",
+            "region",
+            "country",
+            "name",
+            "abbreviation",
+            "email",
+            "logo",
+            "phone_number",
+            "organization_number",
+            "currency",
+            "unit_system",
+            "weight_unit",
+            "language",
+            "time_zone",
+            "is_active",
+            "extra_data",
+            "company_type",
+            "create_date",
+            "address",
+            "user",
+        )
+        read_only_fields = ("id", "is_active", "extra_data", "create_date")

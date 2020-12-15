@@ -614,7 +614,8 @@ class Bank(Address):
     """
 
     company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="banks")
+        Company, on_delete=models.CASCADE, related_name="banks"
+    )
     name = models.CharField(max_length=200, verbose_name=_("Bank Name"))
     benificary = models.CharField(
         max_length=100, verbose_name=_("Benificary Name")
@@ -1183,7 +1184,8 @@ class CompanyContract(models.Model):
     """
 
     companytype = models.ForeignKey(
-        CompanyType, on_delete=models.CASCADE, related_name="company_contracts")
+        CompanyType, on_delete=models.CASCADE, related_name="company_contracts"
+    )
     title = models.CharField(max_length=200, verbose_name=_("Contract Title"))
     files = GenericRelation(File)
     note = models.TextField(blank=True)
@@ -1325,7 +1327,10 @@ class CompanyCredential(models.Model):
     """
 
     companytype = models.ForeignKey(
-        CompanyType, on_delete=models.CASCADE, related_name="company_credentials")
+        CompanyType,
+        on_delete=models.CASCADE,
+        related_name="company_credentials",
+    )
     region = models.CharField(max_length=300, blank=True)
     seller_id = models.CharField(max_length=300, blank=True)
     auth_token = models.CharField(max_length=300, blank=True)
@@ -1552,7 +1557,8 @@ class ComponentGoldenSample(models.Model):
     """
 
     componentme = models.ForeignKey(
-        ComponentMe, on_delete=models.CASCADE, related_name="golden_samples")
+        ComponentMe, on_delete=models.CASCADE, related_name="golden_samples"
+    )
     batch_id = models.CharField(max_length=100)
     files = GenericRelation(File)
     note = models.TextField(blank=True)
@@ -1666,7 +1672,10 @@ class ComponentPrice(models.Model):
     """
 
     componentgoldensample = models.ForeignKey(
-        ComponentGoldenSample, on_delete=models.CASCADE, related_name="component_prices")
+        ComponentGoldenSample,
+        on_delete=models.CASCADE,
+        related_name="component_prices",
+    )
     files = GenericRelation(File)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     start_date = models.DateTimeField(default=timezone.now)
@@ -1782,7 +1791,8 @@ class CompanyProduct(models.Model):
     from bat.product.models import Product
 
     product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="company_products")
+        Product, on_delete=models.CASCADE, related_name="company_products"
+    )
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
     title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
@@ -1895,6 +1905,118 @@ class CompanyProduct(models.Model):
     def has_object_restore_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_company_product")
+
+
+class Mold(models.Model):
+    """
+    Company Mold.
+
+    We are going assign a component called mold here with X-units, no of layers
+    and other data to keep track of the X-units used.
+    """
+
+    from bat.product.models import Product
+
+    companytype = models.ForeignKey(
+        CompanyType, on_delete=models.CASCADE, related_name="company_mold"
+    )
+    component = models.ForeignKey(Product, on_delete=models.CASCADE)
+    x_units = models.PositiveIntegerField()
+    x_units_used = models.PositiveIntegerField(default=0)
+    no_of_layers = models.PositiveSmallIntegerField()
+    paid_by = models.ForeignKey(Company, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Company Mold")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.region)
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_mold")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_mold")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_mold")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_mold")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_mold")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_mold")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_mold")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_mold")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_mold")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_mold")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_mold")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_mold")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_mold")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_mold")
 
 
 class CompanyOrder(models.Model):
@@ -2278,7 +2400,11 @@ class CompanyOrderPayment(models.Model):
         max_digits=5, decimal_places=2, null=True, blank=True
     )
     adjustment_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD", blank=True, null=True
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        blank=True,
+        null=True,
     )
     payment_date = models.DateTimeField(blank=True, null=True)
     status = models.ForeignKey(
@@ -2354,7 +2480,9 @@ class CompanyOrderPaymentPaid(models.Model):
     """
 
     companyorderpayment = models.ForeignKey(
-        CompanyOrderPayment, on_delete=models.CASCADE, related_name="orderpaymentpaid"
+        CompanyOrderPayment,
+        on_delete=models.CASCADE,
+        related_name="orderpaymentpaid",
     )
     payment_id = models.CharField(max_length=200, blank=True)
     invoice_amount = MoneyField(
@@ -2606,7 +2734,10 @@ class CompanyInventory(models.Model):
     """
 
     companyproduct = models.ForeignKey(
-        CompanyProduct, on_delete=models.CASCADE, related_name="company_inventories")
+        CompanyProduct,
+        on_delete=models.CASCADE,
+        related_name="company_inventories",
+    )
     date = models.DateField(default=timezone.now)
     quantity = models.IntegerField(default=0)
     weeks_of_supply = models.IntegerField(default=0)

@@ -86,6 +86,13 @@ class CompanyAdmin(AbstractUserRole):
         "archived_company_credential": True,
         "restore_company_credential": True,
         "delete_company_credential": True,
+        # Mold
+        "view_mold": True,
+        "add_mold": True,
+        "change_mold": True,
+        "archived_mold": True,
+        "restore_mold": True,
+        "delete_mold": True,
         # Component ME
         "view_component_me": True,
         "add_component_me": True,
