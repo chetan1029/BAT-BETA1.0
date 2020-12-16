@@ -32,7 +32,8 @@ class Plan(models.Model):
     cost = MoneyField(max_digits=14, decimal_places=2, default_currency="USD",
                       null=True, blank=True,
                       help_text=_('the cost per recurrence of the plan'))
-    permission_list = models.JSONField(verbose_name=_("Permission List"))
+    permission_list = models.JSONField(verbose_name=_("Permission List"), help_text=_(
+        'list of roles with their permissions which will be provided to the member while subscribing to the plan. '))
     extra_data = HStoreField(null=True, blank=True)
     meta_data = HStoreField(null=True, blank=True)
     status = models.ForeignKey(Status, on_delete=models.PROTECT)
