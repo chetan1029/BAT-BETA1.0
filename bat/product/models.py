@@ -42,11 +42,11 @@ def get_member_from_request(request):
 class ProductpermissionsModelmixin:
 
     @staticmethod
-    def has_retrieve_permission(request):
+    def has_read_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
-    def has_object_retrieve_permission(self, request):
+    def has_object_read_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
@@ -312,16 +312,6 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
     def has_object_active_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "active_product")
-
-    @staticmethod
-    def has_csvexport_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_xlsxeport_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
 
 
 class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
@@ -614,14 +604,9 @@ class ProductRrp(ProductpermissionsModelmixin, models.Model):
         return self.product.title
 
     @staticmethod
-    def has_csvexport_permission(request):
+    def has_importfile_permission(request):
         member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_xlsxeport_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
+        return has_permission(member, "add_product")
 
 
 class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
