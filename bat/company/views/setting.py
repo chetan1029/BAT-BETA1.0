@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db.models import Q
+from django.db import transaction
 
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
@@ -36,7 +37,7 @@ from bat.company.models import (
     CompanyType
 )
 from bat.setting.models import Category
-from bat.company.utils import get_member
+from bat.company.utils import get_member, set_default_company_payment_terms
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 from bat.users.serializers import InvitationSerializer
 
@@ -62,29 +63,32 @@ class CompanyViewSet(
         return context
 
     def perform_create(self, serializer):
-        company = serializer.save()
-        request = self.request
+        with transaction.atomic():
+            company = serializer.save()
+            request = self.request
 
-        extra_data = {}
-        extra_data["user_role"] = "company_admin"
-        member, create = Member.objects.get_or_create(
-            job_title="Admin",
-            user=self.request.user,
-            company=company,
-            invited_by=self.request.user,
-            is_admin=True,
-            is_active=True,
-            invitation_accepted=True,
-            extra_data=extra_data,
-        )
-        if create:
-            # fetch user role from the User and assign after signup.
-            assign_role(member, member.extra_data["user_role"])
+            extra_data = {}
+            extra_data["user_role"] = "company_admin"
+            member, create = Member.objects.get_or_create(
+                job_title="Admin",
+                user=self.request.user,
+                company=company,
+                invited_by=self.request.user,
+                is_admin=True,
+                is_active=True,
+                invitation_accepted=True,
+                extra_data=extra_data,
+            )
+            if create:
+                # fetch user role from the User and assign after signup.
+                assign_role(member, member.extra_data["user_role"])
 
-        if self.request.user.extra_data["step"] == 1:
-            self.request.user.extra_data["step"] = 2
-            self.request.user.extra_data["step_detail"] = "account setup"
-            self.request.user.save()
+            set_default_company_payment_terms(company=company)
+
+            if self.request.user.extra_data["step"] == 1:
+                self.request.user.extra_data["step"] = 2
+                self.request.user.extra_data["step_detail"] = "account setup"
+                self.request.user.save()
 
     def filter_queryset(self, queryset):
         request = self.request
