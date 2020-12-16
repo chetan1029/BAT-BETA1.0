@@ -28,18 +28,18 @@ class Comment(models.Model):
         return self.parent is None
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         return True
 
-    def has_object_read_permission(self, request):
-        return self.content_object.has_read_permission(request) and self.content_object.has_read_permission(request)
+    def has_object_retrieve_permission(self, request):
+        return self.content_object.has_retrieve_permission(request) and self.content_object.has_retrieve_permission(request)
 
     @staticmethod
     def has_list_permission(request):
         return True
 
     def has_object_list_permission(self, request):
-        return self.content_object.has_read_permission(request) and self.content_object.has_read_permission(request)
+        return self.content_object.has_retrieve_permission(request) and self.content_object.has_retrieve_permission(request)
 
     @staticmethod
     def has_create_permission(request):

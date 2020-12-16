@@ -213,10 +213,17 @@ class Company(Address):
         return str(self.id) + " - " + self.name
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         return True
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_list_permission(request):
+        return True
+
+    def has_object_list_permission(self, request):
         return True
 
     @staticmethod
@@ -442,11 +449,11 @@ class Member(MemberPermissionsMixin):
         )
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_staff_member")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_staff_member")
 
@@ -562,11 +569,11 @@ class CompanyPaymentTerms(models.Model):
         return self.title
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_payment_terms")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_payment_terms")
 
@@ -677,11 +684,11 @@ class Bank(Address):
         return self.name
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_banks")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_banks")
 
@@ -780,11 +787,11 @@ class Location(Address):
         return self.name
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_locations")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_locations")
 
@@ -905,11 +912,11 @@ class PackingBox(models.Model):
         return self.name + " - " + str(self.company.id)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_packing_box")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_packing_box")
 
@@ -1014,11 +1021,11 @@ class HsCode(models.Model):
         return self.hscode
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_hscode")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_hscode")
 
@@ -1125,11 +1132,11 @@ class Tax(models.Model):
         return str(self.from_country) + "-" + str(self.to_country)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_taxes")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_taxes")
 
@@ -1263,11 +1270,11 @@ class CompanyContract(models.Model):
         f.file.save(name + ".pdf", contract_file)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_contract")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_contract")
 
@@ -1381,11 +1388,11 @@ class CompanyCredential(models.Model):
         return str(self.region)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_credential")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_credential")
 
@@ -1499,11 +1506,11 @@ class ComponentMe(models.Model):
         return str(self.component.title) + " " + str(self.version)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_component_me")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_component_me")
 
@@ -1616,11 +1623,11 @@ class ComponentGoldenSample(models.Model):
         return self.batch_id + " - " + str(self.id)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_component_golden_sample")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_component_golden_sample")
 
@@ -1727,11 +1734,11 @@ class ComponentPrice(models.Model):
         return self.componentgoldensample.batch_id
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_component_price")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_component_price")
 
@@ -1853,11 +1860,11 @@ class CompanyProduct(models.Model):
         return self.title
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_product")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_product")
 
@@ -2001,11 +2008,11 @@ class CompanyOrder(models.Model):
         f.file.save(name + ".pdf", po_file)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order")
 
@@ -2121,11 +2128,11 @@ class CompanyOrderDelivery(models.Model):
         return self.companyorder.get_company()
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_delivery")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_delivery")
 
@@ -2228,11 +2235,11 @@ class CompanyOrderDeliveryTestReport(models.Model):
         return self.companyorderdelivery.batch_id
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_inspection")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_inspection")
 
@@ -2322,11 +2329,11 @@ class CompanyOrderPayment(models.Model):
         return self.companyorderdelivery.get_company()
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_payment")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_payment")
 
@@ -2403,11 +2410,11 @@ class CompanyOrderPaymentPaid(models.Model):
         return self.companyorderpayment.companyorderdelivery.batch_id
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_payment")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_payment")
 
@@ -2482,11 +2489,11 @@ class CompanyOrderCase(models.Model):
         return self.companyorder.batch_id
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_case")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_case")
 
@@ -2574,11 +2581,11 @@ class CompanyOrderInspection(models.Model):
         return self.companyorder.batch_id
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_inspection")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_order_inspection")
 
