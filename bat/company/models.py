@@ -53,12 +53,6 @@ def get_member_from_request(request):
     return member
 
 
-def companylogo_name(instance, filename):
-    """Manage path and name for vendor logo."""
-    name, extension = os.path.splitext(filename)
-    return "company/{0}/logo/logo{1}".format(instance.id, extension)
-
-
 class Address(models.Model):
     """
     Address Model.
@@ -119,10 +113,22 @@ class Address(models.Model):
         return address.strip(",")
 
 
+def company_logo_name(instance, filename):
+    """Manage path and name for vendor logo."""
+    name, extension = os.path.splitext(filename)
+    return "company/{0}/{1}/{2}_{3}{4}".format(
+        "company",
+        "logo",
+        str(name),
+        uuid.uuid4(),
+        extension,
+    )
+
+
 def license_file_name(instance, filename):
     """Change name of license file."""
     name, extension = os.path.splitext(filename)
-    return "company/{0}_{1}/{2}_{3}{4}".format(
+    return "company/{0}/{1}/{2}_{3}{4}".format(
         "company",
         "license",
         str(name),
@@ -145,7 +151,7 @@ class Company(Address):
     )
     email = models.EmailField(max_length=100, verbose_name=_("Email"))
     logo = models.ImageField(
-        upload_to=companylogo_name, blank=True, verbose_name=_("Logo")
+        upload_to=company_logo_name, blank=True, verbose_name=_("Logo")
     )
     phone_number = models.CharField(
         validators=[phone_validator],
