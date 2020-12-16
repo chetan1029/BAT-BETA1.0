@@ -1,0 +1,28 @@
+# Convenience references for units for plan recurrence billing
+# ----------------------------------------------------------------------------
+RECURRENCE_UNIT_ONCE = '0'
+RECURRENCE_UNIT_SECOND = '1'
+RECURRENCE_UNIT_MINUTE = '2'
+RECURRENCE_UNIT_HOUR = '3'
+RECURRENCE_UNIT_DAY = '4'
+RECURRENCE_UNIT_WEEK = '5'
+RECURRENCE_UNIT_MONTH = '6'
+RECURRENCE_UNIT_YEAR = '7'
+RECURRENCE_UNIT_CHOICES = (
+    (RECURRENCE_UNIT_ONCE, 'once'),
+    (RECURRENCE_UNIT_SECOND, 'second'),
+    (RECURRENCE_UNIT_MINUTE, 'minute'),
+    (RECURRENCE_UNIT_HOUR, 'hour'),
+    (RECURRENCE_UNIT_DAY, 'day'),
+    (RECURRENCE_UNIT_WEEK, 'week'),
+    (RECURRENCE_UNIT_MONTH, 'month'),
+    (RECURRENCE_UNIT_YEAR, 'year'),
+)
+
+PARENT_PLAN_STATUS = "Plan"
+PLAN_STATUS_GENERAL = "General"
+PLAN_STATUS_SPECIAL = "Special"
+
+
+TRANSACTION_TYPE_NET_BANKING = "net_banking"
+TRANSACTION_TYPE_CHOICES = ((TRANSACTION_TYPE_NET_BANKING, "Net banking"),)

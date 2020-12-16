@@ -81,7 +81,7 @@ class ProductRrpViewSet(ExportMixin, ProductMetadatMxin):
 
     serializer_class = serializers.ProductRrpSerializer
     queryset = ProductRrp.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
+    permission_classes = (IsAuthenticated, DRYPermissions,)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
     export_fields = ["id", "product__title", "product__sku", "product__productparent__series", "rrp",
