@@ -6,19 +6,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
 
-from bat.company.utils import get_member
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin, ExportMixin
-from bat.company.models import HsCode
 from bat.product import serializers
-from bat.product.models import ProductParent, Product, ProductOption, ProductVariationOption
+from bat.product.models import ProductParent
 from bat.setting.utils import get_status
-from bat.product.constants import PRODUCT_STATUS_ACTIVE, PRODUCT_STATUS_DRAFT
+from bat.product.constants import PRODUCT_STATUS_ACTIVE
+from bat.product.filters import ProductFilter
 
 
 class ProductViewSet(ArchiveMixin,
@@ -33,9 +32,12 @@ class ProductViewSet(ArchiveMixin,
     serializer_class = serializers.ProductSerializer
     queryset = ProductParent.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions)
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["is_active", "is_component"]
-    search_fields = ["title"]
+    filter_backends = [DjangoFilterBackend, SearchFilter,
+                       OrderingFilter]
+    filterset_class = ProductFilter
+    search_fields = ["title", "type", "series",
+                     "hscode", "sku", "bullet_points", "description"]
+    ordering_fields = ['create_date', 'title']
 
     archive_message = _("Product parent is archived")
     restore_message = _("Product parent is restored")
