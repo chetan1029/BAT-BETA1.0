@@ -7,8 +7,9 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
 from mptt.models import MPTTModel, TreeForeignKey
+
+from bat.setting.constants import *
 
 User = get_user_model()
 
@@ -16,6 +17,7 @@ User = get_user_model()
 class CategoryManager(models.Manager):
     def vendor_categories(self):
         return self.filter(is_vendor_category=True)
+
 
 class Category(MPTTModel):
     """
@@ -39,7 +41,9 @@ class Category(MPTTModel):
     is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
-    is_vendor_category = models.BooleanField(_("Is Vendor Category?"), default=False)
+    is_vendor_category = models.BooleanField(
+        _("Is Vendor Category?"), default=False
+    )
     extra_data = HStoreField(null=True, blank=True)
 
     objects = CategoryManager()
@@ -169,3 +173,85 @@ class PaymentTerms(models.Model):
     def __str__(self):
         """Return Value."""
         return self.title
+
+
+class DeliveryTermName(models.Model):
+    """
+    Delivery Terms name Model.
+
+    Model for Vendor Delivery Term name.
+    """
+
+    name = models.CharField(
+        max_length=200, unique=True, verbose_name=_("Delivery Terms Title")
+    )
+    code = models.CharField(
+        max_length=50, unique=True, verbose_name=_("Delivery Terms Code")
+    )
+    detail = models.TextField(blank=True)
+    extra_data = HStoreField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Delivery Terms Name")
+
+    def __str__(self):
+        """Return Value."""
+        return self.name
+
+
+class DeliveryTermService(models.Model):
+    """
+    Delivery Terms service Model.
+
+    Model for Vendor Delivery Term service.
+    """
+
+    name = models.CharField(
+        max_length=200, unique=True, verbose_name=_("Delivery Terms Title")
+    )
+    detail = models.TextField(blank=True)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Delivery Term Services")
+
+    def __str__(self):
+        """Return Value."""
+        return self.name
+
+
+class DeliveryTerms(models.Model):
+    """
+    Delivery Terms Model.
+
+    Model for Vendor Delivery Terms.
+    """
+
+    term_name = models.ForeignKey(DeliveryTermName, on_delete=models.PROTECT)
+    service = models.ForeignKey(DeliveryTermService, on_delete=models.PROTECT)
+    who_pays = models.CharField(
+        max_length=20,
+        choices=DELIVERY_WHO_PAYS,
+        verbose_name=_("Who pays for the service"),
+    )
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Delivery Terms")
+
+    def __str__(self):
+        """Return Value."""
+        return (
+            str(self.term_name.name)
+            + " - "
+            + str(self.service.name)
+            + " - Paid by "
+            + str(self.who_pays)
+        )
