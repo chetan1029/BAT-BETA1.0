@@ -1,12 +1,6 @@
 from rest_framework import serializers
 
-from bat.setting.models import (
-    Category,
-    DeliveryTermName,
-    DeliveryTerms,
-    DeliveryTermService,
-    Status,
-)
+from bat.setting.models import Category, DeliveryTermName, DeliveryTerms, Status
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -42,38 +36,29 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "is_active")
 
 
-class DeliveryTermNameSerializer(serializers.ModelSerializer):
-    """Delivery Term name serializer."""
-
-    class Meta:
-        model = DeliveryTermName
-        fields = ("id", "name", "code", "detail", "is_active", "extra_data")
-        read_only_fields = ("id", "is_active")
-
-
-class DeliveryTermServiceSerializer(serializers.ModelSerializer):
-    """Delivery Term Services serializer."""
-
-    class Meta:
-        model = DeliveryTermService
-        fields = ("id", "name", "detail")
-        read_only_fields = "id"
-
-
 class DeliveryTermsSerializer(serializers.ModelSerializer):
     """Delivery Terms serializer."""
 
-    term_name = DeliveryTermNameSerializer(read_only=True)
-    service = DeliveryTermServiceSerializer(read_only=True)
-
     class Meta:
         model = DeliveryTerms
+        fields = ("id", "deliverytermname", "service_name", "who_pays")
+        read_only_fields = ("id",)
+
+
+class DeliveryTermNameSerializer(serializers.ModelSerializer):
+    """Delivery Term name serializer."""
+
+    deliveryterms = DeliveryTermsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DeliveryTermName
         fields = (
             "id",
-            "term_name",
-            "service",
-            "who_pays",
-            "create_date",
-            "update_date",
+            "name",
+            "code",
+            "detail",
+            "is_active",
+            "extra_data",
+            "deliveryterms",
         )
-        read_only_fields = ("id", "create_date", "update_date")
+        read_only_fields = ("id", "is_active", "deliveryterms")

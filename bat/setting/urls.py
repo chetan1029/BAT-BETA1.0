@@ -15,9 +15,7 @@ deliverytermname_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
 )
 deliverytermname_router.register(
-    "delivery-terms-name",
-    DeliveryTermNameViewSet,
-    basename="delivery-terms-name",
+    "delivery-terms", DeliveryTermNameViewSet, basename="delivery-terms-name"
 )
 
 app_name = "setting"

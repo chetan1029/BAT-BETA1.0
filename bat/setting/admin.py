@@ -4,7 +4,6 @@ from bat.setting.models import (
     Category,
     DeliveryTermName,
     DeliveryTerms,
-    DeliveryTermService,
     PaymentTerms,
     Status,
 )
@@ -16,5 +15,4 @@ admin.site.register(Category)
 admin.site.register(Status)
 admin.site.register(PaymentTerms)
 admin.site.register(DeliveryTermName)
-admin.site.register(DeliveryTermService)
 admin.site.register(DeliveryTerms)

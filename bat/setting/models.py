@@ -202,28 +202,6 @@ class DeliveryTermName(models.Model):
         return self.name
 
 
-class DeliveryTermService(models.Model):
-    """
-    Delivery Terms service Model.
-
-    Model for Vendor Delivery Term service.
-    """
-
-    name = models.CharField(
-        max_length=200, unique=True, verbose_name=_("Delivery Terms Title")
-    )
-    detail = models.TextField(blank=True)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Delivery Term Services")
-
-    def __str__(self):
-        """Return Value."""
-        return self.name
-
-
 class DeliveryTerms(models.Model):
     """
     Delivery Terms Model.
@@ -231,8 +209,12 @@ class DeliveryTerms(models.Model):
     Model for Vendor Delivery Terms.
     """
 
-    term_name = models.ForeignKey(DeliveryTermName, on_delete=models.PROTECT)
-    service = models.ForeignKey(DeliveryTermService, on_delete=models.PROTECT)
+    deliverytermname = models.ForeignKey(
+        DeliveryTermName,
+        on_delete=models.PROTECT,
+        related_name="deliveryterms",
+    )
+    service_name = models.CharField(max_length=100)
     who_pays = models.CharField(
         max_length=20,
         choices=DELIVERY_WHO_PAYS,
@@ -249,9 +231,9 @@ class DeliveryTerms(models.Model):
     def __str__(self):
         """Return Value."""
         return (
-            str(self.term_name.name)
+            str(self.deliverytermname.name)
             + " - "
-            + str(self.service.name)
+            + str(self.service_name)
             + " - Paid by "
             + str(self.who_pays)
         )
