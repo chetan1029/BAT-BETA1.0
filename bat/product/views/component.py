@@ -82,7 +82,10 @@ class ProductViewSet(ArchiveMixin,
             "type").values_list("type", flat=True)
         tags = queryset.exclude(tags__isnull=True).distinct("tags__name").values_list(
             "tags__name", flat=True)
+        series = queryset.exclude(series__exact="").exclude(series__isnull=True).distinct(
+            "series").values_list("series", flat=True)
         data = {}
         data["tag_data"] = tags
         data["type_data"] = types
+        data["series_data"] = series
         return Response(data, status=status.HTTP_200_OK)
