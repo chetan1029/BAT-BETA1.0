@@ -2,7 +2,7 @@ CM = "cm"
 IN = "in"
 LENGTH_UNIT_TYPE = ((CM, "cm"), (IN, "in"))
 
-
+PRODUCT_PARENT_STATUS = "Basic"
 PRODUCT_STATUS_ACTIVE = "Active"
 PRODUCT_STATUS_ARCHIVE = "Archive"
 PRODUCT_STATUS_DRAFT = "Draft"
