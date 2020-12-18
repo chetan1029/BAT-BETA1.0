@@ -78,8 +78,9 @@ class ProductViewSet(ArchiveMixin,
     @action(detail=False, methods=["GET"], url_path="tags-types")
     def get_tags_and_types(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        types = queryset.distinct("type").values_list("type", flat=True)
-        tags = queryset.distinct("tags__name").values_list(
+        types = queryset.exclude(type__exact="").exclude(type__isnull=True).distinct(
+            "type").values_list("type", flat=True)
+        tags = queryset.exclude(tags__isnull=True).distinct("tags__name").values_list(
             "tags__name", flat=True)
         data = {}
         data["tag_data"] = tags
