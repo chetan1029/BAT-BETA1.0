@@ -1798,3 +1798,39 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
             "user",
         )
         read_only_fields = ("id", "is_active", "extra_data", "create_date")
+
+
+class PartnerCompanySerializer(serializers.ModelSerializer):
+    company_type = serializers.SerializerMethodField()
+
+    def get_company_type(self, obj):
+        company_id = self.context.get('company_id')
+        ctype = CompanyType.objects.filter(company_id=company_id, partner_id=obj.id).first()
+        return ctype.category.name if ctype else ''
+    class Meta:
+        model = Company
+        fields = (
+            "id",
+            "address1",
+            "address2",
+            "zip",
+            "city",
+            "region",
+            "country",
+            "name",
+            "abbreviation",
+            "email",
+            "logo",
+            "phone_number",
+            "organization_number",
+            "currency",
+            "unit_system",
+            "weight_unit",
+            "language",
+            "time_zone",
+            "is_active",
+            "extra_data",
+            "company_type",
+            "create_date"
+        )
+        read_only_fields = ("id", "is_active", "extra_data", "create_date")

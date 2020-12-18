@@ -8,8 +8,11 @@ from rest_framework import mixins, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 
+from bat.setting.models import Category
 from bat.company import serializers
 from bat.company.models import (
+    Company,
+    CompanyType,
     CompanyContract,
     CompanyCredential,
     CompanyOrder,
@@ -362,3 +365,31 @@ class CompanyOrderPaymentViewSet(
         return queryset.filter(
             companyorderdelivery__companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
+
+
+class PartnerCompanyViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Company.objects.all()
+    serializer_class = serializers.PartnerCompanySerializer
+    permission_classes = (IsAuthenticated, DRYPermissions)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+        return context
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+
+        company_id = self.kwargs.get("company_pk", None)
+
+        partner_companies = CompanyType.objects.filter(
+            company_id=company_id).values_list('partner', flat=True)
+        queryset = queryset.filter(
+            pk__in=partner_companies
+        )
+        return queryset
