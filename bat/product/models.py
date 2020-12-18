@@ -323,6 +323,11 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
+    @staticmethod
+    def has_get_tags_and_types_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
 
 class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
     """
