@@ -395,3 +395,31 @@ class PartnerCompanyViewSet(
         company_id = self.kwargs.get("company_pk", None)
         queryset = queryset.filter(company_id=company_id)
         return queryset
+
+
+class ClientCompanyViewSet(
+    ArchiveMixin, RestoreMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = CompanyType.objects.all()
+    serializer_class = serializers.PartnerCompanySerializer
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Client is archived")
+    restore_message = _("Client is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+        return context
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = queryset.filter(partner_id=company_id)
+        return queryset

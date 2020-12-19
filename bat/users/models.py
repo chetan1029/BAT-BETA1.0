@@ -155,10 +155,10 @@ class InvitationDetail(AbstractBaseInvitation):
         invite_url_root = settings.INVITE_LINK
 
         if existing_user:
-            invite_url_root = settings.EXISTING_INVITE_LINK if extra_data and extra_data.get(
-                'type') == 'Member Invitation' else settings.VENDOR_EXISTING_INVITE_LINK + str(self.company_detail['company_id']) + '/invitations'
+            invite_url_root = (settings.EXISTING_INVITE_LINK + "?") if extra_data and extra_data.get(
+                'type') == 'Member Invitation' else settings.VENDOR_EXISTING_INVITE_LINK + str(self.company_detail['company_id']) + '?selectedView=invitations'
 
-        invite_url = invite_url_root + "?inviteKey=" + self.key + "&e=" + self.email
+        invite_url = invite_url_root + "&inviteKey=" + self.key + "&e=" + self.email
 
         ctx = kwargs
         ctx.update(
