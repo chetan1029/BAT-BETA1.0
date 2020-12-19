@@ -134,8 +134,8 @@ class CompanySerializer(serializers.ModelSerializer):
 
     def get_roles(self, obj):
         user_id = self.context.get("user_id", None)
-        member = get_member(company_id=obj.id, user_id=user_id)
-        roles = get_user_roles(member)
+        member = get_member(company_id=obj.id, user_id=user_id, raise_exception=False)
+        roles = get_user_roles(member) if member else []
         return [role.get_name() for role in roles]
 
 
@@ -1799,38 +1799,20 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
         )
         read_only_fields = ("id", "is_active", "extra_data", "create_date")
 
-
 class PartnerCompanySerializer(serializers.ModelSerializer):
+    details = CompanySerializer(source='partner', read_only=True)
     company_type = serializers.SerializerMethodField()
 
     def get_company_type(self, obj):
-        company_id = self.context.get('company_id')
-        ctype = CompanyType.objects.filter(company_id=company_id, partner_id=obj.id).first()
-        return ctype.category.name if ctype else ''
+        return obj.category.name if obj.category else ""
+
     class Meta:
-        model = Company
+        model = CompanyType
         fields = (
             "id",
-            "address1",
-            "address2",
-            "zip",
-            "city",
-            "region",
-            "country",
-            "name",
-            "abbreviation",
-            "email",
-            "logo",
-            "phone_number",
-            "organization_number",
-            "currency",
-            "unit_system",
-            "weight_unit",
-            "language",
-            "time_zone",
-            "is_active",
-            "extra_data",
             "company_type",
-            "create_date"
+            "create_date",
+            "details",
+            "is_active",
         )
         read_only_fields = ("id", "is_active", "extra_data", "create_date")

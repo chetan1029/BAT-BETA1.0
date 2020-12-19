@@ -165,6 +165,13 @@ class CompanyAdmin(AbstractUserRole):
         "archived_order_payment": True,
         "restore_order_payment": True,
         "delete_order_payment": True,
+        # Company Type
+        "view_company_type": True,
+        "add_company_type": True,
+        "change_company_type": True,
+        "archived_company_type": True,
+        "restore_company_type": True,
+        "delete_company_type": True,
     }
 
 

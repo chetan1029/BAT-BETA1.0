@@ -4,7 +4,9 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
-from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import mixins, viewsets, status
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 
@@ -368,13 +370,19 @@ class CompanyOrderPaymentViewSet(
 
 
 class PartnerCompanyViewSet(
+    ArchiveMixin, RestoreMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Company.objects.all()
+    queryset = CompanyType.objects.all()
     serializer_class = serializers.PartnerCompanySerializer
     permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Partner is archived")
+    restore_message = _("Partner is restored")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -384,12 +392,6 @@ class PartnerCompanyViewSet(
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
-
         company_id = self.kwargs.get("company_pk", None)
-
-        partner_companies = CompanyType.objects.filter(
-            company_id=company_id).values_list('partner', flat=True)
-        queryset = queryset.filter(
-            pk__in=partner_companies
-        )
+        queryset = queryset.filter(company_id=company_id)
         return queryset
