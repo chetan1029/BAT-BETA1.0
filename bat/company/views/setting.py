@@ -143,6 +143,8 @@ class InvitationCreate(viewsets.ViewSet):
             )
         context = {}
         context["company_id"] = company.id
+        context["user"] = request.user
+
         serializer = serializers.InvitationDataSerializer(
             data=request.data, context=context
         )

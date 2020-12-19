@@ -197,11 +197,16 @@ class InvitationDataSerializer(serializers.Serializer):
         """
         email = data["email"]
         company_id = self.context.get("company_id", None)
+        user = self.context.get("user", None)
+
+        if user.email == email:
+            raise serializers.ValidationError({"detail": _("You can not invite yourself")})
+
         errors = {}
         if (
             data["invitation_type"]
             and data["invitation_type"] == "vendor_invitation"
-        ):
+        ):      
             if not data["vendor_name"]:
                 raise serializers.ValidationError(
                     {"vendor_name": _("Vendor name is required field")}
@@ -212,6 +217,7 @@ class InvitationDataSerializer(serializers.Serializer):
                 )
             if data["vendor_type"]:
                 choices = list(Category.objects.values("id", "name"))
+                
                 if data["vendor_type"] not in choices:
                     raise serializers.ValidationError(
                         {"vendor_type": _("Vendor type is not valid")}
@@ -1728,11 +1734,6 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
 
         company_id = self.context.get("company_id")
 
-        companytypes = [
-            CompanyType(
-                partner=vendor, company_id=company_id, category=company_type
-            )
-        ]
 
         companytypes = [
             CompanyType(
