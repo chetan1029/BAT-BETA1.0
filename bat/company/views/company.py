@@ -4,12 +4,17 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
-from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import mixins, viewsets, status
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 
+from bat.setting.models import Category
 from bat.company import serializers
 from bat.company.models import (
+    Company,
+    CompanyType,
     CompanyContract,
     CompanyCredential,
     CompanyOrder,
@@ -348,3 +353,59 @@ class CompanyOrderPaymentViewSet(
         return queryset.filter(
             companyorderdelivery__companyorder__companytype__company__id=company_id
         ).order_by("-create_date")
+
+
+class PartnerCompanyViewSet(
+    ArchiveMixin, RestoreMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = CompanyType.objects.all()
+    serializer_class = serializers.PartnerCompanySerializer
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Partner is archived")
+    restore_message = _("Partner is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+        return context
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = queryset.filter(company_id=company_id)
+        return queryset
+
+
+class ClientCompanyViewSet(
+    ArchiveMixin, RestoreMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = CompanyType.objects.all()
+    serializer_class = serializers.PartnerCompanySerializer
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Client is archived")
+    restore_message = _("Client is restored")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+        return context
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = queryset.filter(partner_id=company_id)
+        return queryset

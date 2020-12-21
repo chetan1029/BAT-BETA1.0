@@ -42,12 +42,21 @@ def process_invitations(sender, instance, **kwargs):
                 vendor_type = company_detail["vendor_type"]
                 vendor = Company(name=vendor_name, email=invitation.email)
                 vendor.save()
-                companytype = CompanyType(
+                
+                companytype = CompanyType.objects.create(
                     partner=vendor,
                     company_id=company_id,
                     category_id=vendor_type.get("id", None),
                 )
-                companytype.save()
+
+                category = companytype.category
+                if category.extra_data:
+                    partner_category = category.extra_data.get("partner_category")
+
+                    if partner_category:
+                        CompanyType.objects.create(
+                            partner_id=company_id, company=vendor, category_id=partner_category)
+
 
                 member, _c = Member.objects.get_or_create(
                     job_title=job_title,

@@ -132,8 +132,8 @@ class CompanySerializer(serializers.ModelSerializer):
 
     def get_roles(self, obj):
         user_id = self.context.get("user_id", None)
-        member = get_member(company_id=obj.id, user_id=user_id)
-        roles = get_user_roles(member)
+        member = get_member(company_id=obj.id, user_id=user_id, raise_exception=False)
+        roles = get_user_roles(member) if member else []
         return [role.get_name() for role in roles]
 
 
@@ -195,11 +195,16 @@ class InvitationDataSerializer(serializers.Serializer):
         """
         email = data["email"]
         company_id = self.context.get("company_id", None)
+        user = self.context.get("user", None)
+
+        if user.email == email:
+            raise serializers.ValidationError({"detail": _("You can not invite yourself")})
+
         errors = {}
         if (
             data["invitation_type"]
             and data["invitation_type"] == "vendor_invitation"
-        ):
+        ):      
             if not data["vendor_name"]:
                 raise serializers.ValidationError(
                     {"vendor_name": _("Vendor name is required field")}
@@ -210,6 +215,7 @@ class InvitationDataSerializer(serializers.Serializer):
                 )
             if data["vendor_type"]:
                 choices = list(Category.objects.values("id", "name"))
+                
                 if data["vendor_type"] not in choices:
                     raise serializers.ValidationError(
                         {"vendor_type": _("Vendor type is not valid")}
@@ -1742,11 +1748,6 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
 
         company_id = self.context.get("company_id")
 
-        companytypes = [
-            CompanyType(
-                partner=vendor, company_id=company_id, category=company_type
-            )
-        ]
 
         companytypes = [
             CompanyType(
@@ -1810,5 +1811,23 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
             "create_date",
             "address",
             "user",
+        )
+        read_only_fields = ("id", "is_active", "extra_data", "create_date")
+
+class PartnerCompanySerializer(serializers.ModelSerializer):
+    details = CompanySerializer(source='partner', read_only=True)
+    company_type = serializers.SerializerMethodField()
+
+    def get_company_type(self, obj):
+        return obj.category.name if obj.category else ""
+
+    class Meta:
+        model = CompanyType
+        fields = (
+            "id",
+            "company_type",
+            "create_date",
+            "details",
+            "is_active",
         )
         read_only_fields = ("id", "is_active", "extra_data", "create_date")

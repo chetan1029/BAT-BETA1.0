@@ -16,6 +16,8 @@ from bat.company.views.company import (
     ComponentGoldenSampleViewSet,
     ComponentMeViewSet,
     ComponentPriceViewSet,
+    PartnerCompanyViewSet,
+    ClientCompanyViewSet
 )
 from bat.company.views.file import (
     CompanyContractFilesViewSet,
@@ -65,6 +67,14 @@ member_router.register(
 
 member_router.register(
     "vendors", VendorCompanyViewSet, basename="company-vendors"
+)
+
+member_router.register(
+    "partners", PartnerCompanyViewSet, basename="company-partners"
+)
+
+member_router.register(
+    "clients", ClientCompanyViewSet, basename="company-clients"
 )
 
 payment_terms_router = routers.NestedSimpleRouter(

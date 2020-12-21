@@ -7,11 +7,14 @@ from bat.company.models import Member, Company, CompanyPaymentTerms
 from bat.setting.models import PaymentTerms
 
 
-def get_member(company_id=None, user_id=None):
+def get_member(company_id=None, user_id=None, raise_exception=True):
     """
     get member based on company and user
     """
-    member = get_object_or_404(Member, company__id=company_id, user=user_id)
+    if raise_exception:
+        member = get_object_or_404(Member, company__id=company_id, user=user_id)
+    else:
+        member = Member.objects.filter(company__id=company_id, user=user_id).first()
     return member
 
 

@@ -8,7 +8,7 @@ from rolepermissions.checkers import has_permission
 from django.core.files import File
 from django.template.loader import render_to_string
 
-from bat.product.constants import PRODUCT_STATUS_DRAFT
+from bat.product.constants import PRODUCT_STATUS_DRAFT, PRODUCT_PARENT_STATUS
 from bat.setting.utils import get_status
 
 
@@ -98,7 +98,7 @@ def pdf_file_from_html(data, template_path, file_name):
 def get_status_object(data):
     if not data.get("status", None):
         return get_status(
-            "Basic", PRODUCT_STATUS_DRAFT)
+            PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT)
     else:
         status_name = data.get("status", None)
         return get_status("Basic", status_name)

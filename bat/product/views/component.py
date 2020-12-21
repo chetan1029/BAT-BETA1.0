@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
+from taggit.models import Tag
 
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin, ExportMixin
 from bat.product import serializers
@@ -73,3 +74,18 @@ class ProductViewSet(ArchiveMixin,
         queryset = super().filter_queryset(queryset)
         company_id = self.kwargs.get("company_pk", None)
         return queryset.filter(company__pk=company_id)
+
+    @action(detail=False, methods=["GET"], url_path="tags-types")
+    def get_tags_and_types(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        types = queryset.exclude(type__exact="").exclude(type__isnull=True).distinct(
+            "type").values_list("type", flat=True)
+        tags = queryset.exclude(tags__isnull=True).distinct("tags__name").values_list(
+            "tags__name", flat=True)
+        series = queryset.exclude(series__exact="").exclude(series__isnull=True).distinct(
+            "series").values_list("series", flat=True)
+        data = {}
+        data["tag_data"] = tags
+        data["type_data"] = types
+        data["series_data"] = series
+        return Response(data, status=status.HTTP_200_OK)
