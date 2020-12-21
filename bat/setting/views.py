@@ -18,11 +18,13 @@ from bat.company.utils import get_member
 vendors_only_param = openapi.Parameter(
     'vendors_only', openapi.IN_QUERY, description="Returns only vendor categories", type=openapi.TYPE_BOOLEAN, required=False)
 
+sales_channel_only_param = openapi.Parameter(
+    'sales_channel_only', openapi.IN_QUERY, description="Returns only sales channel categories", type=openapi.TYPE_BOOLEAN, required=False)
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_description="Returns all the categories",
     responses={200: serializers.CategorySerializer(many=True)},
-    manual_parameters=[vendors_only_param]
+    manual_parameters=[vendors_only_param, sales_channel_only_param]
 ))
 class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Operations on Category."""
@@ -40,4 +42,9 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         if only_vendor_categories:
             queryset = queryset.filter(
                 is_vendor_category=True if only_vendor_categories == 'true' else False)
+        
+        sales_channel_only = self.request.GET.get('sales_channel_only', False)
+        if sales_channel_only:
+            queryset = queryset.filter(
+                is_sales_channel_category=True if sales_channel_only == 'true' else False)
         return queryset

@@ -40,6 +40,7 @@ class Category(MPTTModel):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
     is_vendor_category = models.BooleanField(_("Is Vendor Category?"), default=False)
+    is_sales_channel_category = models.BooleanField(_("Is Sales Channel Category?"), default=False)
     extra_data = HStoreField(null=True, blank=True)
 
     objects = CategoryManager()
