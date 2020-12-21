@@ -1,33 +1,38 @@
 from decimal import Decimal
 
-from django.db.models import Sum
+from allauth.account import app_settings as allauth_settings
+from allauth.account.adapter import get_adapter
+from allauth.account.utils import setup_user_email
+from allauth.utils import email_address_exists, get_username_max_length
+from django.conf import settings
 from django.contrib.auth.models import Group, Permission
 from django.db import transaction
+from django.db.models import Sum
 from django.utils.translation import ugettext_lazy as _
 from djmoney.contrib.django_rest_framework import MoneyField
-from djmoney.settings import CURRENCY_CHOICES
 from djmoney.money import Money
+from djmoney.settings import CURRENCY_CHOICES
 from invitations.utils import get_invitation_model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rolepermissions.roles import get_user_roles, assign_role
-from django.conf import settings
-
-from allauth.account import app_settings as allauth_settings
-from allauth.utils import email_address_exists, get_username_max_length
-from allauth.account.adapter import get_adapter
-from allauth.account.utils import setup_user_email
-
+from rolepermissions.roles import assign_role, get_user_roles
 
 from bat.company.file_serializers import FileSerializer
 from bat.company.models import (
+    Asset,
+    AssetTransfer,
     Bank,
     Company,
     CompanyContract,
     CompanyCredential,
     CompanyOrder,
+    CompanyOrderCase,
     CompanyOrderDelivery,
     CompanyOrderDeliveryProduct,
+    CompanyOrderDeliveryTestReport,
+    CompanyOrderInspection,
+    CompanyOrderPayment,
+    CompanyOrderPaymentPaid,
     CompanyOrderProduct,
     CompanyPaymentTerms,
     CompanyProduct,
@@ -41,31 +46,24 @@ from bat.company.models import (
     Member,
     PackingBox,
     Tax,
-    CompanyOrderCase,
-    CompanyOrderInspection,
-    CompanyOrderPayment,
-    CompanyOrderDeliveryTestReport,
-    CompanyOrderPaymentPaid,
-    Mold,
 )
 from bat.company.utils import (
     get_list_of_permissions,
     get_list_of_roles,
     get_member,
 )
-from bat.globalutils.utils import get_cbm, set_field_errors
+from bat.globalutils.utils import get_cbm, get_status_object, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import (
     CountrySerializerField,
     MoneySerializerField,
     QueryFieldsMixin,
-    WeightField,
     StatusField,
+    WeightField,
 )
 from bat.setting.models import Category
 from bat.setting.utils import get_status
 from bat.users.serializers import UserLoginActivitySerializer, UserSerializer
-from bat.globalutils.utils import get_status_object
 
 Invitation = get_invitation_model()
 
@@ -599,6 +597,61 @@ class TaxSerializer(ReversionSerializerMixin):
         )
 
 
+class AssetSerializer(ReversionSerializerMixin):
+    """Serializer for Asset."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = Asset
+        fields = (
+            "id",
+            "company",
+            "asset_id",
+            "title",
+            "type",
+            "detail",
+            "price",
+            "date",
+            "receipt",
+            "current_location",
+            "is_active",
+            "extra_data",
+            "force_create",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "extra_data",
+            "company",
+            "create_date",
+            "update_date",
+        )
+
+
+class AssetTransferSerializer(ReversionSerializerMixin):
+    """Serializer for Asset Transfer."""
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = AssetTransfer
+        fields = (
+            "id",
+            "asset",
+            "from_location",
+            "to_location",
+            "date",
+            "receipt",
+            "note",
+            "date",
+            "receipt",
+            "create_date",
+            "update_date",
+        )
+        read_only_fields = ("id", "create_date", "update_date")
+
+
 class CompanyContractSerializer(serializers.ModelSerializer):
     """Serializer for CompanyContract."""
 
@@ -945,45 +998,6 @@ class CompanyProductSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data["status"] = get_status_object(validated_data)
         return super().update(instance, validated_data)
-
-
-class MoldSerializer(serializers.ModelSerializer):
-    """Serializer for Mold."""
-
-    class Meta:
-        """Define field that we wanna show in the Json."""
-
-        model = Mold
-        fields = (
-            "id",
-            "companytype",
-            "component",
-            "x_units",
-            "x_units_used",
-            "no_of_layers",
-            "paid_by",
-            "is_active",
-            "extra_data",
-        )
-        read_only_fields = ("id", "x_units_used", "create_date", "update_date")
-
-    def validate(self, attrs):
-        """
-        validate that :
-            the selected company type must relate to the current company.
-        """
-        company_id = self.context.get("company_id", None)
-        companytype = attrs.get("companytype", None)
-        errors = {}
-        if companytype:
-            if str(companytype.company.id) != str(company_id):
-                errors = set_field_errors(
-                    errors, "companytype", _("Invalid company type selected.")
-                )
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        return super().validate(attrs)
 
 
 class CompanyOrderProductSerializer(serializers.ModelSerializer):
