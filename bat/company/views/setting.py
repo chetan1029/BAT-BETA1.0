@@ -1,46 +1,43 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.db.models import Q
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
-from django.utils.decorators import method_decorator
-from django.conf import settings
-from django.db.models import Q
-from django.db import transaction
-
-from rest_framework import mixins, status, viewsets
-from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.decorators import action
-
-from drf_yasg2.utils import swagger_auto_schema
 from drf_yasg2 import openapi
-
-from rolepermissions.checkers import has_permission
-from rolepermissions.permissions import revoke_permission
-from rolepermissions.roles import RolesManager, assign_role, clear_roles
+from drf_yasg2.utils import swagger_auto_schema
 from dry_rest_permissions.generics import DRYPermissions
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
-
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rolepermissions.checkers import has_permission
+from rolepermissions.permissions import revoke_permission
+from rolepermissions.roles import RolesManager, assign_role, clear_roles
 
 from bat.company import serializers
 from bat.company.models import (
+    Asset,
+    AssetTransfer,
     Bank,
     Company,
     CompanyPaymentTerms,
+    CompanyType,
     HsCode,
     Location,
     Member,
     PackingBox,
     Tax,
-    CompanyType
 )
-from bat.setting.models import Category
 from bat.company.utils import get_member, set_default_company_payment_terms
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
+from bat.setting.models import Category
 from bat.users.serializers import InvitationSerializer
-
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -120,11 +117,14 @@ input to content
 """
 
 
-@method_decorator(name='create', decorator=swagger_auto_schema(
-    operation_description="Allows to invite member or vendor or other users",
-    request_body=serializers.InvitationDataSerializer(),
-    responses={201: serializers.InvitationDataSerializer()}
-))
+@method_decorator(
+    name="create",
+    decorator=swagger_auto_schema(
+        operation_description="Allows to invite member or vendor or other users",
+        request_body=serializers.InvitationDataSerializer(),
+        responses={201: serializers.InvitationDataSerializer()},
+    ),
+)
 class InvitationCreate(viewsets.ViewSet):
     def create(self, request, company_pk):
         """
@@ -256,14 +256,22 @@ class InvitationCreate(viewsets.ViewSet):
 
 
 is_accepted_param = openapi.Parameter(
-    'is_accepted', openapi.IN_QUERY, description="Filters by status", type=openapi.TYPE_BOOLEAN, required=False)
+    "is_accepted",
+    openapi.IN_QUERY,
+    description="Filters by status",
+    type=openapi.TYPE_BOOLEAN,
+    required=False,
+)
 
 
-@method_decorator(name='list', decorator=swagger_auto_schema(
-    operation_description="Returns all the invitations",
-    responses={200: InvitationSerializer(many=True)},
-    manual_parameters=[is_accepted_param]
-))
+@method_decorator(
+    name="list",
+    decorator=swagger_auto_schema(
+        operation_description="Returns all the invitations",
+        responses={200: InvitationSerializer(many=True)},
+        manual_parameters=[is_accepted_param],
+    ),
+)
 class CompanyInvitationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Invitation.objects.all()
     serializer_class = InvitationSerializer
@@ -278,9 +286,9 @@ class CompanyInvitationViewSet(viewsets.ReadOnlyModelViewSet):
             company_detail__company_id=int(self.kwargs.get("company_pk", None))
         )
 
-        is_accepted = self.request.GET.get('is_accepted', None)
+        is_accepted = self.request.GET.get("is_accepted", None)
         if is_accepted:
-            queryset = queryset.filter(accepted=is_accepted == 'true')
+            queryset = queryset.filter(accepted=is_accepted == "true")
         return queryset
 
     @action(detail=True, methods=["post"])
@@ -290,11 +298,18 @@ class CompanyInvitationViewSet(viewsets.ReadOnlyModelViewSet):
         """
         instance = self.get_object()
         if instance.accepted == True:
-            return Response({"detail": _("Accepted successfully")}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": _("Accepted successfully")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         instance.send_invitation(request)
 
-        return Response({"detail": _("Invitations resent successfully")}, status=status.HTTP_200_OK)
+        return Response(
+            {"detail": _("Invitations resent successfully")},
+            status=status.HTTP_200_OK,
+        )
+
 
 # Member
 
@@ -480,7 +495,7 @@ class HsCodeBoxViewSet(CompanySettingBaseViewSet):
 
 
 # Tax
-class TaxBoxViewSet(CompanySettingBaseViewSet):
+class TaxViewSet(CompanySettingBaseViewSet):
     """Operations on Tax."""
 
     serializer_class = serializers.TaxSerializer
@@ -497,18 +512,66 @@ class TaxBoxViewSet(CompanySettingBaseViewSet):
     restore_message = _("Tax is restored")
 
 
+# Asset
+class AssetViewSet(CompanySettingBaseViewSet):
+    """Operations on Asset."""
+
+    serializer_class = serializers.AssetSerializer
+    queryset = Asset.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [
+        DjangoFilterBackend,
+        # SearchFilter,
+    ]
+    filterset_fields = ["is_active"]
+    # search_fields = ["name"]
+
+    archive_message = _("Asset is archived")
+    restore_message = _("Asset is restored")
+
+
+# Asset Transfer
+class AssetTransferViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Operations on Asset Transfer."""
+
+    serializer_class = serializers.AssetTransferSerializer
+    queryset = AssetTransfer.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [
+        DjangoFilterBackend,
+        # SearchFilter,
+    ]
+
+
 category_param = openapi.Parameter(
-    'category', openapi.IN_QUERY, description="Returns vendors belong to this category", type=openapi.TYPE_INTEGER, required=False)
+    "category",
+    openapi.IN_QUERY,
+    description="Returns vendors belong to this category",
+    type=openapi.TYPE_INTEGER,
+    required=False,
+)
 
 
-@method_decorator(name='list', decorator=swagger_auto_schema(
-    operation_description="Returns all the vendors",
-    responses={200: serializers.VendorCompanySerializer(many=True)},
-    manual_parameters=[category_param]
-))
-@method_decorator(name='create', decorator=swagger_auto_schema(
-    reqeust={serializers.CreateVendorCompanySerializer()},
-))
+@method_decorator(
+    name="list",
+    decorator=swagger_auto_schema(
+        operation_description="Returns all the vendors",
+        responses={200: serializers.VendorCompanySerializer(many=True)},
+        manual_parameters=[category_param],
+    ),
+)
+@method_decorator(
+    name="create",
+    decorator=swagger_auto_schema(
+        reqeust={serializers.CreateVendorCompanySerializer()}
+    ),
+)
 class VendorCompanyViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -532,30 +595,70 @@ class VendorCompanyViewSet(
 
         company_id = self.kwargs.get("company_pk", None)
 
-        category = self.request.GET.get('category', False)
+        category = self.request.GET.get("category", False)
         if category:
             vendor_categories = [category]
         else:
             # get vendor category
-            vendor_categories = Category.objects.vendor_categories().values_list('id', flat=True)
+            vendor_categories = Category.objects.vendor_categories().values_list(
+                "id", flat=True
+            )
 
         vendor_companies = CompanyType.objects.filter(
-            category__id__in=vendor_categories, company_id=company_id).values_list('partner', flat=True)
+            category__id__in=vendor_categories, company_id=company_id
+        ).values_list("partner", flat=True)
 
-        queryset = queryset.filter(
-            pk__in=vendor_companies
-        )
+        queryset = queryset.filter(pk__in=vendor_companies)
         return queryset
 
     def create(self, request, *args, **kwargs):
-        context = {'request': request}
+        context = {"request": request}
         context["user_id"] = self.request.user.id
         context["company_id"] = self.kwargs.get("company_pk", None)
 
         serializer = serializers.CreateVendorCompanySerializer(
-            data=request.data, context=context)
+            data=request.data, context=context
+        )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         data = serializers.VendorCompanySerializer(instance=instance).data
         headers = self.get_success_headers(data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class SalesChannelCompanyViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Company.objects.all()
+    serializer_class = serializers.VendorCompanySerializer
+    permission_classes = (IsAuthenticated, DRYPermissions)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+        return context
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        request = self.request
+
+        company_id = self.kwargs.get("company_pk", None)
+
+        category = self.request.GET.get("category", False)
+        if category:
+            sales_categories = [category]
+        else:
+            # get categories
+            sales_categories = Category.objects.sales_channel_categories().values_list(
+                "id", flat=True
+            )
+
+        companies = CompanyType.objects.filter(
+            category__id__in=sales_categories, company_id=company_id
+        ).values_list("partner", flat=True)
+
+        queryset = queryset.filter(pk__in=companies)
+        return queryset

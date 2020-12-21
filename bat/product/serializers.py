@@ -99,6 +99,44 @@ class ProductVariationSerializer(serializers.ModelSerializer):
         )
 
 
+class UpdateProductVariationSerializer(serializers.ModelSerializer):
+    weight = WeightField(required=False)
+    product_variation_options = ProductVariationOptionSerializer(
+        many=True, read_only=True, required=False)
+    images = ImageSerializer(many=True, read_only=True, required=False)
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "productparent",
+            "title",
+            "sku",
+            "ean",
+            "model_number",
+            "manufacturer_part_number",
+            "length",
+            "width",
+            "depth",
+            "length_unit",
+            "weight",
+            "is_active",
+            "extra_data",
+            "product_variation_options",
+            "images",
+        )
+        read_only_fields = (
+            "id",
+            "productparent",
+            "is_active",
+            "extra_data",
+            "model_number",
+            "manufacturer_part_number",
+            "product_variation_options"
+            "images",
+        )
+
+
 class ProductSerializer(serializers.ModelSerializer):
     """
     ModelSerializer to create component

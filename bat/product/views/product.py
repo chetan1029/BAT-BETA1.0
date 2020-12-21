@@ -20,7 +20,10 @@ from bat.product.models import (
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin, ExportMixin
 
 
-class ProductVariationViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+@method_decorator(name='update', decorator=swagger_auto_schema(
+    reqeust={serializers.UpdateProductVariationSerializer()},
+))
+class ProductVariationViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """Operations on ProductVariation."""
 
     serializer_class = serializers.ProductVariationSerializer
@@ -37,6 +40,21 @@ class ProductVariationViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
         return queryset.filter(productparent__company__pk=company_id)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        context = self.get_serializer_context()
+        serializer = serializers.UpdateProductVariationSerializer(
+            instance=instance, data=request.data, context=context, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+        return Response(serializer.data)
 
 
 class ProductMetadatMxin(viewsets.ModelViewSet):

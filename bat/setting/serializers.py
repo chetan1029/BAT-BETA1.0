@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from bat.setting.models import Status, Category
+from bat.setting.models import Category, DeliveryTermName, DeliveryTerms, Status
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -10,22 +10,13 @@ class StatusSerializer(serializers.ModelSerializer):
         """Define field that we wanna show in the Json."""
 
         model = Status
-        fields = (
-            "id",
-            "name",
-            "parent",
-            "user",
-            "is_active",
-        )
-        read_only_fields = (
-            "id",
-            "name",
-            "parent",
-            "user",
-            "is_active",
-        )
+        fields = ("id", "name", "parent", "user", "is_active")
+        read_only_fields = ("id", "name", "parent", "user", "is_active")
+
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Global category serializer."""
+
     parent_details = serializers.SerializerMethodField()
 
     def get_parent_details(self, obj):
@@ -42,7 +33,32 @@ class CategorySerializer(serializers.ModelSerializer):
             "is_active",
             "parent_details",
         )
-        read_only_fields = (
+        read_only_fields = ("id", "is_active")
+
+
+class DeliveryTermsSerializer(serializers.ModelSerializer):
+    """Delivery Terms serializer."""
+
+    class Meta:
+        model = DeliveryTerms
+        fields = ("id", "deliverytermname", "service_name", "who_pays")
+        read_only_fields = ("id",)
+
+
+class DeliveryTermNameSerializer(serializers.ModelSerializer):
+    """Delivery Term name serializer."""
+
+    deliveryterms = DeliveryTermsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DeliveryTermName
+        fields = (
             "id",
+            "name",
+            "code",
+            "detail",
             "is_active",
+            "extra_data",
+            "deliveryterms",
         )
+        read_only_fields = ("id", "is_active", "deliveryterms")
