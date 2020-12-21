@@ -8,7 +8,6 @@ class StatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         """Define field that we wanna show in the Json."""
-
         model = Status
         fields = (
             "id",
@@ -24,6 +23,12 @@ class StatusSerializer(serializers.ModelSerializer):
             "user",
             "is_active",
         )
+
+    def get_fields(self):
+        fields = super(StatusSerializer, self).get_fields()
+        fields['parent'] = StatusSerializer()
+        return fields
+
 
 class CategorySerializer(serializers.ModelSerializer):
     parent_details = serializers.SerializerMethodField()

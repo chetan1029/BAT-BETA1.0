@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from bat.setting import serializers
 from bat.setting.models import (
-    Category
+    Category, Status
 )
 from bat.company.models import Member
 from bat.company.utils import get_member
@@ -41,3 +41,15 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
             queryset = queryset.filter(
                 is_vendor_category=True if only_vendor_categories == 'true' else False)
         return queryset
+
+
+class StatusViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    gives list of available status in the system
+    """
+    serializer_class = serializers.StatusSerializer
+    queryset = Status.objects.all()
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+
+    filterset_fields = ["is_active", "name"]
