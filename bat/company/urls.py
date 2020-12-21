@@ -43,6 +43,7 @@ from bat.company.views.setting import (
     PackingBoxViewSet,
     TaxViewSet,
     VendorCompanyViewSet,
+    SalesChannelCompanyViewSet
 )
 
 router = routers.SimpleRouter()
@@ -67,6 +68,10 @@ member_router.register(
 
 member_router.register(
     "vendors", VendorCompanyViewSet, basename="company-vendors"
+)
+
+member_router.register(
+    "sales-channels", SalesChannelCompanyViewSet, basename="company-sales-channels"
 )
 
 member_router.register(

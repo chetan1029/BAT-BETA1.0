@@ -17,6 +17,8 @@ User = get_user_model()
 class CategoryManager(models.Manager):
     def vendor_categories(self):
         return self.filter(is_vendor_category=True)
+    def sales_channel_categories(self):
+        return self.filter(is_sales_channel_category=True)
 
 
 class Category(MPTTModel):
@@ -42,8 +44,9 @@ class Category(MPTTModel):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
     is_vendor_category = models.BooleanField(
-        _("Is Vendor Category?"), default=False
-    )
+        _("Is Vendor Category?"), default=False)
+    is_sales_channel_category = models.BooleanField(
+        _("Is Sales Channel Category?"), default=False)
     extra_data = HStoreField(null=True, blank=True)
 
     objects = CategoryManager()

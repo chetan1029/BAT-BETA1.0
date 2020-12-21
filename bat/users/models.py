@@ -152,7 +152,7 @@ class InvitationDetail(AbstractBaseInvitation):
 
         company_name = self.company_detail.get("company_name")
 
-        invite_url_root = settings.INVITE_LINK
+        invite_url_root = settings.INVITE_LINK + "?"
 
         if existing_user:
             invite_url_root = (settings.EXISTING_INVITE_LINK + "?") if extra_data and extra_data.get(

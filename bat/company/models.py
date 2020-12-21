@@ -47,9 +47,10 @@ def get_member_from_request(request):
     """
     kwargs = request.resolver_match.kwargs
     company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
-    member = get_object_or_404(
-        Member, company__id=company_pk, user=request.user.id
-    )
+    # member = get_object_or_404(
+    #     Member, company__id=company_pk, user=request.user.id
+    # )
+    member = Member.objects.filter(company__id=company_pk, user=request.user.id).first()
     return member
 
 

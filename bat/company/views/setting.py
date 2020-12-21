@@ -624,3 +624,41 @@ class VendorCompanyViewSet(
         data = serializers.VendorCompanySerializer(instance=instance).data
         headers = self.get_success_headers(data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class SalesChannelCompanyViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Company.objects.all()
+    serializer_class = serializers.VendorCompanySerializer
+    permission_classes = (IsAuthenticated, DRYPermissions)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user_id"] = self.request.user.id
+        context["company_id"] = self.kwargs.get("company_pk", None)
+        return context
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        request = self.request
+
+        company_id = self.kwargs.get("company_pk", None)
+
+        category = self.request.GET.get("category", False)
+        if category:
+            sales_categories = [category]
+        else:
+            # get categories
+            sales_categories = Category.objects.sales_channel_categories().values_list(
+                "id", flat=True
+            )
+
+        companies = CompanyType.objects.filter(
+            category__id__in=sales_categories, company_id=company_id
+        ).values_list("partner", flat=True)
+
+        queryset = queryset.filter(pk__in=companies)
+        return queryset
