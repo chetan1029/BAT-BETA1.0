@@ -1096,7 +1096,7 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"orderproducts": msg})
         if errors:
             raise serializers.ValidationError(errors)
-
+        
         attrs["vat_amount"] = attrs.get(
             "vat_amount", Money(0, member.company.currency)
         )

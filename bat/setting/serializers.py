@@ -2,9 +2,16 @@ from rest_framework import serializers
 
 from bat.setting.models import Status, Category
 
+from bat.serializersFields.serializers_fields import get_status_json
+
 
 class StatusSerializer(serializers.ModelSerializer):
     """Serializer for Status."""
+
+    parent = serializers.SerializerMethodField()
+
+    def get_parent(self, obj):
+        return obj.parent.name if obj.parent else None
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -23,11 +30,6 @@ class StatusSerializer(serializers.ModelSerializer):
             "user",
             "is_active",
         )
-
-    def get_fields(self):
-        fields = super(StatusSerializer, self).get_fields()
-        fields['parent'] = StatusSerializer()
-        return fields
 
 
 class CategorySerializer(serializers.ModelSerializer):

@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.db import IntegrityError, transaction
+from django.db.models.signals import post_save
+
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -17,7 +19,7 @@ from bat.mixins.mixins import ArchiveMixin, RestoreMixin, ExportMixin
 from bat.product import serializers
 from bat.product.models import ProductParent
 from bat.setting.utils import get_status
-from bat.product.constants import PRODUCT_STATUS_ACTIVE
+from bat.product.constants import PRODUCT_STATUS_ACTIVE, PRODUCT_STATUS_DISCONTINUED, PRODUCT_PARENT_STATUS
 from bat.product.filters import ProductFilter
 
 
@@ -42,6 +44,8 @@ class ProductViewSet(ArchiveMixin,
 
     archive_message = _("Product parent is archived")
     restore_message = _("Product parent is restored")
+    active_message = _("Product parent is active")
+    discontinued_message = _("Product parent is discontinued")
 
     export_fields = ["id", "company", "is_component", "title", "type", "sku",
                      "bullet_points", "description", "tags", "is_active", "status__name", "products__title",
@@ -64,11 +68,29 @@ class ProductViewSet(ArchiveMixin,
             return Response({"detail": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
         try:
             with transaction.atomic():
-                instance.status = get_status("Basic", PRODUCT_STATUS_ACTIVE)
+                instance.status = get_status(
+                    PRODUCT_PARENT_STATUS, PRODUCT_STATUS_ACTIVE)
                 instance.save()
-            return Response({"detail": self.archive_message}, status=status.HTTP_200_OK)
+            return Response({"detail": self.active_message}, status=status.HTTP_200_OK)
         except IntegrityError:
             return Response({"detail": _("Can't activate")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    @action(detail=True, methods=["post"])
+    def discontinued(self, request, *args, **kwargs):
+        """Set the discontinued status."""
+        instance = self.get_object()
+        if instance.get_status_name == PRODUCT_STATUS_DISCONTINUED:
+            return Response({"detail": _("Already discontinued")}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with transaction.atomic():
+                instance.status = get_status(
+                    PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DISCONTINUED)
+                instance.save()
+                # post_save.send(ProductParent, instance=instance,
+                #                created=False, using=None)
+            return Response({"detail": self.discontinued_message}, status=status.HTTP_200_OK)
+        except IntegrityError:
+            return Response({"detail": _("Can't discontinued")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
