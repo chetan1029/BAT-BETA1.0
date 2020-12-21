@@ -55,6 +55,13 @@ class CompanyAdmin(AbstractUserRole):
         "archived_taxes": True,
         "restore_taxes": True,
         "delete_taxes": True,
+        # Company Asset
+        "view_asset": True,
+        "add_asset": True,
+        "change_asset": True,
+        "archived_asset": True,
+        "restore_asset": True,
+        "delete_asset": True,
         # Company HSCode
         "view_hscode": True,
         "add_hscode": True,
