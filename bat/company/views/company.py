@@ -18,17 +18,16 @@ from bat.company.models import (
     CompanyContract,
     CompanyCredential,
     CompanyOrder,
+    CompanyOrderCase,
     CompanyOrderDelivery,
+    CompanyOrderDeliveryTestReport,
+    CompanyOrderInspection,
+    CompanyOrderPayment,
+    CompanyOrderPaymentPaid,
     CompanyProduct,
     ComponentGoldenSample,
     ComponentMe,
     ComponentPrice,
-    CompanyOrderCase,
-    CompanyOrderInspection,
-    CompanyOrderDeliveryTestReport,
-    CompanyOrderPaymentPaid,
-    CompanyOrderPayment,
-    Mold,
 )
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 
@@ -181,19 +180,6 @@ class CompanyProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
         return queryset.filter(companytype__company__id=company_id).order_by(
             "-create_date"
         )
-
-
-class MoldViewSet(CompanySettingBaseViewSet):
-    """Operations on Mold."""
-
-    serializer_class = serializers.MoldSerializer
-    queryset = Mold.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["is_active"]
-
-    archive_message = _("Company mold is archived")
-    restore_message = _("Company mold is restored")
 
 
 class CompanyOrderViewSet(
