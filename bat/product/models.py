@@ -328,6 +328,15 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
         member = get_member_from_request(request)
         return has_permission(member, "view_product")
 
+    @staticmethod
+    def has_discontinued_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_product")
+
+    def has_object_discontinued_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_product")
+
 
 class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
     """
@@ -343,6 +352,10 @@ class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Mod
     title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
     ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
+    type = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Product Type")
+    )
+    tags = TaggableManager(blank=True)
     model_number = models.CharField(
         max_length=200, blank=True, verbose_name=_("Model Number")
     )

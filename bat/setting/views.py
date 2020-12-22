@@ -4,11 +4,10 @@ from drf_yasg2 import openapi
 from drf_yasg2.utils import swagger_auto_schema
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
-
 from bat.company.models import Member
 from bat.company.utils import get_member
 from bat.setting import serializers
-from bat.setting.models import Category, DeliveryTermName, DeliveryTerms
+from bat.setting.models import Category, DeliveryTermName, DeliveryTerms, Category, Status
 
 vendors_only_param = openapi.Parameter(
     "vendors_only",
@@ -56,7 +55,41 @@ class CategoryViewSet(
         return queryset
 
 
+parent_name_param = openapi.Parameter(
+    "parent_name",
+    openapi.IN_QUERY,
+    description="Returns children of this status",
+    type=openapi.TYPE_STRING,
+    required=False,
+)
+
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="Returns all the status",
+    responses={200: serializers.StatusSerializer(many=True)},
+    manual_parameters=[parent_name_param]
+))
+class StatusViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    gives list of available status in the system
+    """
+    serializer_class = serializers.StatusSerializer
+    queryset = Status.objects.all()
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+
+    filterset_fields = ["is_active", "name", "parent"]
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        parent_name = self.request.GET.get('parent_name', None)
+        if parent_name:
+            queryset = queryset.filter(parent__name__iexact=parent_name)
+        return queryset
+
 # delivery terms Name
+
+
 class DeliveryTermNameViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
