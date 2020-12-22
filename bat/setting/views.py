@@ -55,6 +55,20 @@ class CategoryViewSet(
         return queryset
 
 
+parent_name_param = openapi.Parameter(
+    "parent_name",
+    openapi.IN_QUERY,
+    description="Returns children of this status",
+    type=openapi.TYPE_STRING,
+    required=False,
+)
+
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="Returns all the status",
+    responses={200: serializers.StatusSerializer(many=True)},
+    manual_parameters=[parent_name_param]
+))
 class StatusViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     gives list of available status in the system
@@ -64,7 +78,14 @@ class StatusViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
 
-    filterset_fields = ["is_active", "name"]
+    filterset_fields = ["is_active", "name", "parent"]
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        parent_name = self.request.GET.get('parent_name', None)
+        if parent_name:
+            queryset = queryset.filter(parent__name__iexact=parent_name)
+        return queryset
 
 # delivery terms Name
 
