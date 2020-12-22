@@ -55,9 +55,6 @@ class CategoryViewSet(
         return queryset
 
 
-<< << << < HEAD
-
-
 class StatusViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     gives list of available status in the system
@@ -69,8 +66,6 @@ class StatusViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     filterset_fields = ["is_active", "name"]
 
-
-== == == =
 # delivery terms Name
 
 
@@ -84,6 +79,3 @@ class DeliveryTermNameViewSet(
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
-
-
->>>>>> > develop
