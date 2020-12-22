@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from djmoney.models.fields import MoneyField
 
-from bat.company.models import Member
+from bat.company.models import Member, Company
 from bat.setting.models import Status
 from bat.subscription import constants
 
@@ -128,8 +128,8 @@ class Subscription(models.Model):
     Model to represent plans subscribe by the member.
     """
 
-    member = models.ForeignKey(
-        Member, on_delete=models.PROTECT, related_name="subscriptions"
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, related_name="subscriptions"
     )
     plan = models.ForeignKey(
         Plan, on_delete=models.PROTECT, related_name="subscriptions"
