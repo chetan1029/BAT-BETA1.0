@@ -3,6 +3,7 @@ from rest_framework_nested import routers
 
 from bat.company.views.comment import CompanyContractCommentsViewSet
 from bat.company.views.company import (
+    ClientCompanyViewSet,
     CompanyContractViewSet,
     CompanyCredentialViewSet,
     CompanyOrderCaseViewSet,
@@ -16,6 +17,7 @@ from bat.company.views.company import (
     ComponentGoldenSampleViewSet,
     ComponentMeViewSet,
     ComponentPriceViewSet,
+    PartnerCompanyViewSet,
 )
 from bat.company.views.file import (
     CompanyContractFilesViewSet,
@@ -28,6 +30,8 @@ from bat.company.views.file import (
     ComponentPriceFilesViewSet,
 )
 from bat.company.views.setting import (
+    AssetTransferViewSet,
+    AssetViewSet,
     BankViewSet,
     CompanyInvitationViewSet,
     CompanyPaymentTermsViewSet,
@@ -37,8 +41,9 @@ from bat.company.views.setting import (
     LocationViewSet,
     MemberViewSet,
     PackingBoxViewSet,
-    TaxBoxViewSet,
+    TaxViewSet,
     VendorCompanyViewSet,
+    SalesChannelCompanyViewSet
 )
 
 router = routers.SimpleRouter()
@@ -63,6 +68,18 @@ member_router.register(
 
 member_router.register(
     "vendors", VendorCompanyViewSet, basename="company-vendors"
+)
+
+member_router.register(
+    "sales-channels", SalesChannelCompanyViewSet, basename="company-sales-channels"
+)
+
+member_router.register(
+    "partners", PartnerCompanyViewSet, basename="company-partners"
+)
+
+member_router.register(
+    "clients", ClientCompanyViewSet, basename="company-clients"
 )
 
 payment_terms_router = routers.NestedSimpleRouter(
@@ -98,8 +115,19 @@ hscode_router = routers.NestedSimpleRouter(
 hscode_router.register("hscode", HsCodeBoxViewSet, basename="company-hscode")
 
 tax_router = routers.NestedSimpleRouter(router, "companies", lookup="company")
-tax_router.register("tax", TaxBoxViewSet, basename="company-tax")
+tax_router.register("tax", TaxViewSet, basename="company-tax")
 
+asset_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+asset_router.register("asset", AssetViewSet, basename="company-asset")
+
+assettransfer_router = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+assettransfer_router.register(
+    "asset-transfer", AssetTransferViewSet, basename="company-asset-transfer"
+)
 
 # company
 
@@ -196,6 +224,7 @@ companyproduct_router = routers.NestedSimpleRouter(
 companyproduct_router.register(
     "company-product", CompanyProductViewSet, basename="company-product"
 )
+
 
 companyorder_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
@@ -317,6 +346,8 @@ urlpatterns += [
     path("", include(packingbox_router.urls)),
     path("", include(hscode_router.urls)),
     path("", include(tax_router.urls)),
+    path("", include(asset_router.urls)),
+    path("", include(assettransfer_router.urls)),
     path("", include(contract_router.urls)),
     path("", include(contract_file_router.urls)),
     path("", include(credentail_router.urls)),

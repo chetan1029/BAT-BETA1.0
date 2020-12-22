@@ -55,6 +55,13 @@ class CompanyAdmin(AbstractUserRole):
         "archived_taxes": True,
         "restore_taxes": True,
         "delete_taxes": True,
+        # Company Asset
+        "view_asset": True,
+        "add_asset": True,
+        "change_asset": True,
+        "archived_asset": True,
+        "restore_asset": True,
+        "delete_asset": True,
         # Company HSCode
         "view_hscode": True,
         "add_hscode": True,
@@ -86,6 +93,13 @@ class CompanyAdmin(AbstractUserRole):
         "archived_company_credential": True,
         "restore_company_credential": True,
         "delete_company_credential": True,
+        # Mold
+        "view_mold": True,
+        "add_mold": True,
+        "change_mold": True,
+        "archived_mold": True,
+        "restore_mold": True,
+        "delete_mold": True,
         # Component ME
         "view_component_me": True,
         "add_component_me": True,
@@ -158,6 +172,13 @@ class CompanyAdmin(AbstractUserRole):
         "archived_order_payment": True,
         "restore_order_payment": True,
         "delete_order_payment": True,
+        # Company Type
+        "view_company_type": True,
+        "add_company_type": True,
+        "change_company_type": True,
+        "archived_company_type": True,
+        "restore_company_type": True,
+        "delete_company_type": True,
     }
 
 
