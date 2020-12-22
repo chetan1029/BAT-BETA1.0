@@ -69,6 +69,7 @@ class ProductVariationSerializer(serializers.ModelSerializer):
         many=True, read_only=False, required=False
     )
     images = ImageSerializer(many=True, read_only=True, required=False)
+    tags = TagField(required=False)
 
     class Meta:
         model = Product
@@ -81,7 +82,9 @@ class ProductVariationSerializer(serializers.ModelSerializer):
             "model_number",
             "manufacturer_part_number",
             "length",
+            "tags",
             "width",
+            "type",
             "depth",
             "length_unit",
             "weight",
@@ -104,6 +107,7 @@ class UpdateProductVariationSerializer(serializers.ModelSerializer):
     product_variation_options = ProductVariationOptionSerializer(
         many=True, read_only=True, required=False)
     images = ImageSerializer(many=True, read_only=True, required=False)
+    tags = TagField(required=False)
 
     class Meta:
         model = Product
@@ -118,6 +122,8 @@ class UpdateProductVariationSerializer(serializers.ModelSerializer):
             "length",
             "width",
             "depth",
+            "tags",
+            "type",
             "length_unit",
             "weight",
             "is_active",
@@ -135,6 +141,15 @@ class UpdateProductVariationSerializer(serializers.ModelSerializer):
             "product_variation_options"
             "images",
         )
+
+    def update(self, instance, validated_data):
+        data = validated_data.copy()
+        tags = data.pop("tags", None)
+        instance = super().update(instance, data)
+        if tags:
+            # set tags
+            instance.tags.set(*tags)
+        return instance
 
 
 class ProductSerializer(serializers.ModelSerializer):

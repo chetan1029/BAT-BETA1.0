@@ -120,36 +120,36 @@ class UniqueWithinCompanyMixin:
         Validate field value should be unique within company environment in a model.
         """
         errors = []
-        company = self.get_company
-        company_path = self.get_company_path
-        for field_name in self.unique_within_company:
-            f = self._meta.get_field(field_name)
-            lookup_value = getattr(self, f.attname)
-            if lookup_value:
-                kwargs = {company_path: company, field_name: lookup_value}
-                if self.id:
-                    if (
-                        self.__class__.objects.filter(**kwargs)
-                        .exclude(pk=self.id)
-                        .exists()
-                    ):
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-                else:
-                    if self.__class__.objects.filter(**kwargs).exists():
-                        detail = {
-                            field_name: self.velidation_within_company_messages.get(
-                                field_name, None
-                            )
-                        }
-                        errors.append(detail)
-        e = self.extra_clean()
-        if len(e) > 0:
-            errors.extend(e)
+        # company = self.get_company
+        # company_path = self.get_company_path
+        # for field_name in self.unique_within_company:
+        #     f = self._meta.get_field(field_name)
+        #     lookup_value = getattr(self, f.attname)
+        #     if lookup_value:
+        #         kwargs = {company_path: company, field_name: lookup_value}
+        #         if self.id:
+        #             if (
+        #                 self.__class__.objects.filter(**kwargs)
+        #                 .exclude(pk=self.id)
+        #                 .exists()
+        #             ):
+        #                 detail = {
+        #                     field_name: self.velidation_within_company_messages.get(
+        #                         field_name, None
+        #                     )
+        #                 }
+        #                 errors.append(detail)
+        #         else:
+        #             if self.__class__.objects.filter(**kwargs).exists():
+        #                 detail = {
+        #                     field_name: self.velidation_within_company_messages.get(
+        #                         field_name, None
+        #                     )
+        #                 }
+        #                 errors.append(detail)
+        # e = self.extra_clean()
+        # if len(e) > 0:
+        #     errors.extend(e)
         if errors:
             raise ValidationError(errors)
 
@@ -332,7 +332,7 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
     def has_discontinued_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "change_product")
-    
+
     def has_object_discontinued_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "change_product")
@@ -352,6 +352,10 @@ class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Mod
     title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
     ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
+    type = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Product Type")
+    )
+    tags = TaggableManager(blank=True)
     model_number = models.CharField(
         max_length=200, blank=True, verbose_name=_("Model Number")
     )
