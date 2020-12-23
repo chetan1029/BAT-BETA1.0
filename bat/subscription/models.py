@@ -94,7 +94,6 @@ class Plan(models.Model):
         """
         if current is None:
             current = timezone.now
-            print("\ncurrent : ", current, "\n")
 
         if self.recurrence_unit == constants.RECURRENCE_UNIT_SECOND:
             delta = timedelta(seconds=self.recurrence_period)

@@ -1,7 +1,11 @@
-from rolepermissions.roles import get_user_roles
-
+from django.utils import timezone
+from rolepermissions.roles import get_user_roles, RolesManager
+from rolepermissions.permissions import revoke_permission, grant_permission
+from rolepermissions.checkers import has_permission
 from bat.company.models import Company, Member
 from bat.subscription.models import Plan, Subscription
+from bat.setting.utils import get_status
+from bat.subscription.constants import PARENT_SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_ACTIVE
 
 
 def set_subscription_plan_on_company(plan, company):
@@ -13,14 +17,31 @@ def set_subscription_plan_on_company(plan, company):
         for member in members:
             roles = get_user_roles(member)
             for role in roles:
-                permission_list_for_this_role = permission_list.get(role, None)
-                pass
+                permission_list_for_this_role = permission_list.get(
+                    role.get_name(), None)
+                for perm in role.permission_names_list():
+                    if perm not in permission_list_for_this_role:
+                        revoke_permission(member, perm)
+                    if perm in permission_list_for_this_role and not has_permission(member, perm):
+                        grant_permission(member, perm)
+
+    def _create_subscription(company, plan):
+        current = timezone.now()
+        data = {}
+        data["company"] = company
+        data["plan"] = plan
+        data["billing_start_date"] = current
+        data["billing_end_date"] = current
+        data["last_billing_date"] = current
+        data["next_billing_date"] = current
+        data["status"] = get_status(
+            PARENT_SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_ACTIVE)
+        Subscription.objects.create(**data)
 
     if isinstance(company, Company) and isinstance(plan, Plan):
         permission_list = plan.permission_list
-        print("\n\npermission_list :", permission_list,
-              "\n\npermission_list type:", type(permission_list))
         _assign_permissions_to_all_members(company, permission_list)
+        _create_subscription(company, plan)
 
 
 def set_default_subscription_plan_on_company(company):
