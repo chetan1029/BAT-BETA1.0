@@ -116,6 +116,7 @@ LOCAL_APPS = [
     "bat.setting.apps.SettingConfig",
     "bat.product.apps.ProductConfig",
     "bat.comments.apps.CommentsConfig",
+    "bat.subscription.apps.SubscriptionConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
