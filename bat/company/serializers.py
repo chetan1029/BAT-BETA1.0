@@ -314,9 +314,9 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
             if founded_data.exists():
                 raise serializers.ValidationError(
                     {
-                        "detail": _("Item with same data exixts."),
+                        "detail": _("Item with same data exixts"),
                         "existing_items": list(
-                            founded_data.values_list("id", flat=True)
+                            founded_data.values()
                         ),
                     }
                 )
