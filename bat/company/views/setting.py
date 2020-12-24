@@ -38,6 +38,7 @@ from bat.company.utils import get_member, set_default_company_payment_terms
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 from bat.setting.models import Category
 from bat.users.serializers import InvitationSerializer
+from bat.subscription.utils import set_default_subscription_plan_on_company
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -81,6 +82,8 @@ class CompanyViewSet(
                 assign_role(member, member.extra_data["user_role"])
 
             set_default_company_payment_terms(company=company)
+            if not company.companytype_company.exists():
+                set_default_subscription_plan_on_company(company=company)
 
             if self.request.user.extra_data["step"] == 1:
                 self.request.user.extra_data["step"] = 2
