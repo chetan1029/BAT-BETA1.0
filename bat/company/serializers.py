@@ -291,11 +291,11 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         query_data = self.get_query_data(data)
         if pk:
             founded_data = ModelClass.objects.filter(
-                is_active=False, company__id=company_id, **query_data
+                company__id=company_id, **query_data
             ).exclude(pk=pk)
         else:
             founded_data = ModelClass.objects.filter(
-                is_active=False, company__id=company_id, **query_data
+                company__id=company_id, **query_data
             )
 
         return founded_data
@@ -304,7 +304,7 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
         force_create = data.pop("force_create", False)
         data = super().validate(data)
         kwargs = self.context["request"].resolver_match.kwargs
-        if not force_create:
+        if not force_create and not kwargs.get("pk", None):
             founded_data = self.find_similar_objects(
                 user=self.context["request"].user,
                 company_id=kwargs.get("company_pk", None),
