@@ -40,10 +40,35 @@ def process_invitations(sender, instance, **kwargs):
             if invitation.extra_data["type"] == "Vendor Invitation":
                 vendor_name = company_detail["vendor_name"]
                 vendor_type = company_detail["vendor_type"]
-                vendor = Company(name=vendor_name, email=invitation.email)
-                vendor.save()
+
+                member = Member.objects.filter(
+                    user=instance,
+                    is_admin=True
+                ).first()
+
+                if member:
+                    vendor = member.company
+                else:
+                    vendor = Company.objects.create(name=vendor_name, email=invitation.email)
+
+                    member, _c = Member.objects.get_or_create(
+                        job_title=job_title,
+                        user=instance,
+                        company=vendor,
+                        invited_by=invitation.inviter,
+                        is_admin=True,
+                        is_active=True,
+                        invitation_accepted=True,
+                    )
+
+                    assign_role(member, role)
+                    role_obj = RolesManager.retrieve_role(role)
+                    # remove unneccesary permissions
+                    for perm in role_obj.permission_names_list():
+                        if perm not in perms:
+                            revoke_permission(member, perm)
                 
-                companytype = CompanyType.objects.create(
+                companytype, _cc = CompanyType.objects.get_or_create(
                     partner=vendor,
                     company_id=company_id,
                     category_id=vendor_type.get("id", None),
@@ -57,16 +82,6 @@ def process_invitations(sender, instance, **kwargs):
                         CompanyType.objects.create(
                             partner_id=company_id, company=vendor, category_id=partner_category)
 
-
-                member, _c = Member.objects.get_or_create(
-                    job_title=job_title,
-                    user=instance,
-                    company=vendor,
-                    invited_by=invitation.inviter,
-                    is_admin=True,
-                    is_active=True,
-                    invitation_accepted=True,
-                )
             else:
                 member, _c = Member.objects.get_or_create(
                     job_title=job_title,
@@ -78,12 +93,12 @@ def process_invitations(sender, instance, **kwargs):
                     invitation_accepted=True,
                 )
 
-            assign_role(member, role)
-            role_obj = RolesManager.retrieve_role(role)
-            # remove unneccesary permissions
-            for perm in role_obj.permission_names_list():
-                if perm not in perms:
-                    revoke_permission(member, perm)
+                assign_role(member, role)
+                role_obj = RolesManager.retrieve_role(role)
+                # remove unneccesary permissions
+                for perm in role_obj.permission_names_list():
+                    if perm not in perms:
+                        revoke_permission(member, perm)
 
             notify.send(
                 instance,
