@@ -228,8 +228,15 @@ class ProductSerializer(serializers.ModelSerializer):
                 product_variation_options = product.get(
                     "product_variation_options", None)
                 product.pop("product_variation_options", None)
+
+                tags = product.pop("tags", None)
+
                 new_product = Product.objects.create(
                     productparent=product_parent, **product)
+
+                if tags:
+                    # set tags
+                    new_product.tags.set(*tags)
                 # save options
                 for variation_option in product_variation_options or []:
                     name = variation_option.get(
