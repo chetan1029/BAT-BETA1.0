@@ -106,8 +106,8 @@ THIRD_PARTY_APPS = [
     "modeltranslation",
     "health_check",
     "health_check.db",
-    'health_check.cache',
-    'health_check.storage',
+    "health_check.cache",
+    "health_check.storage",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -322,7 +322,7 @@ ACCOUNT_ALLOW_REGISTRATION = env.bool(
     "DJANGO_ACCOUNT_ALLOW_REGISTRATION", True
 )
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_AUTHENTICATION_METHOD = "username"
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_EMAIL_REQUIRED = True
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
@@ -363,7 +363,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 REST_AUTH_SERIALIZERS = {
     "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer",
-    "PASSWORD_RESET_SERIALIZER": "bat.users.serializers.PasswordSerializer"
+    "PASSWORD_RESET_SERIALIZER": "bat.users.serializers.PasswordSerializer",
 }
 
 # jwt
@@ -404,17 +404,13 @@ DEFAULT_FROM_EMAIL = env(
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS").split(",")
 
 SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header'
-        }
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
     },
-    'USE_SESSION_AUTH': DEBUG
+    "USE_SESSION_AUTH": DEBUG,
 }
 
-FORGET_PASSWORD_PAGE_LINK = env("FORGET_PASSWORD_PAGE_LINK", default='')
+FORGET_PASSWORD_PAGE_LINK = env("FORGET_PASSWORD_PAGE_LINK", default="")
 INVITE_LINK = env("INVITE_LINK", default="")
 EXISTING_INVITE_LINK = env("EXISTING_INVITE_LINK", default="")
 
