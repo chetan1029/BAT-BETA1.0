@@ -23,7 +23,7 @@ from bat.company.models import HsCode
 from bat.setting.utils import get_status
 from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.globalutils.utils import get_status_object
-
+from django.utils.crypto import get_random_string
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -173,6 +173,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "series",
             "hscode",
             "sku",
+            "model_number",
             "bullet_points",
             "description",
             "tags",
@@ -207,6 +208,7 @@ class ProductSerializer(serializers.ModelSerializer):
         )
         data = validated_data.copy()
         data['status'] = get_status_object(validated_data)
+        data['model_number'] = get_random_string(length=10).upper()
         with transaction.atomic():
             hscode = data.get("hscode", None)
             if hscode:

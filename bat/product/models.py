@@ -231,6 +231,9 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
         max_length=200, blank=True, verbose_name=_("Product HsCode")
     )
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
+    model_number = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Model Number")
+    )
     bullet_points = models.TextField(blank=True)
     description = models.TextField(blank=True)
     tags = TaggableManager(blank=True)
