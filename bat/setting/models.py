@@ -7,6 +7,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django_countries.fields import CountryField
+from djmoney.models.fields import MoneyField
 from mptt.models import MPTTModel, TreeForeignKey
 
 from bat.setting.constants import *
@@ -17,6 +19,7 @@ User = get_user_model()
 class CategoryManager(models.Manager):
     def vendor_categories(self):
         return self.filter(is_vendor_category=True)
+
     def sales_channel_categories(self):
         return self.filter(is_sales_channel_category=True)
 
@@ -44,9 +47,11 @@ class Category(MPTTModel):
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
     is_vendor_category = models.BooleanField(
-        _("Is Vendor Category?"), default=False)
+        _("Is Vendor Category?"), default=False
+    )
     is_sales_channel_category = models.BooleanField(
-        _("Is Sales Channel Category?"), default=False)
+        _("Is Sales Channel Category?"), default=False
+    )
     extra_data = HStoreField(null=True, blank=True)
 
     objects = CategoryManager()
@@ -113,7 +118,7 @@ class Status(MPTTModel):
 
         unique_together = (("name", "parent"),)
         ordering = ["name"]
-        verbose_name_plural = _("Statuses")
+        verbose_name_plural = _("Status")
 
     @property
     def full_path(self):
@@ -240,3 +245,65 @@ class DeliveryTerms(models.Model):
             + " - Paid by "
             + str(self.who_pays)
         )
+
+
+class LogisticLeadTime(models.Model):
+    """
+    Logistic Lead Time Model.
+
+    Model to store overall data for Logistic services.
+    """
+
+    title = models.CharField(
+        max_length=200,
+        unique=True,
+        blank=True,
+        verbose_name=_("Logistic Title"),
+    )
+    from_country = CountryField()
+    to_country = CountryField()
+    ship_type = models.CharField(
+        max_length=20, choices=SHIP_TYPE, verbose_name=_("Shipment type")
+    )
+    shipping_time = models.PositiveIntegerField(
+        verbose_name=_("Shipping time (in days)")
+    )
+    misc_time = models.PositiveIntegerField(
+        verbose_name=_("Misc time (in days)")
+    )
+    estimated_avg_rate = MoneyField(
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        verbose_name="Estimated Shipment Avg rate",
+    )
+    rate_type = models.CharField(
+        max_length=20,
+        choices=SHIPRATE_TYPE,
+        verbose_name=_("Shipment Rate type"),
+    )
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    is_active = models.BooleanField(default=True)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Logistic Lead Time")
+
+    def save(self, *args, **kwargs):
+        """Pre save."""
+        self.title = (
+            str(self.ship_type)
+            + " shipment from "
+            + str(self.from_country.name)
+            + " to "
+            + str(self.to_country.name)
+        )
+        super(LogisticLeadTime, self).save(*args, **kwargs)
+
+    def __str__(self):
+        """Return Value."""
+        return self.title

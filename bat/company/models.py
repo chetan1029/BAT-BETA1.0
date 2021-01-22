@@ -50,7 +50,9 @@ def get_member_from_request(request):
     # member = get_object_or_404(
     #     Member, company__id=company_pk, user=request.user.id
     # )
-    member = Member.objects.filter(company__id=company_pk, user=request.user.id).first()
+    member = Member.objects.filter(
+        company__id=company_pk, user=request.user.id
+    ).first()
     return member
 
 
@@ -314,7 +316,6 @@ class CompanyType(models.Model):
         """
         self.is_active = True
         self.save()
-
 
     class Meta:
         """Meta Class."""

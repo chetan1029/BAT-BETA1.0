@@ -1,8 +1,13 @@
 from rest_framework import serializers
 
-from bat.setting.models import Category, DeliveryTermName, DeliveryTerms, Status
-
 from bat.serializersFields.serializers_fields import get_status_json
+from bat.setting.models import (
+    Category,
+    DeliveryTermName,
+    DeliveryTerms,
+    LogisticLeadTime,
+    Status,
+)
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -15,10 +20,10 @@ class StatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         """Define field that we wanna show in the Json."""
+
         model = Status
         fields = ("id", "name", "parent", "user", "is_active")
         read_only_fields = ("id", "name", "parent", "user", "is_active")
-
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -69,3 +74,24 @@ class DeliveryTermNameSerializer(serializers.ModelSerializer):
             "deliveryterms",
         )
         read_only_fields = ("id", "is_active", "deliveryterms")
+
+
+class LogisticLeadTimeSerializer(serializers.ModelSerializer):
+    """Logistic Lead Time serializer."""
+
+    class Meta:
+        model = LogisticLeadTime
+        fields = (
+            "id",
+            "title",
+            "from_country",
+            "to_country",
+            "ship_type",
+            "shipping_time",
+            "misc_time",
+            "estimated_avg_rate",
+            "rate_type",
+            "is_active",
+            "extra_data",
+        )
+        read_only_fields = ("id", "title", "is_active")
