@@ -8,10 +8,7 @@ from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey,
-    GenericRelation,
-)
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -1330,6 +1327,11 @@ class Asset(models.Model):
         return has_permission(member, "view_asset")
 
     def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset")
+
+    @staticmethod
+    def has_get_types_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_asset")
 

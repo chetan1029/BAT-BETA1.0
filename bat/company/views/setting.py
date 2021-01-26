@@ -37,8 +37,8 @@ from bat.company.models import (
 from bat.company.utils import get_member, set_default_company_payment_terms
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 from bat.setting.models import Category
-from bat.users.serializers import InvitationSerializer
 from bat.subscription.utils import set_default_subscription_plan_on_company
+from bat.users.serializers import InvitationSerializer
 
 Invitation = get_invitation_model()
 User = get_user_model()
@@ -532,6 +532,20 @@ class AssetViewSet(CompanySettingBaseViewSet):
     archive_message = _("Asset is archived")
     restore_message = _("Asset is restored")
 
+    @action(detail=False, methods=["GET"], url_path="types")
+    def get_types(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        types = (
+            queryset.exclude(type__exact="")
+            .exclude(type__isnull=True)
+            .distinct("type")
+            .values_list("type", flat=True)
+            .order_by("type")
+        )
+        data = {}
+        data["type_data"] = types
+        return Response(data, status=status.HTTP_200_OK)
+
 
 # Asset Transfer
 class AssetTransferViewSet(
@@ -630,9 +644,7 @@ class VendorCompanyViewSet(
 
 
 class SalesChannelCompanyViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
     queryset = Company.objects.all()
     serializer_class = serializers.VendorCompanySerializer

@@ -47,13 +47,9 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import (
-    get_list_of_permissions,
-    get_list_of_roles,
-    get_member,
-)
+from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, get_status_object, set_field_errors
-from bat.product.constants import PRODUCT_STATUS_DRAFT, PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT
+from bat.product.constants import PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import (
     CountrySerializerField,
     MoneySerializerField,
@@ -132,8 +128,9 @@ class CompanySerializer(serializers.ModelSerializer):
 
     def get_roles(self, obj):
         user_id = self.context.get("user_id", None)
-        member = get_member(company_id=obj.id,
-                            user_id=user_id, raise_exception=False)
+        member = get_member(
+            company_id=obj.id, user_id=user_id, raise_exception=False
+        )
         roles = get_user_roles(member) if member else []
         return [role.get_name() for role in roles]
 
@@ -200,7 +197,8 @@ class InvitationDataSerializer(serializers.Serializer):
 
         if user.email == email:
             raise serializers.ValidationError(
-                {"detail": _("You can not invite yourself")})
+                {"detail": _("You can not invite yourself")}
+            )
 
         errors = {}
         if (
@@ -314,10 +312,8 @@ class ReversionSerializerMixin(serializers.ModelSerializer):
             if founded_data.exists():
                 raise serializers.ValidationError(
                     {
-                        "detail": _("Item with same data exixts"),
-                        "existing_items": list(
-                            founded_data.values()
-                        ),
+                        "detail": _("Item with same data exists"),
+                        "existing_items": list(founded_data.values()),
                     }
                 )
         return data
@@ -601,6 +597,8 @@ class TaxSerializer(ReversionSerializerMixin):
 
 class AssetSerializer(ReversionSerializerMixin):
     """Serializer for Asset."""
+
+    current_location = LocationSerializer()
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -1096,16 +1094,19 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
         """
         company_id = self.context.get("company_id", None)
         member = get_member(
-            company_id=company_id,
-            user_id=self.context.get("user_id", None),
+            company_id=company_id, user_id=self.context.get("user_id", None)
         )
         companytype = attrs.get("companytype", None)
         orderproducts = attrs.get("orderproducts", [])
         errors = {}
-        discontinued_products_id = list(CompanyProduct.objects.filter(
-            product__productparent__status_id=get_status(
-                PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DISCONTINUED).id,
-            companytype__company_id=company_id).values_list("id", flat=True))
+        discontinued_products_id = list(
+            CompanyProduct.objects.filter(
+                product__productparent__status_id=get_status(
+                    PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DISCONTINUED
+                ).id,
+                companytype__company_id=company_id,
+            ).values_list("id", flat=True)
+        )
         if companytype:
             if str(companytype.company.id) != str(company_id):
                 errors = set_field_errors(
@@ -1116,9 +1117,19 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"orderproducts": msg})
         else:
             for orderproduct in orderproducts:
-                if orderproduct["companyproduct"].id in discontinued_products_id:
-                    errors = set_field_errors(errors, "orderproducts", _(
-                        "Selected product " + str(orderproduct["companyproduct"].id) + " is discontinued."))
+                if (
+                    orderproduct["companyproduct"].id
+                    in discontinued_products_id
+                ):
+                    errors = set_field_errors(
+                        errors,
+                        "orderproducts",
+                        _(
+                            "Selected product "
+                            + str(orderproduct["companyproduct"].id)
+                            + " is discontinued."
+                        ),
+                    )
         if errors:
             raise serializers.ValidationError(errors)
 
@@ -1826,7 +1837,7 @@ class CreateVendorCompanySerializer(VendorCompanySerializer):
 
 
 class PartnerCompanySerializer(serializers.ModelSerializer):
-    details = CompanySerializer(source='partner', read_only=True)
+    details = CompanySerializer(source="partner", read_only=True)
     company_type = serializers.SerializerMethodField()
 
     def get_company_type(self, obj):
@@ -1834,11 +1845,5 @@ class PartnerCompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyType
-        fields = (
-            "id",
-            "company_type",
-            "create_date",
-            "details",
-            "is_active",
-        )
+        fields = ("id", "company_type", "create_date", "details", "is_active")
         read_only_fields = ("id", "is_active", "extra_data", "create_date")
