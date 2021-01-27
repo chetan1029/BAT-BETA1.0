@@ -1,11 +1,16 @@
-
-from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.utils.crypto import get_random_string
+from django.utils.translation import ugettext_lazy as _
 from djmoney.contrib.django_rest_framework import MoneyField
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
+from bat.company.models import HsCode, PackingBox
 from bat.company.serializers import PackingBoxSerializer
-from bat.globalutils.utils import set_field_errors
+from bat.company.utils import get_member
+from bat.globalutils.utils import get_status_object, set_field_errors
+from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.product.models import (
     Image,
     Product,
@@ -17,13 +22,14 @@ from bat.product.models import (
     ProductVariationOption,
 )
 from bat.serializersFields.serializers_fields import (
-    CountrySerializerField, WeightField, TagField, MoneySerializerField, StatusField)
-from bat.company.utils import get_member
-from bat.company.models import HsCode
+    CountrySerializerField,
+    MoneySerializerField,
+    StatusField,
+    TagField,
+    WeightField,
+)
 from bat.setting.utils import get_status
-from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.globalutils.utils import get_status_object
-from django.utils.crypto import get_random_string
+
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -105,7 +111,8 @@ class ProductVariationSerializer(serializers.ModelSerializer):
 class UpdateProductVariationSerializer(serializers.ModelSerializer):
     weight = WeightField(required=False)
     product_variation_options = ProductVariationOptionSerializer(
-        many=True, read_only=True, required=False)
+        many=True, read_only=True, required=False
+    )
     images = ImageSerializer(many=True, read_only=True, required=False)
     tags = TagField(required=False)
 
@@ -138,8 +145,7 @@ class UpdateProductVariationSerializer(serializers.ModelSerializer):
             "extra_data",
             "model_number",
             "manufacturer_part_number",
-            "product_variation_options"
-            "images",
+            "product_variation_options" "images",
         )
 
     def update(self, instance, validated_data):
@@ -199,16 +205,16 @@ class ProductSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
-        '''
+        """
         save product parent with all children products and related objects.
-        '''
+        """
         member = get_member(
             company_id=self.context.get("company_id", None),
             user_id=self.context.get("user_id", None),
         )
         data = validated_data.copy()
-        data['status'] = get_status_object(validated_data)
-        data['model_number'] = get_random_string(length=10).upper()
+        data["status"] = get_status_object(validated_data)
+        data["model_number"] = get_random_string(length=10).upper()
         with transaction.atomic():
             hscode = data.get("hscode", None)
             if hscode:
@@ -221,30 +227,35 @@ class ProductSerializer(serializers.ModelSerializer):
             products = data.get("products", None)
             data.pop("products")
             product_parent = ProductParent.objects.create(
-                company=member.company, **data)
+                company=member.company, **data
+            )
             if tags:
                 # set tags
                 product_parent.tags.set(*tags)
             # save variations
             for product in products or []:
                 product_variation_options = product.get(
-                    "product_variation_options", None)
+                    "product_variation_options", None
+                )
                 product.pop("product_variation_options", None)
 
                 tags = product.pop("tags", None)
 
                 new_product = Product.objects.create(
-                    productparent=product_parent, **product)
+                    productparent=product_parent, **product
+                )
 
                 if tags:
                     # set tags
                     new_product.tags.set(*tags)
                 # save options
                 for variation_option in product_variation_options or []:
-                    name = variation_option.get(
-                        "productoption", None).get("name", None)
-                    value = variation_option.get(
-                        "productoption", None).get("value", None)
+                    name = variation_option.get("productoption", None).get(
+                        "name", None
+                    )
+                    value = variation_option.get("productoption", None).get(
+                        "value", None
+                    )
                     if name and value:
                         productoption, _c = ProductOption.objects.get_or_create(
                             name=name,
@@ -252,8 +263,7 @@ class ProductSerializer(serializers.ModelSerializer):
                             productparent=product_parent,
                         )
                         ProductVariationOption.objects.create(
-                            product=new_product,
-                            productoption=productoption,
+                            product=new_product, productoption=productoption
                         )
         return product_parent
 
@@ -363,9 +373,28 @@ class ProductRrpSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
 
+class PackingBoxSerializerField(serializers.Field):
+    def to_representation(self, value):
+        """
+        give json of PackingBox .
+        """
+        if isinstance(value, PackingBox):
+            return PackingBoxSerializer(value).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = PackingBox.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {"current_location": _(f"{data} is not a valid location.")}
+            )
+
+
 class ProductPackingBoxSerializer(serializers.ModelSerializer):
     weight = WeightField()
-    packingbox = PackingBoxSerializer()
+    packingbox = PackingBoxSerializerField()
 
     class Meta:
         model = ProductPackingBox

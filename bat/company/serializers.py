@@ -6,9 +6,9 @@ from allauth.account.utils import setup_user_email
 from allauth.utils import email_address_exists, get_username_max_length
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Sum
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 from djmoney.contrib.django_rest_framework import MoneyField
 from djmoney.money import Money
@@ -601,7 +601,6 @@ class TaxSerializer(ReversionSerializerMixin):
 
 
 class LocationSerializerField(serializers.Field):
-
     def to_representation(self, value):
         """
         give json of Location .
@@ -616,14 +615,15 @@ class LocationSerializerField(serializers.Field):
             return obj
         except ObjectDoesNotExist:
             raise ValidationError(
-                {"current_location": _(f"{data} is not a valid location.")})
+                {"current_location": _(f"{data} is not a valid location.")}
+            )
 
 
-class AssetSerializer(ReversionSerializerMixin):
+class AssetSerializer(serializers.ModelSerializer):
     """Serializer for Asset."""
 
-    # current_location = LocationSerializer(read_only=True)
     current_location = LocationSerializerField()
+    price = MoneySerializerField()
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -642,7 +642,6 @@ class AssetSerializer(ReversionSerializerMixin):
             "current_location",
             "is_active",
             "extra_data",
-            "force_create",
         )
         read_only_fields = (
             "id",
@@ -654,8 +653,11 @@ class AssetSerializer(ReversionSerializerMixin):
         )
 
 
-class AssetTransferSerializer(ReversionSerializerMixin):
+class AssetTransferSerializer(serializers.ModelSerializer):
     """Serializer for Asset Transfer."""
+
+    from_location = LocationSerializerField()
+    to_location = LocationSerializerField()
 
     class Meta:
         """Define field that we wanna show in the Json."""
@@ -670,7 +672,6 @@ class AssetTransferSerializer(ReversionSerializerMixin):
             "receipt",
             "note",
             "date",
-            "receipt",
             "create_date",
             "update_date",
         )
@@ -1218,7 +1219,7 @@ class CompanyOrderSerializer(serializers.ModelSerializer):
                     price=Money(componentprice_obj.price.amount, currency),
                     amount=Money(amount, currency),
                     remaining_quantity=product_quantity,
-                    **orderproduct
+                    **orderproduct,
                 )
             companyorder.sub_amount = Money(total_amount, currency)
             companyorder.total_amount = Money(total_amount, currency)
@@ -1363,7 +1364,7 @@ class CompanyOrderDeliverySerializer(serializers.ModelSerializer):
                     companyorderdelivery=companyorderdelivery,
                     amount=Money(amount, currency),
                     quantity=orderproduct_quantity,
-                    **orderdeliveryproduct
+                    **orderdeliveryproduct,
                 )
             companyorderdelivery.amount = Money(total_amount, currency)
             companyorderdelivery.quantity = quantity
