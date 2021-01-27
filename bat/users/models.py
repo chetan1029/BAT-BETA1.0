@@ -27,6 +27,12 @@ def profilepic_name(instance, filename):
     return "user/images/{0}.{1}".format(instance.username, extension)
 
 
+def por_file_name(instance, filename):
+    """Change name of POR file."""
+    name, extension = os.path.splitext(filename)
+    return "user/por/{0}.{1}".format(instance.username, extension)
+
+
 class User(AbstractUser):
     """
     Extending User class to User Profile.
@@ -50,13 +56,16 @@ class User(AbstractUser):
         max_length=50,
         verbose_name=_("Language"),
         choices=settings.LANGUAGES,
-        default='en',
+        default="en",
     )
     timezone = CharField(
         max_length=50,
         verbose_name=_("Time Zone"),
         choices=[(x, x) for x in pytz.common_timezones],
         default=settings.TIME_ZONE,
+    )
+    por_file = models.FileField(
+        upload_to=por_file_name, blank=True, verbose_name=_("File")
     )
     extra_data = HStoreField(null=True, blank=True)
 
@@ -155,10 +164,17 @@ class InvitationDetail(AbstractBaseInvitation):
         invite_url_root = settings.INVITE_LINK + "?"
 
         if existing_user:
-            invite_url_root = (settings.EXISTING_INVITE_LINK + "?") if extra_data and extra_data.get(
-                'type') == 'Member Invitation' else settings.VENDOR_EXISTING_INVITE_LINK + str(self.company_detail['company_id']) + '?selectedView=invitations'
+            invite_url_root = (
+                (settings.EXISTING_INVITE_LINK + "?")
+                if extra_data and extra_data.get("type") == "Member Invitation"
+                else settings.VENDOR_EXISTING_INVITE_LINK
+                + str(self.company_detail["company_id"])
+                + "?selectedView=invitations"
+            )
 
-        invite_url = invite_url_root + "&inviteKey=" + self.key + "&e=" + self.email
+        invite_url = (
+            invite_url_root + "&inviteKey=" + self.key + "&e=" + self.email
+        )
 
         ctx = kwargs
         ctx.update(

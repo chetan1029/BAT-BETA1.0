@@ -1,15 +1,13 @@
 from decimal import Decimal
 
 from django.utils.translation import ugettext_lazy as _
-
-from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import Field, ChoiceField, JSONField
-
 from django_countries import countries
-from measurement.measures import Weight
 from djmoney.money import Money
-from drf_yasg2.utils import swagger_auto_schema
 from drf_yasg2 import openapi
+from drf_yasg2.utils import swagger_auto_schema
+from measurement.measures import Weight
+from rest_framework.exceptions import ValidationError
+from rest_framework.serializers import ChoiceField, Field, JSONField
 
 from bat.company import constants
 from bat.globalconstants.constants import CURRENCY_CODE_CHOICES
@@ -23,55 +21,45 @@ class WeightField(JSONField):
             "title": "Weight",
             "properties": {
                 "value": openapi.Schema(
-                    title="value",
-                    type=openapi.TYPE_NUMBER,
+                    title="value", type=openapi.TYPE_NUMBER
                 ),
-                "unit": openapi.Schema(
-                    title="unit",
-                    type=openapi.TYPE_STRING,
-                ),
+                "unit": openapi.Schema(title="unit", type=openapi.TYPE_STRING),
             },
             "required": ["value", "unit"],
         }
 
     def to_representation(self, value):
-        '''
+        """
         represent weight object to json data
-        '''
+        """
         if not isinstance(value, Weight):
             return value
         ret = {"value": value.value, "unit": value.unit}
         return ret
 
     def to_internal_value(self, data):
-        '''
+        """
         generate weight object from json data
-        '''
+        """
         if not isinstance(data, dict):
-            raise ValidationError(
-                "%s is not a valid %s" % (data, "format")
-            )
+            raise ValidationError("%s is not a valid %s" % (data, "format"))
         value = data.get("value", None)
         unit = data.get("unit", None)
         if value is None:
-            raise ValidationError(
-                {"value": _("value is required")})
+            raise ValidationError({"value": _("value is required")})
         try:
             Decimal(value)
         except Exception:
-            raise ValidationError(
-                {"value": _("value is not a valid decimal")})
+            raise ValidationError({"value": _("value is not a valid decimal")})
 
         if unit is None:
-            raise ValidationError(
-                {"unit": _("unit is required")})
+            raise ValidationError({"unit": _("unit is required")})
 
         kwargs = {unit: value}
         if unit in constants.WEIGHT_UNIT_TYPE_LIST:
             return Weight(**kwargs)
         else:
-            raise ValidationError(
-                {"unit": _(f"{unit} is not a valid unit")})
+            raise ValidationError({"unit": _(f"{unit} is not a valid unit")})
 
 
 class CountrySerializerField(ChoiceField):
@@ -105,99 +93,102 @@ class TagField(Field):
 
 
 class MoneySerializerField(JSONField):
-
     class Meta:
         swagger_schema_fields = {
             "type": openapi.TYPE_OBJECT,
             "title": "Money",
             "properties": {
                 "amount": openapi.Schema(
-                    title="amount",
-                    type=openapi.TYPE_NUMBER,
+                    title="amount", type=openapi.TYPE_NUMBER
                 ),
                 "currency": openapi.Schema(
-                    title="currency",
-                    type=openapi.TYPE_STRING,
+                    title="currency", type=openapi.TYPE_STRING
                 ),
             },
             "required": ["amount", "currency"],
         }
 
     def to_representation(self, value):
-        '''
+        """
         represent money object to json data
-        '''
+        """
         if not isinstance(value, Money):
             return value
         ret = {"amount": value.amount, "currency": value.currency.code}
         return ret
 
     def to_internal_value(self, data):
-        '''
+        """
         generate money object from json data
-        '''
+        """
         if not isinstance(data, dict):
-            raise ValidationError(
-                "%s is not a valid %s" % (data, "format")
-            )
+            raise ValidationError("%s is not a valid %s" % (data, "format"))
         amount = data.get("amount", None)
         currency = data.get("currency", None)
         if amount is None:
-            raise ValidationError(
-                {"amount": _("amount is required")})
+            raise ValidationError({"amount": _("amount is required")})
         try:
             Decimal(amount)
         except Exception:
             raise ValidationError(
-                {"amount": _("amount is not a valid decimal")})
+                {"amount": _("amount is not a valid decimal")}
+            )
 
         if currency is None:
-            raise ValidationError(
-                {"currency": _("currency is required")})
+            raise ValidationError({"currency": _("currency is required")})
 
         if currency in CURRENCY_CODE_CHOICES:
             return Money(amount, currency)
         else:
             raise ValidationError(
-                {"currency": _(f"{currency} is not a valid currency")})
+                {"currency": _(f"{currency} is not a valid currency")}
+            )
 
 
 class QueryFieldsMixin(object):
 
     # If using Django filters in the API, these labels mustn't conflict with any model field names.
-    include_arg_name = 'fields'
-    exclude_arg_name = 'fields!'
+    include_arg_name = "fields"
+    exclude_arg_name = "fields!"
 
     # Split field names by this string.  It doesn't necessarily have to be a single character.
     # Avoid RFC 1738 reserved characters i.e. ';', '/', '?', ':', '@', '=' and '&'
-    delimiter = ','
+    delimiter = ","
 
     def __init__(self, *args, **kwargs):
         super(QueryFieldsMixin, self).__init__(*args, **kwargs)
 
         try:
-            request = self.context['request']
+            request = self.context["request"]
             method = request.method
         except (AttributeError, TypeError, KeyError):
             # The serializer was not initialized with request context.
             return
 
-        if method != 'GET':
+        if method != "GET":
             return
 
         try:
             query_params = request.query_params
         except AttributeError:
             # DRF 2
-            query_params = getattr(request, 'QUERY_PARAMS', request.GET)
+            query_params = getattr(request, "QUERY_PARAMS", request.GET)
 
         includes = query_params.getlist(self.include_arg_name)
         include_field_names = {
-            name for names in includes for name in names.split(self.delimiter) if name}
+            name
+            for names in includes
+            for name in names.split(self.delimiter)
+            if name
+        }
 
         excludes = query_params.getlist(self.exclude_arg_name)
         exclude_field_names = {
-            name for names in excludes for name in names.split(self.delimiter) if name}
+            name
+            for names in excludes
+            for name in names.split(self.delimiter)
+            if name
+        }
 
         if not include_field_names and not exclude_field_names:
             # No user fields filtering was requested, we have nothing to do here.
@@ -215,16 +206,18 @@ class QueryFieldsMixin(object):
 
 def get_status_json(obj):
     if obj.parent:
-        json_status = {"id": obj.id,
-                       "name": obj.name, "user": obj.user.id, "parent": get_status_json(obj.parent)}
+        json_status = {
+            "id": obj.id,
+            "name": obj.name,
+            "user": obj.user.id,
+            "parent": get_status_json(obj.parent),
+        }
     else:
-        json_status = {"id": obj.id,
-                       "name": obj.name, "user": obj.user.id}
+        json_status = {"id": obj.id, "name": obj.name, "user": obj.user.id}
     return json_status
 
 
 class StatusField(ChoiceField):
-
     def __init__(self, **kwargs):
         choices = list(PRODUCT_STATUS_CHOICE)
         super().__init__(choices=choices, **kwargs)
