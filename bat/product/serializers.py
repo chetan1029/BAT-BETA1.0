@@ -19,7 +19,7 @@ from bat.product.models import (
 from bat.serializersFields.serializers_fields import (
     CountrySerializerField, WeightField, TagField, MoneySerializerField, StatusField)
 from bat.company.utils import get_member
-from bat.company.models import HsCode
+from bat.company.models import HsCode, PackingBox
 from bat.setting.utils import get_status
 from bat.product.constants import PRODUCT_STATUS_DRAFT
 from bat.globalutils.utils import get_status_object
@@ -362,10 +362,41 @@ class ProductRrpSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
         return super().validate(attrs)
 
+class ShowPackingBoxSerializer(serializers.ModelSerializer):
+    """Serializer for PackingBox."""
+
+    weight = WeightField(required=True)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = PackingBox
+        fields = (
+            "id",
+            "name",
+            "length",
+            "width",
+            "depth",
+            "length_unit",
+            "weight",
+            "cbm",
+            "is_active",
+            "extra_data",
+            "force_create",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "extra_data",
+            "company",
+            "cbm",
+            "create_date",
+            "update_date",
+        )
 
 class ProductPackingBoxSerializer(serializers.ModelSerializer):
     weight = WeightField()
-    packingbox = PackingBoxSerializer()
+    packingbox = ShowPackingBoxSerializer()
 
     class Meta:
         model = ProductPackingBox
