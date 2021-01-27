@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group, Permission
 from django.db import transaction
 from django.db.models import Sum
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 from djmoney.contrib.django_rest_framework import MoneyField
 from djmoney.money import Money
@@ -599,10 +600,30 @@ class TaxSerializer(ReversionSerializerMixin):
         )
 
 
+class LocationSerializerField(serializers.Field):
+
+    def to_representation(self, value):
+        """
+        give json of Location .
+        """
+        if isinstance(value, Location):
+            return LocationSerializer(value).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = Location.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {"current_location": _(f"{data} is not a valid location.")})
+
+
 class AssetSerializer(ReversionSerializerMixin):
     """Serializer for Asset."""
 
     # current_location = LocationSerializer(read_only=True)
+    current_location = LocationSerializerField()
 
     class Meta:
         """Define field that we wanna show in the Json."""
