@@ -521,7 +521,7 @@ class AssetViewSet(CompanySettingBaseViewSet):
 
     serializer_class = serializers.AssetSerializer
     queryset = Asset.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
+    permission_classes = (IsAuthenticated, DRYPermissions, )
     filter_backends = [
         DjangoFilterBackend,
         # SearchFilter,

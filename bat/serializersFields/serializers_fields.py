@@ -230,3 +230,4 @@ class StatusField(ChoiceField):
             return value
         json_status = get_status_json(value)
         return json_status
+
