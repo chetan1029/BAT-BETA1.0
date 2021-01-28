@@ -647,8 +647,11 @@ class VendorCompanyViewSet(
         company_id = self.kwargs.get("pk", None)
         if company_id:
             queryset = Member.objects.filter(company__id=company_id)
-            print(queryset)
-            data = serializers.VendorMemberSerializer(queryset).data
+            members = serializers.VendorMemberSerializer(
+                queryset, many=True
+            ).data
+            data = {}
+            data["results"] = members
             return Response(data, status=status.HTTP_200_OK)
 
 

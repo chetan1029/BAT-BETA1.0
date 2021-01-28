@@ -1877,6 +1877,8 @@ class PartnerCompanySerializer(serializers.ModelSerializer):
 
 
 class VendorMemberSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
     class Meta:
         model = Member
         fields = (
