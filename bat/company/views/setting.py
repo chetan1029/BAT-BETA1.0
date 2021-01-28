@@ -521,7 +521,7 @@ class AssetViewSet(CompanySettingBaseViewSet):
 
     serializer_class = serializers.AssetSerializer
     queryset = Asset.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions, )
+    permission_classes = (IsAuthenticated, DRYPermissions)
     filter_backends = [
         DjangoFilterBackend,
         # SearchFilter,
@@ -641,6 +641,15 @@ class VendorCompanyViewSet(
         data = serializers.VendorCompanySerializer(instance=instance).data
         headers = self.get_success_headers(data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=True, methods=["GET"], url_path="members")
+    def get_vendormembers(self, request, *args, **kwargs):
+        company_id = self.kwargs.get("pk", None)
+        if company_id:
+            queryset = Member.objects.filter(company__id=company_id)
+            print(queryset)
+            data = serializers.VendorMemberSerializer(queryset).data
+            return Response(data, status=status.HTTP_200_OK)
 
 
 class SalesChannelCompanyViewSet(

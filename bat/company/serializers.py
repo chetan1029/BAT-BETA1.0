@@ -48,7 +48,11 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
+from bat.company.utils import (
+    get_list_of_permissions,
+    get_list_of_roles,
+    get_member,
+)
 from bat.globalutils.utils import get_cbm, get_status_object, set_field_errors
 from bat.product.constants import PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import (
@@ -1870,3 +1874,24 @@ class PartnerCompanySerializer(serializers.ModelSerializer):
         model = CompanyType
         fields = ("id", "company_type", "create_date", "details", "is_active")
         read_only_fields = ("id", "is_active", "extra_data", "create_date")
+
+
+class VendorMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Member
+        fields = (
+            "id",
+            "job_title",
+            "user",
+            "is_admin",
+            "is_active",
+            "extra_data",
+        )
+        read_only_fields = (
+            "id",
+            "job_title",
+            "user",
+            "is_active",
+            "is_admin",
+            "extra_data",
+        )
