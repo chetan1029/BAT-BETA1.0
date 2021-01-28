@@ -435,10 +435,6 @@ class ProductPackingBoxSerializer(serializers.ModelSerializer):
                         "Selected product variation is not from current Product."
                     ),
                 )
-            if product.productparent.is_component:
-                errors = set_field_errors(
-                    errors, "product", _("Selected product is a component.")
-                )
         if packingbox:
             if str(packingbox.company.id) != str(
                 kwargs.get("company_pk", None)

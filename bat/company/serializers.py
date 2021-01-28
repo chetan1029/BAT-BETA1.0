@@ -48,11 +48,7 @@ from bat.company.models import (
     PackingBox,
     Tax,
 )
-from bat.company.utils import (
-    get_list_of_permissions,
-    get_list_of_roles,
-    get_member,
-)
+from bat.company.utils import get_list_of_permissions, get_list_of_roles, get_member
 from bat.globalutils.utils import get_cbm, get_status_object, set_field_errors
 from bat.product.constants import PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT
 from bat.serializersFields.serializers_fields import (
@@ -1760,6 +1756,7 @@ class VendorCompanySerializer(serializers.ModelSerializer):
             "weight_unit",
             "language",
             "time_zone",
+            "license_file",
             "is_active",
             "extra_data",
             "create_date",
