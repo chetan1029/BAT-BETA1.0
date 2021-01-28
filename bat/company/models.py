@@ -8,7 +8,10 @@ from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -234,6 +237,10 @@ class Company(Address):
         return True
 
     def has_object_create_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_read_permission(request):
         return True
 
 
