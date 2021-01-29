@@ -17,7 +17,6 @@ from bat.product.models import (
     ProductComponent,
     ProductOption,
     ProductPackingBox,
-    ProductParent,
     ProductRrp,
     ProductVariationOption,
 )
@@ -55,8 +54,8 @@ class ImageSerializer(serializers.ModelSerializer):
 class ProductOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductOption
-        fields = ("id", "productparent", "name", "value")
-        read_only_fields = ("id", "productparent")
+        fields = ("id", "company", "name", "value")
+        read_only_fields = ("id", "company")
 
 
 class ProductVariationOptionSerializer(serializers.ModelSerializer):
@@ -69,150 +68,62 @@ class ProductVariationOptionSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
 
-class ProductVariationSerializer(serializers.ModelSerializer):
+class ProductSerializer(serializers.ModelSerializer):
     weight = WeightField(required=False)
     product_variation_options = ProductVariationOptionSerializer(
         many=True, read_only=False, required=False
     )
-    images = ImageSerializer(many=True, read_only=True, required=False)
-    tags = TagField(required=False)
-
-    class Meta:
-        model = Product
-        fields = (
-            "id",
-            "productparent",
-            "title",
-            "sku",
-            "ean",
-            "model_number",
-            "manufacturer_part_number",
-            "length",
-            "tags",
-            "width",
-            "type",
-            "depth",
-            "length_unit",
-            "weight",
-            "is_active",
-            "extra_data",
-            "product_variation_options",
-            "images",
-        )
-        read_only_fields = (
-            "id",
-            "is_active",
-            "extra_data",
-            "productparent",
-            "images",
-        )
-
-
-class UpdateProductVariationSerializer(serializers.ModelSerializer):
-    weight = WeightField(required=False)
-    product_variation_options = ProductVariationOptionSerializer(
-        many=True, read_only=True, required=False
-    )
-    images = ImageSerializer(many=True, read_only=True, required=False)
-    tags = TagField(required=False)
-
-    class Meta:
-        model = Product
-        fields = (
-            "id",
-            "productparent",
-            "title",
-            "sku",
-            "ean",
-            "model_number",
-            "manufacturer_part_number",
-            "length",
-            "width",
-            "depth",
-            "tags",
-            "type",
-            "length_unit",
-            "weight",
-            "is_active",
-            "extra_data",
-            "product_variation_options",
-            "images",
-        )
-        read_only_fields = (
-            "id",
-            "productparent",
-            "is_active",
-            "extra_data",
-            "model_number",
-            "manufacturer_part_number",
-            "product_variation_options" "images",
-        )
-
-    def update(self, instance, validated_data):
-        data = validated_data.copy()
-        tags = data.pop("tags", None)
-        instance = super().update(instance, data)
-        if tags:
-            # set tags
-            instance.tags.set(*tags)
-        return instance
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    """
-    ModelSerializer to create component
-    """
-
-    tags = TagField(required=False)
     status = StatusField(default=PRODUCT_STATUS_DRAFT)
-    products = ProductVariationSerializer(many=True, read_only=False)
     images = ImageSerializer(many=True, read_only=True, required=False)
+    tags = TagField(required=False)
 
     class Meta:
-        model = ProductParent
+        model = Product
         fields = (
             "id",
-            "company",
-            "is_component",
             "title",
+            "sku",
+            "ean",
+            "model_number",
+            "manufacturer_part_number",
+            "length",
+            "tags",
+            "width",
             "type",
             "series",
             "hscode",
-            "sku",
-            "model_number",
+            "depth",
+            "length_unit",
+            "weight",
             "bullet_points",
             "description",
-            "tags",
-            "is_active",
-            "status",
             "extra_data",
-            "products",
+            "status",
+            "product_variation_options",
             "images",
+            "parent",
+            "create_date",
+            "update_date",
         )
         read_only_fields = (
             "id",
-            "is_active",
             "extra_data",
-            "company",
             "images",
+            "parent",
+            "create_date",
+            "update_date",
         )
-
-    def validate(self, attrs):
-        products = attrs.get("products", [])
-        if len(products) < 1:
-            msg = _("At Least one child product required.")
-            raise serializers.ValidationError({"products": msg})
-        return super().validate(attrs)
 
     def create(self, validated_data):
         """
-        save product parent with all children products and related objects.
+        save product from the variations.
         """
         member = get_member(
             company_id=self.context.get("company_id", None),
             user_id=self.context.get("user_id", None),
         )
         data = validated_data.copy()
+        print(data)
         data["status"] = get_status_object(validated_data)
         data["model_number"] = get_random_string(length=10).upper()
         with transaction.atomic():
@@ -226,12 +137,7 @@ class ProductSerializer(serializers.ModelSerializer):
             data.pop("tags", None)
             products = data.get("products", None)
             data.pop("products")
-            product_parent = ProductParent.objects.create(
-                company=member.company, **data
-            )
-            if tags:
-                # set tags
-                product_parent.tags.set(*tags)
+
             # save variations
             for product in products or []:
                 product_variation_options = product.get(
@@ -242,7 +148,7 @@ class ProductSerializer(serializers.ModelSerializer):
                 tags = product.pop("tags", None)
 
                 new_product = Product.objects.create(
-                    productparent=product_parent, **product
+                    company=member.company, **product
                 )
 
                 if tags:
@@ -258,14 +164,66 @@ class ProductSerializer(serializers.ModelSerializer):
                     )
                     if name and value:
                         productoption, _c = ProductOption.objects.get_or_create(
-                            name=name,
-                            value=value,
-                            productparent=product_parent,
+                            name=name, value=value, company=member.company
                         )
                         ProductVariationOption.objects.create(
                             product=new_product, productoption=productoption
                         )
-        return product_parent
+        return new_product
+
+
+class UpdateProductSerializer(serializers.ModelSerializer):
+    weight = WeightField(required=False)
+    product_variation_options = ProductVariationOptionSerializer(
+        many=True, read_only=True, required=False
+    )
+    images = ImageSerializer(many=True, read_only=True, required=False)
+    tags = TagField(required=False)
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "title",
+            "sku",
+            "ean",
+            "model_number",
+            "manufacturer_part_number",
+            "length",
+            "width",
+            "depth",
+            "tags",
+            "type",
+            "series",
+            "hscode",
+            "length_unit",
+            "weight",
+            "bullet_points",
+            "description",
+            "status",
+            "extra_data",
+            "product_variation_options",
+            "images",
+            "parent",
+        )
+        read_only_fields = (
+            "id",
+            "extra_data",
+            "model_number",
+            "manufacturer_part_number",
+            "product_variation_options",
+            "images",
+            "parent",
+        )
+
+    def update(self, instance, validated_data):
+        data = validated_data.copy()
+        tags = data.pop("tags", None)
+        instance = super().update(instance, data)
+        if tags:
+            # set tags
+            instance.tags.set(*tags)
+        return instance
 
 
 class ProductComponentSerializer(serializers.ModelSerializer):
@@ -299,17 +257,7 @@ class ProductComponentSerializer(serializers.ModelSerializer):
                 errors = set_field_errors(
                     errors, "product", _("Invalid product selected.")
                 )
-            if str(product.productparent.id) != str(
-                kwargs.get("product_pk", None)
-            ):
-                errors = set_field_errors(
-                    errors,
-                    "product",
-                    _(
-                        "Selected product variation is not from current Product."
-                    ),
-                )
-            if product.productparent.is_component:
+            if product.is_component:
                 errors = set_field_errors(
                     errors, "product", _("Selected product is a component.")
                 )
@@ -320,7 +268,7 @@ class ProductComponentSerializer(serializers.ModelSerializer):
                 errors = set_field_errors(
                     errors, "component", _("Invalid component selected.")
                 )
-            if not component.productparent.is_component:
+            if not component.is_component:
                 errors = set_field_errors(
                     errors, "component", _("Selected component is a product.")
                 )
@@ -354,17 +302,7 @@ class ProductRrpSerializer(serializers.ModelSerializer):
                 errors = set_field_errors(
                     errors, "product", _("Invalid product selected.")
                 )
-            if str(product.productparent.id) != str(
-                kwargs.get("product_pk", None)
-            ):
-                errors = set_field_errors(
-                    errors,
-                    "product",
-                    _(
-                        "Selected product variation is not from current Product."
-                    ),
-                )
-            if product.productparent.is_component:
+            if product.is_component:
                 errors = set_field_errors(
                     errors, "product", _("Selected product is a component.")
                 )
@@ -424,16 +362,6 @@ class ProductPackingBoxSerializer(serializers.ModelSerializer):
             ):
                 errors = set_field_errors(
                     errors, "product", _("Invalid product selected.")
-                )
-            if str(product.productparent.id) != str(
-                kwargs.get("product_pk", None)
-            ):
-                errors = set_field_errors(
-                    errors,
-                    "product",
-                    _(
-                        "Selected product variation is not from current Product."
-                    ),
                 )
         if packingbox:
             if str(packingbox.company.id) != str(

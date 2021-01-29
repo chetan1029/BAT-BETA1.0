@@ -642,6 +642,18 @@ class VendorCompanyViewSet(
         headers = self.get_success_headers(data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @action(detail=True, methods=["GET"], url_path="members")
+    def get_vendormembers(self, request, *args, **kwargs):
+        company_id = self.kwargs.get("pk", None)
+        if company_id:
+            queryset = Member.objects.filter(company__id=company_id)
+            members = serializers.VendorMemberSerializer(
+                queryset, many=True
+            ).data
+            data = {}
+            data["results"] = members
+            return Response(data, status=status.HTTP_200_OK)
+
 
 class SalesChannelCompanyViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
