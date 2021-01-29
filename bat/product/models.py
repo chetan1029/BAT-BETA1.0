@@ -3,6 +3,7 @@
 import os
 import uuid
 
+from django.conf import settings
 from django.contrib.contenttypes.fields import (
     GenericForeignKey,
     GenericRelation,
@@ -13,7 +14,6 @@ from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from django.conf import settings
 from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
 from djmoney.models.fields import MoneyField
@@ -40,7 +40,6 @@ def get_member_from_request(request):
 
 
 class ProductpermissionsModelmixin:
-
     @staticmethod
     def has_retrieve_permission(request):
         member = get_member_from_request(request)
@@ -206,21 +205,23 @@ class Image(models.Model):
         return self.image.name
 
 
-class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
+class Product(
+    ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model
+):
     """
-    Product Parent Model.
+    Product Model.
 
-    We are using this model to store detail for the main product and all the
-    other variation etc will be store in Product table with connection to
-    ProductVariationOption.
+    We are using this model to store detail for both product and components.
     """
 
     company = models.ForeignKey(Company, on_delete=models.PROTECT)
-    images = GenericRelation(Image)
     is_component = models.BooleanField(
         default=False, verbose_name=_("Is Component")
     )
+    images = GenericRelation(Image)
     title = models.CharField(verbose_name=_("Title"), max_length=500)
+    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
+    ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
     type = models.CharField(
         max_length=200, blank=True, verbose_name=_("Product Type")
     )
@@ -229,134 +230,6 @@ class ProductParent(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, mode
     )
     hscode = models.CharField(
         max_length=200, blank=True, verbose_name=_("Product HsCode")
-    )
-    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
-    model_number = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Model Number")
-    )
-    bullet_points = models.TextField(blank=True)
-    description = models.TextField(blank=True)
-    tags = TaggableManager(blank=True)
-    is_active = models.BooleanField(default=True)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT)
-    extra_data = HStoreField(null=True, blank=True)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    # UniqueWithinCompanyMixin data
-    unique_within_company = ["sku"]
-    velidation_within_company_messages = {
-        "sku": _("Product Parent with same sku already exists.")
-    }
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Products Parent")
-
-    @property
-    def get_status_name(self):
-        """
-        return status name
-        """
-        return self.status.name
-
-    @property
-    def get_company(self):
-        """
-        return related company
-        """
-        return self.company
-
-    @property
-    def get_company_path(self):
-        """
-        return related company
-        """
-        return "company"
-
-    def extra_clean(self):
-        """
-        retuen list of model specific velidation errors or empty list
-        """
-        return []
-
-    def archive(self):
-        """
-        archive model instance
-        """
-        self.is_active = False
-        self.save()
-        for image in self.images.all():
-            image.archive()
-        for product in self.products.all():
-            product.archive()
-
-    def restore(self):
-        """
-        restore model instance
-        """
-        self.is_active = True
-        self.save()
-        for image in self.images.all():
-            image.restore()
-        for product in self.products.all():
-            product.restore()
-
-    def __str__(self):
-        """Return Value."""
-        return self.title + " - " + str(self.id)
-
-    @staticmethod
-    def has_active_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "active_product")
-
-    def has_object_active_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "active_product")
-
-    @staticmethod
-    def has_csvexport_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_xlsxeport_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_get_tags_and_types_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_product")
-
-    @staticmethod
-    def has_discontinued_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "change_product")
-
-    def has_object_discontinued_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "change_product")
-
-
-class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model):
-    """
-    Product Model.
-
-    We are using this model to store detail for both product and components.
-    """
-
-    productparent = models.ForeignKey(
-        ProductParent, on_delete=models.CASCADE, related_name="products"
-    )
-    images = GenericRelation(Image)
-    title = models.CharField(verbose_name=_("Title"), max_length=500)
-    sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
-    ean = models.CharField(verbose_name=_("EAN"), max_length=200, blank=True)
-    type = models.CharField(
-        max_length=200, blank=True, verbose_name=_("Product Type")
     )
     tags = TaggableManager(blank=True)
     model_number = models.CharField(
@@ -399,8 +272,18 @@ class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Mod
         blank=True,
         null=True,
     )
-    is_active = models.BooleanField(default=True)
+    bullet_points = models.TextField(blank=True)
+    description = models.TextField(blank=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
     extra_data = HStoreField(null=True, blank=True)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name="Select Parent",
+        related_name="product_parent",
+    )
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
@@ -426,31 +309,31 @@ class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Mod
         verbose_name_plural = _("Products")
 
     @property
+    def get_status_name(self):
+        """
+        return status name
+        """
+        return self.status.name
+
+    @property
     def get_company(self):
         """
         return related company
         """
-        return self.productparent.company
+        return self.company
 
     @property
     def get_company_path(self):
         """
         return related company
         """
-        return "productparent__company"
+        return "company"
 
     def extra_clean(self):
         """
         retuen list of model specific velidation errors or empty list
         """
-        errors = []
-        if self.sku:
-            if ProductParent.objects.filter(
-                company=self.get_company, sku=self.sku
-            ).exists():
-                detail = {"sku": "Product Parent with this sku is exists."}
-                errors.append(detail)
-        return errors
+        return []
 
     def archive(self):
         """
@@ -484,11 +367,75 @@ class Product(ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Mod
 
     def __str__(self):
         """Return Value."""
-        name = self.productparent.title + " - " + \
-            str(self.productparent.id) + " - me -> " + str(self.id)
-        if self.productparent.is_component:
+        name = self.title
+        if self.is_component:
             name += " - component"
         return name
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_read_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_product")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_product")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_product")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_product")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_product")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_product")
 
 
 class ProductOption(models.Model):
@@ -499,9 +446,7 @@ class ProductOption(models.Model):
     etc.
     """
 
-    productparent = models.ForeignKey(
-        ProductParent, on_delete=models.CASCADE, related_name="product_options"
-    )
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
     name = models.CharField(verbose_name=_("Option Name"), max_length=200)
     value = models.CharField(verbose_name=_("Option Value"), max_length=200)
 
@@ -603,7 +548,8 @@ class ProductRrp(ProductpermissionsModelmixin, models.Model):
     """
 
     product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="product_rrps")
+        Product, on_delete=models.CASCADE, related_name="product_rrps"
+    )
     rrp = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     country = CountryField()
     is_active = models.BooleanField(default=True)
@@ -614,7 +560,7 @@ class ProductRrp(ProductpermissionsModelmixin, models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Product RRP's")
-        unique_together = ['product', 'country']
+        unique_together = ["product", "country"]
 
     def archive(self):
         """
@@ -653,9 +599,13 @@ class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
     """
 
     product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="product_packingboxes")
+        Product, on_delete=models.CASCADE, related_name="product_packingboxes"
+    )
     packingbox = models.ForeignKey(
-        PackingBox, on_delete=models.CASCADE, related_name="product_packingboxes")
+        PackingBox,
+        on_delete=models.CASCADE,
+        related_name="product_packingboxes",
+    )
     weight = MeasurementField(
         measurement=Weight,
         unit_choices=(("g", "g"), ("kg", "kg"), ("oz", "oz"), ("lb", "lb")),
