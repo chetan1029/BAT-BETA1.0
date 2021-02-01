@@ -4,7 +4,10 @@ import os
 import uuid
 
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -478,7 +481,7 @@ class ProductVariationOption(models.Model):
     class Meta:
         """Meta Class."""
 
-        verbose_name_plural = _("Product Options")
+        verbose_name_plural = _("Product Variation Options")
 
     def __str__(self):
         """Return Value."""

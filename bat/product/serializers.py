@@ -6,13 +6,14 @@ from djmoney.contrib.django_rest_framework import MoneyField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from bat.company.file_serializers import FileSerializer
 from bat.company.models import HsCode, PackingBox
 from bat.company.serializers import PackingBoxSerializer
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_status_object, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
-from bat.company.file_serializers import FileSerializer
 from bat.product.models import (
+    ComponentMe,
     Image,
     Product,
     ProductComponent,
@@ -20,7 +21,6 @@ from bat.product.models import (
     ProductPackingBox,
     ProductRrp,
     ProductVariationOption,
-    ComponentMe,
 )
 from bat.serializersFields.serializers_fields import (
     CountrySerializerField,
@@ -70,7 +70,7 @@ class ProductVariationOptionSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class SingleProductSerializer(serializers.ModelSerializer):
     weight = WeightField(required=False)
     product_variation_options = ProductVariationOptionSerializer(
         many=True, read_only=False, required=False
@@ -112,6 +112,43 @@ class ProductSerializer(serializers.ModelSerializer):
             "extra_data",
             "images",
             "parent",
+            "status",
+            "create_date",
+            "update_date",
+        )
+
+
+class ProductSerializer(serializers.ModelSerializer):
+
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
+    images = ImageSerializer(many=True, read_only=True, required=False)
+    tags = TagField(required=False)
+    products = SingleProductSerializer(many=True, read_only=False)
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "title",
+            "tags",
+            "type",
+            "series",
+            "hscode",
+            "bullet_points",
+            "description",
+            "extra_data",
+            "status",
+            "images",
+            "parent",
+            "products",
+            "create_date",
+            "update_date",
+        )
+        read_only_fields = (
+            "id",
+            "extra_data",
+            "images",
+            "parent",
             "create_date",
             "update_date",
         )
@@ -125,8 +162,8 @@ class ProductSerializer(serializers.ModelSerializer):
             user_id=self.context.get("user_id", None),
         )
         data = validated_data.copy()
-        print(data)
         data["status"] = get_status_object(validated_data)
+        print(data)
         data["model_number"] = get_random_string(length=10).upper()
         with transaction.atomic():
             hscode = data.get("hscode", None)
@@ -148,6 +185,8 @@ class ProductSerializer(serializers.ModelSerializer):
                 product.pop("product_variation_options", None)
 
                 tags = product.pop("tags", None)
+
+                product["status"] = data["status"]
 
                 new_product = Product.objects.create(
                     company=member.company, **product

@@ -19,7 +19,7 @@ from bat.product.constants import (
     PRODUCT_STATUS_DISCONTINUED,
 )
 from bat.product.filters import ProductFilter
-from bat.product.models import Product, ComponentMe
+from bat.product.models import ComponentMe, Product
 from bat.setting.utils import get_status
 
 
@@ -161,6 +161,29 @@ class ProductViewSet(
         data["type_data"] = types
         data["series_data"] = series
         return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["GET"], url_path="types-with-images")
+    def get_types(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        types = (
+            queryset.exclude(type__exact="")
+            .exclude(type__isnull=True)
+            .distinct("type")
+            .values_list("type", flat=True)
+        )
+        type_data = {}
+        for type in types:
+            product_data = {}
+            queryset_type = queryset.filter(type__exact=type)
+            product_data["total"] = queryset_type.count()
+            product_data["products"] = queryset_type.values_list(
+                "images", flat=True
+            )[:3]
+            type_data[type] = product_data
+        data = {}
+        data["type_data"] = type_data
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class ComponentMeViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """Operations on Component ME."""
