@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='product',
             name='company',
-            field=models.ForeignKey(default=8, on_delete=django.db.models.deletion.PROTECT, to='company.company'),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.PROTECT, to='company.company'),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='productoption',
             name='company',
-            field=models.ForeignKey(default=8, on_delete=django.db.models.deletion.PROTECT, to='company.company'),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.PROTECT, to='company.company'),
             preserve_default=False,
         ),
         migrations.DeleteModel(
