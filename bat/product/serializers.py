@@ -11,6 +11,7 @@ from bat.company.serializers import PackingBoxSerializer
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_status_object, set_field_errors
 from bat.product.constants import PRODUCT_STATUS_DRAFT
+from bat.company.file_serializers import FileSerializer
 from bat.product.models import (
     Image,
     Product,
@@ -19,6 +20,7 @@ from bat.product.models import (
     ProductPackingBox,
     ProductRrp,
     ProductVariationOption,
+    ComponentMe,
 )
 from bat.serializersFields.serializers_fields import (
     CountrySerializerField,
@@ -373,3 +375,64 @@ class ProductPackingBoxSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         return super().validate(attrs)
+
+class ComponentMeSerializer(serializers.ModelSerializer):
+    """Serializer for Component ME."""
+
+    files = FileSerializer(many=True, required=False)
+    status = StatusField(default=PRODUCT_STATUS_DRAFT)
+
+    class Meta:
+        """Define field that we wanna show in the Json."""
+
+        model = ComponentMe
+        fields = (
+            "id",
+            "version",
+            "revision_history",
+            "component",
+            "files",
+            "status",
+            "is_active",
+            "create_date",
+            "update_date",
+        )
+        read_only_fields = (
+            "id",
+            "is_active",
+            "files",
+            "create_date",
+            "update_date",
+        )
+
+    def validate(self, attrs):
+        """
+        validate that :
+            the selected company type must relate to the current company.
+        """
+        kwargs = self.context["request"].resolver_match.kwargs
+        company_id = self.context.get("company_id", None)
+        component = attrs.get("component", None)
+        errors = {}
+        if component:
+            if str(component.get_company.id) != str(
+                kwargs.get("company_pk", None)
+            ):
+                errors = set_field_errors(
+                    errors, "component", _("Invalid component selected.")
+                )
+            if not component.is_component:
+                errors = set_field_errors(
+                    errors, "component", _("Selected component is a product.")
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().update(instance, validated_data)

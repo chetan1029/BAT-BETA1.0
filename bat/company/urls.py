@@ -15,7 +15,6 @@ from bat.company.views.company import (
     CompanyOrderViewSet,
     CompanyProductViewSet,
     ComponentGoldenSampleViewSet,
-    ComponentMeViewSet,
     ComponentPriceViewSet,
     PartnerCompanyViewSet,
 )
@@ -26,7 +25,6 @@ from bat.company.views.file import (
     CompanyOrderInspectionFilesViewSet,
     CompanyOrderPaymentPaidFilesViewSet,
     ComponentGoldenSampleFilesViewSet,
-    ComponentMeFilesViewSet,
     ComponentPriceFilesViewSet,
 )
 from bat.company.views.setting import (
@@ -166,20 +164,7 @@ credentail_router.register(
     "credential", CompanyCredentialViewSet, basename="company-credential"
 )
 
-componentme_router = routers.NestedSimpleRouter(
-    router, "companies", lookup="company"
-)
-componentme_router.register(
-    "component-me", ComponentMeViewSet, basename="company-me"
-)
 
-componentme_file_router = routers.NestedSimpleRouter(
-    componentme_router, "component-me", lookup="object"
-)
-
-componentme_file_router.register(
-    "files", ComponentMeFilesViewSet, basename="company-component-me-files"
-)
 
 componentgoldesample_router = routers.NestedSimpleRouter(
     router, "companies", lookup="company"
@@ -351,8 +336,6 @@ urlpatterns += [
     path("", include(contract_router.urls)),
     path("", include(contract_file_router.urls)),
     path("", include(credentail_router.urls)),
-    path("", include(componentme_router.urls)),
-    path("", include(componentme_file_router.urls)),
     path("", include(contract_comment_router.urls)),
     path("", include(componentgoldesample_router.urls)),
     path("", include(componentgoldensample_file_router.urls)),

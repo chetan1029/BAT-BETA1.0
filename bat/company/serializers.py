@@ -39,7 +39,6 @@ from bat.company.models import (
     CompanyProduct,
     CompanyType,
     ComponentGoldenSample,
-    ComponentMe,
     ComponentPrice,
     File,
     HsCode,
@@ -780,71 +779,6 @@ class CompanyCredentialSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
 
-class ComponentMeSerializer(serializers.ModelSerializer):
-    """Serializer for Component ME."""
-
-    files = FileSerializer(many=True, required=False)
-    status = StatusField(default=PRODUCT_STATUS_DRAFT)
-
-    class Meta:
-        """Define field that we wanna show in the Json."""
-
-        model = ComponentMe
-        fields = (
-            "id",
-            "version",
-            "revision_history",
-            "component",
-            "companytype",
-            "files",
-            "status",
-            "is_active",
-        )
-        read_only_fields = (
-            "id",
-            "is_active",
-            "files",
-            "create_date",
-            "update_date",
-        )
-
-    def validate(self, attrs):
-        """
-        validate that :
-            the selected company type must relate to the current company.
-        """
-        kwargs = self.context["request"].resolver_match.kwargs
-        company_id = self.context.get("company_id", None)
-        companytype = attrs.get("companytype", None)
-        component = attrs.get("component", None)
-        errors = {}
-        if component:
-            if str(component.get_company.id) != str(
-                kwargs.get("company_pk", None)
-            ):
-                errors = set_field_errors(
-                    errors, "component", _("Invalid component selected.")
-                )
-            if not component.productparent.is_component:
-                errors = set_field_errors(
-                    errors, "component", _("Selected component is a product.")
-                )
-        if companytype:
-            if str(companytype.company.id) != str(company_id):
-                errors = set_field_errors(
-                    errors, "companytype", _("Invalid company type selected.")
-                )
-        if errors:
-            raise serializers.ValidationError(errors)
-        return super().validate(attrs)
-
-    def create(self, validated_data):
-        validated_data["status"] = get_status_object(validated_data)
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        validated_data["status"] = get_status_object(validated_data)
-        return super().update(instance, validated_data)
 
 
 class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
@@ -883,7 +817,7 @@ class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
         componentme = attrs.get("componentme", None)
         errors = {}
         if componentme:
-            if str(componentme.companytype.company.id) != str(
+            if str(componentme.component.company.id) != str(
                 kwargs.get("company_pk", None)
             ):
                 errors = set_field_errors(
@@ -941,7 +875,7 @@ class ComponentPriceSerializer(serializers.ModelSerializer):
         errors = {}
         if componentgoldensample:
             if str(
-                componentgoldensample.componentme.companytype.company.id
+                componentgoldensample.componentme.component.company.id
             ) != str(kwargs.get("company_pk", None)):
                 errors = set_field_errors(
                     errors,

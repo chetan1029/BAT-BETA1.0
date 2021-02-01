@@ -8,6 +8,7 @@ from bat.product.models import (
     ProductPackingBox,
     ProductRrp,
     ProductVariationOption,
+    ComponentMe,
 )
 
 admin.site.register(Image)
@@ -17,3 +18,4 @@ admin.site.register(ProductVariationOption)
 admin.site.register(ProductComponent)
 admin.site.register(ProductRrp)
 admin.site.register(ProductPackingBox)
+admin.site.register(ComponentMe)

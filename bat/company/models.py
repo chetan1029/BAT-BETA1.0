@@ -1747,123 +1747,6 @@ class CompanyCredential(models.Model):
         return has_permission(member, "restore_company_credential")
 
 
-class ComponentMe(models.Model):
-    """
-    Component Manufacturer Expectation.
-
-    Component manufacturer expectation for the .
-    """
-
-    from bat.product.models import Product
-
-    version = models.DecimalField(max_digits=5, decimal_places=1)
-    revision_history = models.TextField(blank=True)
-    component = models.ForeignKey(Product, on_delete=models.CASCADE)
-    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
-    files = GenericRelation(File)
-    status = models.ForeignKey(
-        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
-    )
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Component MEs")
-
-    def archive(self):
-        """
-        archive model instance
-        """
-        self.is_active = False
-        self.save()
-        for f in self.files.all():
-            f.archive()
-        for golden_sample in self.golden_samples.all():
-            golden_sample.archive()
-
-    def restore(self):
-        """
-        restore model instance
-        """
-        self.is_active = True
-        self.save()
-        for f in self.files.all():
-            f.restore()
-        for golden_sample in self.golden_samples.all():
-            golden_sample.restore()
-
-    def __str__(self):
-        """Return Value."""
-        return str(self.component.title) + " " + str(self.version)
-
-    @staticmethod
-    def has_retrieve_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_component_me")
-
-    def has_object_retrieve_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_component_me")
-
-    @staticmethod
-    def has_list_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_component_me")
-
-    def has_object_list_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "view_component_me")
-
-    @staticmethod
-    def has_create_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_component_me")
-
-    def has_object_create_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "add_component_me")
-
-    @staticmethod
-    def has_destroy_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_component_me")
-
-    def has_object_destroy_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_component_me")
-
-    @staticmethod
-    def has_update_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "change_component_me")
-
-    def has_object_update_permission(self, request):
-        member = get_member_from_request(request)
-        if not self.is_active:
-            return False
-        return has_permission(member, "change_component_me")
-
-    @staticmethod
-    def has_archive_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_component_me")
-
-    def has_object_archive_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "archived_component_me")
-
-    @staticmethod
-    def has_restore_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_component_me")
-
-    def has_object_restore_permission(self, request):
-        member = get_member_from_request(request)
-        return has_permission(member, "restore_component_me")
-
 
 class ComponentGoldenSample(models.Model):
     """
@@ -1872,6 +1755,8 @@ class ComponentGoldenSample(models.Model):
     Component Golden sample will be for the final component ME and sign by both
     company and vendor before finalize.
     """
+
+    from bat.product.models import ComponentMe
 
     componentme = models.ForeignKey(
         ComponentMe, on_delete=models.CASCADE, related_name="golden_samples"

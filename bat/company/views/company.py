@@ -26,9 +26,9 @@ from bat.company.models import (
     CompanyOrderPaymentPaid,
     CompanyProduct,
     ComponentGoldenSample,
-    ComponentMe,
     ComponentPrice,
 )
+from bat.product.models import ComponentMe
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 
 
@@ -86,18 +86,6 @@ class CompanyCredentialViewSet(CompanySettingBaseViewSet):
     restore_message = _("Company credential is restored")
 
 
-class ComponentMeViewSet(CompanySettingBaseViewSet):
-    """Operations on Component ME."""
-
-    serializer_class = serializers.ComponentMeSerializer
-    queryset = ComponentMe.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["is_active"]
-
-    archive_message = _("Component ME is archived")
-    restore_message = _("Component ME is restored")
-
 
 class ComponentGoldenSampleViewSet(
     ArchiveMixin, RestoreMixin, viewsets.ModelViewSet
@@ -124,7 +112,7 @@ class ComponentGoldenSampleViewSet(
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
         return queryset.filter(
-            componentme__companytype__company__id=company_id
+            componentme__component__company__id=company_id
         ).order_by("-create_date")
 
 
@@ -151,7 +139,7 @@ class ComponentPriceViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
         return queryset.filter(
-            componentgoldensample__componentme__companytype__company__id=company_id
+            componentgoldensample__componentme__component__company__id=company_id
         ).order_by("-create_date")
 
 

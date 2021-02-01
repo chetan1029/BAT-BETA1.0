@@ -19,7 +19,7 @@ from bat.product.constants import (
     PRODUCT_STATUS_DISCONTINUED,
 )
 from bat.product.filters import ProductFilter
-from bat.product.models import Product
+from bat.product.models import Product, ComponentMe
 from bat.setting.utils import get_status
 
 
@@ -161,3 +161,15 @@ class ProductViewSet(
         data["type_data"] = types
         data["series_data"] = series
         return Response(data, status=status.HTTP_200_OK)
+
+class ComponentMeViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
+    """Operations on Component ME."""
+
+    serializer_class = serializers.ComponentMeSerializer
+    queryset = ComponentMe.objects.all()
+    permission_classes = (IsAuthenticated, DRYPermissions)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Component ME is archived")
+    restore_message = _("Component ME is restored")

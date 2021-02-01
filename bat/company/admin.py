@@ -18,7 +18,6 @@ from bat.company.models import (
     CompanyProduct,
     CompanyType,
     ComponentGoldenSample,
-    ComponentMe,
     ComponentPrice,
     File,
     HsCode,
@@ -44,7 +43,6 @@ admin.site.register(CompanyOrder)
 admin.site.register(CompanyOrderDelivery)
 admin.site.register(CompanyProduct)
 admin.site.register(ComponentGoldenSample)
-admin.site.register(ComponentMe)
 admin.site.register(ComponentPrice)
 admin.site.register(CompanyOrderCase)
 admin.site.register(CompanyOrderInspection)
