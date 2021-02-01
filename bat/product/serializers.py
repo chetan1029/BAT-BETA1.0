@@ -231,14 +231,7 @@ class UpdateProductSerializer(serializers.ModelSerializer):
 class ProductComponentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductComponent
-        fields = (
-            "id",
-            "product",
-            "component",
-            "quantity",
-            "value",
-            "is_active",
-        )
+        fields = ("id", "product", "component", "quantity", "is_active")
         read_only_fields = ("id", "is_active")
 
     def validate(self, attrs):
@@ -375,6 +368,7 @@ class ProductPackingBoxSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         return super().validate(attrs)
+
 
 class ComponentMeSerializer(serializers.ModelSerializer):
     """Serializer for Component ME."""

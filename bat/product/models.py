@@ -4,10 +4,7 @@ import os
 import uuid
 
 from django.conf import settings
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey,
-    GenericRelation,
-)
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
@@ -22,11 +19,12 @@ from rest_framework.exceptions import ValidationError
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
 
-from bat.company.models import Company, Member, PackingBox, File
+from bat.company.models import Company, File, Member, PackingBox
 from bat.product.constants import *
 from bat.setting.models import Status
 
 STATUS_DRAFT = 4
+
 
 def get_member_from_request(request):
     """
@@ -511,7 +509,6 @@ class ProductComponent(ProductpermissionsModelmixin, models.Model):
     quantity = models.PositiveIntegerField(
         verbose_name=_("Quantity"), default=1
     )
-    value = models.CharField(verbose_name=_("Option Value"), max_length=200)
     is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -642,6 +639,7 @@ class ProductPackingBox(ProductpermissionsModelmixin, models.Model):
     def __str__(self):
         """Return Value."""
         return self.product.title
+
 
 class ComponentMe(models.Model):
     """
