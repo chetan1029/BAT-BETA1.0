@@ -83,6 +83,23 @@ class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     archive_message = _("Product component  is archived")
     restore_message = _("Product component is restored")
 
+class ComponentProductViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
+    """Operations on ComponentProduct."""
+
+    serializer_class = serializers.ProductComponentSerializer
+    queryset = ProductComponent.objects.all()
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    archive_message = _("Product component  is archived")
+    restore_message = _("Product component is restored")
+
+    def filter_queryset(self, queryset):
+        product_pk = self.kwargs.get("product_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(component__pk=product_pk)
+
 
 country_field = openapi.Parameter(
     "country",
