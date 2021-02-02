@@ -284,7 +284,7 @@ class Product(
         blank=True,
         null=True,
         verbose_name="Select Parent",
-        related_name="product_parent",
+        related_name="parents",
     )
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
