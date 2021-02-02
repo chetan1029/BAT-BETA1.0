@@ -83,15 +83,19 @@ componentme_router.register(
     "component-me", ComponentMeViewSet, basename="company-me"
 )
 
+componentme_router2 = routers.NestedSimpleRouter(
+    router, "companies", lookup="company"
+)
+componentme_router2.register(
+    "component-me", ComponentMeViewSet, basename="component-price"
+)
 componentme_file_router = routers.NestedSimpleRouter(
-    componentme_router, "component-me", lookup="object"
+    componentme_router2, "component-me", lookup="object"
 )
 
 componentme_file_router.register(
     "files", ComponentMeFilesViewSet, basename="company-component-me-files"
 )
-
-
 app_name = "product"
 
 urlpatterns = [
