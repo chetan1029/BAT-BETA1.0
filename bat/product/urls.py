@@ -7,7 +7,7 @@ from bat.product.views.product import (
     ProductVariationViewSet, ProductComponentViewSet, ProductRrpViewSet, ProductPackingBoxViewSet
     )
 from bat.product.views.image import ProductImagesViewSet, ProductVariationImagesViewSet
-from bat.company.views.file import (
+from bat.product.views.file import (
     ComponentMeFilesViewSet,
 )
 
@@ -17,13 +17,6 @@ product_router = routers.NestedSimpleRouter(
 product_router.register(
     "products", ProductViewSet, basename="company-product"
 )
-
-# product_variation_router = routers.NestedSimpleRouter(
-#     product_router, "products", lookup="product"
-# )
-# product_variation_router.register(
-#     "product-variations", ProductVariationViewSet, basename="company-product-Product-variation"
-# )
 
 
 product_variation_router = routers.NestedSimpleRouter(

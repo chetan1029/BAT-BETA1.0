@@ -55,17 +55,6 @@ class CompanyContractFilesViewSet(BaseFilesViewSet):
             app_label='company', model='companycontract')
 
 
-class ComponentMeFilesViewSet(BaseFilesViewSet):
-    """
-    View set to save files of ComponentMe
-    """
-    permission_list = ["add_component_me", "change_component_me"]
-
-    def get_content_type(self):
-        return ContentType.objects.get(
-            app_label='company', model='componentme')
-
-
 class ComponentGoldenSampleFilesViewSet(BaseFilesViewSet):
     """
     View set to save files of ComponentGoldenSample

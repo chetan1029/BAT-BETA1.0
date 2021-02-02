@@ -66,6 +66,7 @@ class ProductViewSet(
         "width",
         "depth",
         "length_unit",
+        "weight",
         "bullet_points",
         "description",
         "tags",

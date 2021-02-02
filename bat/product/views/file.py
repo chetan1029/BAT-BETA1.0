@@ -53,4 +53,4 @@ class ComponentMeFilesViewSet(BaseFilesViewSet):
 
     def get_content_type(self):
         return ContentType.objects.get(
-            app_label='company', model='componentme')
+            app_label='product', model='componentme')
