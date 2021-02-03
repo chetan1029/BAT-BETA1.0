@@ -210,7 +210,8 @@ class ProductSerializer(serializers.ModelSerializer):
                 product["status"] = data["status"]
                 product["is_component"] = is_component
                 product["description"] = description
-                product["hscode"] = hscode
+                if hscode:
+                    product["hscode"] = hscode
 
 
                 new_product = Product.objects.create(
