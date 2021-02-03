@@ -71,6 +71,7 @@ class ProductMetadatMxin(viewsets.ModelViewSet):
         )
 
 
+
 class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     """Operations on ProductComponent."""
 
@@ -83,7 +84,7 @@ class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     archive_message = _("Product component  is archived")
     restore_message = _("Product component is restored")
 
-class ComponentProductViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
+class ComponentProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """Operations on ComponentProduct."""
 
     serializer_class = serializers.ProductComponentSerializer
@@ -96,9 +97,13 @@ class ComponentProductViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     restore_message = _("Product component is restored")
 
     def filter_queryset(self, queryset):
-        product_pk = self.kwargs.get("product_pk", None)
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(component__pk=product_pk)
+        product_id = self.kwargs.get("product_pk", None)
+        company_id = self.kwargs.get("company_pk", None)
+        return queryset.filter(
+            component__id=product_id, component__company__id=company_id
+        )
+
 
 
 country_field = openapi.Parameter(

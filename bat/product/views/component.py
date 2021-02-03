@@ -157,10 +157,17 @@ class ProductViewSet(
             .distinct("series")
             .values_list("series", flat=True)
         )
+        hscode = (
+            queryset.exclude(hscode__exact="")
+            .exclude(hscode__isnull=True)
+            .distinct("hscode")
+            .values_list("hscode", flat=True)
+        )
         data = {}
         data["tag_data"] = tags
         data["type_data"] = types
         data["series_data"] = series
+        data["hscode_data"] = hscode
         return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["GET"], url_path="types-with-images")

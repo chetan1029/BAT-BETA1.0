@@ -89,13 +89,13 @@ class SingleProductSerializer(serializers.ModelSerializer):
             "model_number",
             "manufacturer_part_number",
             "length",
-            "tags",
             "width",
+            "depth",
+            "length_unit",
+            "tags",
             "type",
             "series",
             "hscode",
-            "depth",
-            "length_unit",
             "weight",
             "bullet_points",
             "description",
@@ -123,12 +123,14 @@ class ProductSerializer(serializers.ModelSerializer):
     status = StatusField(default=PRODUCT_STATUS_DRAFT)
     images = ImageSerializer(many=True, read_only=True, required=False)
     tags = TagField(required=False)
+    weight = WeightField(required=False)
     products = SingleProductSerializer(many=True, read_only=False)
 
     class Meta:
         model = Product
         fields = (
             "id",
+            "is_component",
             "title",
             "tags",
             "type",
@@ -137,10 +139,19 @@ class ProductSerializer(serializers.ModelSerializer):
             "bullet_points",
             "description",
             "extra_data",
+            "sku",
+            "ean",
+            "model_number",
+            "manufacturer_part_number",
+            "length",
+            "width",
+            "depth",
+            "length_unit",
             "status",
             "images",
             "parent",
             "products",
+            "weight",
             "create_date",
             "update_date",
         )
@@ -149,6 +160,15 @@ class ProductSerializer(serializers.ModelSerializer):
             "extra_data",
             "images",
             "parent",
+            "weight",
+            "sku",
+            "ean",
+            "model_number",
+            "manufacturer_part_number",
+            "length",
+            "width",
+            "depth",
+            "length_unit",
             "create_date",
             "update_date",
         )
@@ -163,17 +183,18 @@ class ProductSerializer(serializers.ModelSerializer):
         )
         data = validated_data.copy()
         data["status"] = get_status_object(validated_data)
-        print(data)
         data["model_number"] = get_random_string(length=10).upper()
         with transaction.atomic():
             hscode = data.get("hscode", None)
             if hscode:
-                hscode, _c = HsCode.objects.get_or_create(
+                hscode_d, _c = HsCode.objects.get_or_create(
                     hscode=hscode, company=member.company
                 )
             data.pop("images", None)
             tags = data.get("tags", None)
             data.pop("tags", None)
+            is_component = data.get("is_component", None)
+            description = data.get("description", None)
             products = data.get("products", None)
             data.pop("products")
 
@@ -187,6 +208,10 @@ class ProductSerializer(serializers.ModelSerializer):
                 tags = product.pop("tags", None)
 
                 product["status"] = data["status"]
+                product["is_component"] = is_component
+                product["description"] = description
+                product["hscode"] = hscode
+
 
                 new_product = Product.objects.create(
                     company=member.company, **product
