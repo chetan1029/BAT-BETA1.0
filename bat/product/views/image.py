@@ -71,7 +71,7 @@ class ProductImagesViewSet(BaseImagesViewSet):
 
     def get_content_type(self):
         return ContentType.objects.get(
-            app_label='product', model='productparent')
+            app_label='product', model='product')
 
 
 class ProductVariationImagesViewSet(BaseImagesViewSet):
