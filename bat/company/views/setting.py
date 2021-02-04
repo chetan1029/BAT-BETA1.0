@@ -560,6 +560,7 @@ class AssetTransferViewSet(
     serializer_class = serializers.AssetTransferSerializer
     queryset = AssetTransfer.objects.all()
     permission_classes = (IsAuthenticated, DRYPermissions)
+    filterset_fields = ["asset", ]
     filter_backends = [
         DjangoFilterBackend,
         # SearchFilter,

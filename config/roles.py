@@ -62,6 +62,13 @@ class CompanyAdmin(AbstractUserRole):
         "archived_asset": True,
         "restore_asset": True,
         "delete_asset": True,
+        # Asset Transfer
+        "view_asset_transfer": True,
+        "add_asset_transfer": True,
+        "delete_asset_transfer": True,
+        "change_asset_transfer": True,
+        "archived_asset_transfer": True,
+        "restore_asset_transfer": True,
         # Company HSCode
         "view_hscode": True,
         "add_hscode": True,

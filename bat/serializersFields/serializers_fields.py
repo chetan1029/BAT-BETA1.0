@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 
 from django.utils.translation import ugettext_lazy as _
@@ -121,10 +122,16 @@ class MoneySerializerField(JSONField):
         """
         generate money object from json data
         """
-        if not isinstance(data, dict):
+        copied_data = data
+
+        if not isinstance(data, dict) and not isinstance(data, str):
             raise ValidationError("%s is not a valid %s" % (data, "format"))
-        amount = data.get("amount", None)
-        currency = data.get("currency", None)
+
+        if isinstance(data, str):
+            copied_data = json.loads(data)
+
+        amount = copied_data.get("amount", None)
+        currency = copied_data.get("currency", None)
         if amount is None:
             raise ValidationError({"amount": _("amount is required")})
         try:
@@ -230,4 +237,3 @@ class StatusField(ChoiceField):
             return value
         json_status = get_status_json(value)
         return json_status
-
