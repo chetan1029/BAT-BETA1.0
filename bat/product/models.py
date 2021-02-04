@@ -311,7 +311,7 @@ class Product(
         verbose_name_plural = _("Products")
 
     @property
-    def get_status_name(self):
+    def status_name(self):
         """
         return status name
         """

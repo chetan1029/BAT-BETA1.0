@@ -69,10 +69,10 @@ class ProductViewSet(
         "weight",
         "bullet_points",
         "description",
-        "tags",
+        "tags__name",
         "status__name",
     ]
-    field_header_map = {"status__name": "status"}
+    field_header_map = {"status__name": "status", "tags__name": "tags"}
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
