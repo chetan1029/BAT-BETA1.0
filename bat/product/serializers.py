@@ -292,8 +292,29 @@ class UpdateProductSerializer(serializers.ModelSerializer):
             instance.tags.set(*tags)
         return instance
 
+class ProductSerializerField(serializers.Field):
+    def to_representation(self, value):
+        """
+        give json of Product .
+        """
+        if isinstance(value, Product):
+            return ProductSerializer(value).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = Product.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {"current_location": _(f"{data} is not a valid Product.")}
+            )
 
 class ProductComponentSerializer(serializers.ModelSerializer):
+
+    product = ProductSerializerField()
+    component = ProductSerializerField()
+
     class Meta:
         model = ProductComponent
         fields = ("id", "product", "component", "quantity", "is_active")
