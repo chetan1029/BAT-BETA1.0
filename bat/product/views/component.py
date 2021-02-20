@@ -10,6 +10,8 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from taggit.models import Tag
+import openpyxl
+
 
 from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
 from bat.product import serializers
@@ -69,10 +71,10 @@ class ProductViewSet(
         "weight",
         "bullet_points",
         "description",
-        "tags__name",
+        "tags",
         "status__name",
     ]
-    field_header_map = {"status__name": "status", "tags__name": "tags"}
+    field_header_map = {"status__name": "status"}
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -197,6 +199,21 @@ class ProductViewSet(
         # data["type_data"] = type_data
         return Response(type_data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=["post"])
+    def import_bulk(self, request, *args, **kwargs):
+        """Set the update_status_bulk action."""
+        serializer = serializers.ImportProductSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        import_file = serializer.validated_data.get("import_file")
+        
+        ws = openpyxl.load_workbook(import_file) 
+        sheet = ws.active 
+        cell = sheet.cell(row = 1, column = 1)
+        print("\ncell : ", cell.value, "\n")
+        return Response(
+            {"detail": "message"},
+            status=status.HTTP_200_OK,
+        )
 
 class ComponentMeViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """Operations on Component ME."""

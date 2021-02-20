@@ -15,3 +15,7 @@ PRODUCT_STATUS = {"active": "PRODUCT_STATUS_ACTIVE",
                   "archive": "PRODUCT_STATUS_ARCHIVE",
                   "draft": "PRODUCT_STATUS_DRAFT",
                   "discontinued": "PRODUCT_STATUS_DISCONTINUED"}
+
+AVAILABLE_IMPORT_FILE_EXTENSIONS = {"csv": ["csv"],
+                                    "excel": ["xlsx"]
+                                    }

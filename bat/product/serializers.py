@@ -11,7 +11,7 @@ from bat.company.models import HsCode, PackingBox
 from bat.company.serializers import PackingBoxSerializer
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_status_object, set_field_errors
-from bat.product.constants import PRODUCT_STATUS_DRAFT
+from bat.product.constants import PRODUCT_STATUS_DRAFT, AVAILABLE_IMPORT_FILE_EXTENSIONS
 from bat.product.models import (
     ComponentMe,
     Image,
@@ -213,7 +213,6 @@ class ProductSerializer(serializers.ModelSerializer):
                 if hscode:
                     product["hscode"] = hscode
 
-
                 new_product = Product.objects.create(
                     company=member.company, **product
                 )
@@ -292,6 +291,7 @@ class UpdateProductSerializer(serializers.ModelSerializer):
             instance.tags.set(*tags)
         return instance
 
+
 class ProductSerializerField(serializers.Field):
     def to_representation(self, value):
         """
@@ -309,6 +309,7 @@ class ProductSerializerField(serializers.Field):
             raise ValidationError(
                 {"current_location": _(f"{data} is not a valid Product.")}
             )
+
 
 class ProductComponentSerializer(serializers.ModelSerializer):
 
@@ -516,3 +517,18 @@ class ComponentMeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data["status"] = get_status_object(validated_data)
         return super().update(instance, validated_data)
+
+
+class ImportProductSerializer(serializers.Serializer):
+    import_file = serializers.FileField(required=True)
+    file_format = serializers.ChoiceField(choices=["csv", "excel"], required=True)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        file_format = attrs.get("file_format")
+        import_file = attrs.get("import_file")
+        ext = import_file.name.split(".")[-1]
+
+        if not ext in AVAILABLE_IMPORT_FILE_EXTENSIONS.get(file_format):
+            raise ValidationError({"import_file": "File type is invalid"})
+        return attrs

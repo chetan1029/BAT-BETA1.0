@@ -439,6 +439,11 @@ class Product(
         member = get_member_from_request(request)
         return has_permission(member, "restore_product")
 
+    @staticmethod
+    def has_import_bulk_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_product")
+
 
 class ProductOption(models.Model):
     """
