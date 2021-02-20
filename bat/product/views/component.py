@@ -14,6 +14,7 @@ from taggit.models import Tag
 from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
 from bat.product import serializers
 from bat.product.constants import (
+    PRODUCT_STATUS,
     PRODUCT_PARENT_STATUS,
     PRODUCT_STATUS_ACTIVE,
     PRODUCT_STATUS_DISCONTINUED,
@@ -80,6 +81,55 @@ class ProductViewSet(
         context["company_id"] = company_id
         context["user_id"] = self.request.user.id
         return context
+    
+    @action(detail=False, methods=["post"])
+    def update_status_bulk(self, request, *args, **kwargs):
+        """Set the update_status_bulk action."""
+        serializer = serializers.UpdateStatusSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            ids = serializer.data.get("ids")
+            try:
+                with transaction.atomic():
+                    status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(serializer.data.get("status").lower()))
+                    Product.objects.filter(id__in=ids).update(status=status_obj)
+                    return Response(
+                        {"detail": "Products status updated."}, status=status.HTTP_200_OK
+                    )
+            except IntegrityError:
+                return Response(
+                    {"detail": _("Can't update status")},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
+        
+    
+    @action(detail=False, methods=["delete"])
+    def delete_bulk(self, request, *args, **kwargs):
+        """Set the delete_bulk action."""
+        ids = request.GET.get("ids", None)
+        if ids:
+            ids = ids.split(",")
+            ids = list(filter(None, ids))
+            if not ids:
+                return Response(
+                    {"detail": _("Id list should not empty.")},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                with transaction.atomic():
+                    Product.objects.filter(id__in=ids).delete()
+                return Response(
+                    {"detail": "Products deleted."}, status=status.HTTP_200_OK
+                )
+            except IntegrityError:
+                return Response(
+                    {"detail": _("Can't delete products")},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
+        return Response(
+                    {"detail": _("Provide id list")},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        
 
     @action(detail=True, methods=["post"])
     def active(self, request, *args, **kwargs):

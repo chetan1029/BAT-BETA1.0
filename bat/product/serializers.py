@@ -495,3 +495,18 @@ class ComponentMeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data["status"] = get_status_object(validated_data)
         return super().update(instance, validated_data)
+
+class IdListSerializer(serializers.Serializer):
+    ids = serializers.ListField(required=True)
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        ids = list(filter(None, data.get("ids")))
+        if not ids:
+            raise ValidationError({"ids" : "Id list should not empty."})
+        data = data.copy()
+        data["ids"] = ids
+        return data
+
+class UpdateStatusSerializer(IdListSerializer):
+    status = StatusField(required=True)
