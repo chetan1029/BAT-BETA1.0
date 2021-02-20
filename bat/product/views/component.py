@@ -20,7 +20,7 @@ from bat.product.constants import (
     PRODUCT_STATUS_DISCONTINUED,
 )
 from bat.product.filters import ProductFilter
-from bat.product.models import ComponentMe, Product
+from bat.product.models import ComponentMe, Product, Image
 from bat.setting.utils import get_status
 
 
@@ -70,10 +70,10 @@ class ProductViewSet(
         "weight",
         "bullet_points",
         "description",
-        "tags",
+        "tags__name",
         "status__name",
     ]
-    field_header_map = {"status__name": "status"}
+    field_header_map = {"status__name": "status", "tags__name": "tags"}
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -229,18 +229,23 @@ class ProductViewSet(
             .distinct("type")
             .values_list("type", flat=True)
         )
-        type_data = {}
+        type_data = []
         for type in types:
             product_data = {}
             queryset_type = queryset.filter(type__exact=type)
-            product_data["total"] = queryset_type.count()
-            product_data["products"] = queryset_type.values_list(
+            product_images = queryset_type.values_list(
                 "images", flat=True
             )[:3]
-            type_data[type] = product_data
-        data = {}
-        data["type_data"] = type_data
-        return Response(data, status=status.HTTP_200_OK)
+            product_images = Image.objects.filter(id__in=product_images)
+
+            type_data.append({
+                "type": type,
+                "total": queryset_type.count(),
+                "products": ["http://localhost:8000" + image.image.url for image in product_images]
+            })
+        # data = {}
+        # data["type_data"] = type_data
+        return Response(type_data, status=status.HTTP_200_OK)
 
 
 class ComponentMeViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
