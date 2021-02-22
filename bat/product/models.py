@@ -28,7 +28,6 @@ from bat.setting.models import Status
 
 STATUS_DRAFT = 4
 
-
 def get_member_from_request(request):
     """
     get member from request bye resolving it

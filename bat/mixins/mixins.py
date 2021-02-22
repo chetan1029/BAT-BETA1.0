@@ -74,7 +74,7 @@ class ExportMixin:
                 fields.remove("tags")
                 queryset_with_tags = queryset
                 queryset = queryset.values(*fields)
-            else :
+            else:
                 queryset = queryset.values(*self.export_fields)
 
         # get filenames
