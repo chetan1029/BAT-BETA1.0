@@ -41,6 +41,22 @@ def get_member_from_request(request):
     return member
 
 
+class IsDeletableMixin:
+    def is_deletable(self):
+        # get all the related object
+        for rel in self._meta.get_fields():
+            try:
+                # check if there is a relationship with at least one related object
+                if not rel.related_model.__name__ in self.ignore_rel_while_delete:
+                    related = rel.related_model.objects.filter(**{rel.field.name: self})
+                    if related.exists():
+                        # if there is return a flag
+                        return False
+            except AttributeError:  # an attribute error for field occurs when checking for AutoField
+                pass  # just pass as we dont need to check for AutoField
+        return True
+
+
 class ProductpermissionsModelmixin:
     @staticmethod
     def has_retrieve_permission(request):
@@ -208,7 +224,7 @@ class Image(models.Model):
 
 
 class Product(
-    ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model
+    ProductpermissionsModelmixin, UniqueWithinCompanyMixin, IsDeletableMixin, models.Model
 ):
     """
     Product Model.
@@ -304,6 +320,8 @@ class Product(
             "Product with same manufacturer_part_number already exists."
         ),
     }
+
+    ignore_rel_while_delete = ["ProductVariationOption"]
 
     class Meta:
         """Meta Class."""
@@ -438,12 +456,12 @@ class Product(
     def has_object_restore_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_product")
-    
+
     @staticmethod
     def has_update_status_bulk_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "change_product")
-    
+
     @staticmethod
     def has_delete_bulk_permission(request):
         member = get_member_from_request(request)

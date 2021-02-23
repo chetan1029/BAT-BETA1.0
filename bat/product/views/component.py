@@ -81,7 +81,7 @@ class ProductViewSet(
         context["company_id"] = company_id
         context["user_id"] = self.request.user.id
         return context
-    
+
     @action(detail=False, methods=["post"])
     def update_status_bulk(self, request, *args, **kwargs):
         """Set the update_status_bulk action."""
@@ -90,7 +90,8 @@ class ProductViewSet(
             ids = serializer.data.get("ids")
             try:
                 with transaction.atomic():
-                    status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(serializer.data.get("status").lower()))
+                    status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
+                        serializer.data.get("status").lower()))
                     Product.objects.filter(id__in=ids).update(status=status_obj)
                     return Response(
                         {"detail": "Products status updated."}, status=status.HTTP_200_OK
@@ -100,8 +101,7 @@ class ProductViewSet(
                     {"detail": _("Can't update status")},
                     status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 )
-        
-    
+
     @action(detail=False, methods=["delete"])
     def delete_bulk(self, request, *args, **kwargs):
         """Set the delete_bulk action."""
@@ -116,7 +116,11 @@ class ProductViewSet(
                 )
             try:
                 with transaction.atomic():
-                    Product.objects.filter(id__in=ids).delete()
+                    products = Product.objects.filter(id__in=ids)
+                    for product in products:
+                        if not product.is_deletable():
+                            ids.remove(str(product.id))
+                    products = Product.objects.filter(id__in=ids).delete()
                 return Response(
                     {"detail": "Products deleted."}, status=status.HTTP_200_OK
                 )
@@ -126,10 +130,9 @@ class ProductViewSet(
                     status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 )
         return Response(
-                    {"detail": _("Provide id list")},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        
+            {"detail": _("Provide id list")},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @action(detail=True, methods=["post"])
     def active(self, request, *args, **kwargs):
