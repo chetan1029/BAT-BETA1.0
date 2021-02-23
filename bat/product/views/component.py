@@ -10,6 +10,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
+from django.contrib.contenttypes.models import ContentType
 
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -36,6 +37,7 @@ from bat.product.filters import ProductFilter
 from bat.product.models import ComponentMe, Product, Image
 from bat.setting.utils import get_status
 from bat.company.models import Company, HsCode
+from bat.product.import_file import import_products_bulk_excel
 
 
 class ProductViewSet(
@@ -223,102 +225,16 @@ class ProductViewSet(
         serializer = serializers.ImportProductSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # get model_number map with map
-        products_map_tuple = Product.objects.filter(
-            company_id=company_id).values_list("model_number", "id")
-        products_map = {k: v for k, v in products_map_tuple}
-
-        # get exsisting hscoad map
-        hscode_map_tuple = HsCode.objects.filter(company_id=company_id).values_list("hscode", "id")
-        hscode_map = {k: v for k, v in hscode_map_tuple}
-
+        # get uploaded file type
+        file_format = serializer.validated_data.get("file_format")
         # get uploaded file
         import_file = serializer.validated_data.get("import_file")
-
-        # read file
-        ws = openpyxl.load_workbook(import_file)
-        sheet = ws.active
-
-        # get column's list
-        header = [cell.value for cell in sheet[1]]
-        header = header[1:]
-
-        # add column for errors
-        lat_col_index = len(header)+2
-        header_cell = sheet.cell(row=1, column=lat_col_index)
-        header_cell.value = "errors"
-        header.append(header_cell.value)
-
-        # create model objects
-        products_update = []
-        hscode_objs = []
-        for row in sheet.iter_rows(min_row=2, min_col=2):
-            values = {}
-            # process each value
-            for key, cell in zip(header, row):
-                if key == "status":
-                    values[key] = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
-                        cell.value.lower())) if cell.value else None
-                elif key == "weight":
-                    value = cell.value.replace(" g", "") if cell.value else None
-                    value = Weight({"g": Decimal(value)})
-                    values[key] = value
-                elif key == "tags":
-                    values[key] = cell.value.split(",") if cell.value else None
-                    # print(Tag.objects.all(), "........", TaggedItem.objects.all())
-                elif key == "hscode":
-                    try:
-                        _hscode_id = hscode_map.get(cell.value)
-                        values[key] = cell.value if cell.value else ""
-                    except KeyError as e:
-                        hscode_objs.append(HsCode(company=company, hscode=cell.value))
-                elif key in ["bullet_points", "description"]:
-                    values[key] = cell.value if cell.value else ""
-                elif key == "errors":
-                    pass
-                else:
-                    values[key] = cell.value
+        if file_format == "excel":
             try:
-                product_id = products_map.get(values.get("model_number", None))
-                product = Product(id=product_id, company=company, **values)
-                try:
-                    # validate object
-                    product.full_clean(exclude=["id"])
-                    products_update.append(product)
-                except ValidationError as e:
-                    # add validation error in file
-                    error_cell = sheet.cell(row=row[0].row, column=lat_col_index)
-                    error_cell.value = json.dumps(e.message_dict)
-            except KeyError as e:
-                print("have to create object")
-
-        # create temporaryfile
-        tmp_dir = tempfile.TemporaryDirectory()
-        tmp_xlsx_file_path = tmp_dir.name + "/" + import_file.name
-
-        # save changes in uploaded file
-        ws.save(tmp_xlsx_file_path)
-        ws.close()
-
-        # open saved file
-        ext = import_file.name.split(".")[-1]
-        f = open(tmp_xlsx_file_path, "rb")
-
-        response_args = {'content_type': 'application/'+ext}
-        response = HttpResponse(f, **response_args)
-        response['Content-Disposition'] = 'attachment; filename=' + \
-            import_file.name
-
-        response['Cache-Control'] = 'no-cache'
-        try:
-            # perform bulk operations
-            HsCode.objects.bulk_create(hscode_objs)
-            Product.objects.bulk_update(products_update, header[:-1])
-        except Exception as e:
-            response_args["status"] = status.HTTP_500_INTERNAL_SERVER_ERROR
-
-        # send file in response
-        return response
+                return import_products_bulk_excel(company, import_file)
+            except Exception:
+                return HttpResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return HttpResponse({"message": "File type is invalid."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ComponentMeViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
