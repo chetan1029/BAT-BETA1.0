@@ -458,14 +458,8 @@ class Product(
         return has_permission(member, "restore_product")
 
     @staticmethod
-    def has_update_status_bulk_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "change_product")
-
-    @staticmethod
-    def has_delete_bulk_permission(request):
-        member = get_member_from_request(request)
-        return has_permission(member, "delete_product")
+    def has_bulk_action_permission(request):
+        return True
 
 
 class ProductOption(models.Model):

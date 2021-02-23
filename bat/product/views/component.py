@@ -10,6 +10,8 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from taggit.models import Tag
+from rolepermissions.checkers import has_permission
+
 
 from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
 from bat.product import serializers
@@ -22,6 +24,7 @@ from bat.product.constants import (
 from bat.product.filters import ProductFilter
 from bat.product.models import ComponentMe, Product, Image
 from bat.setting.utils import get_status
+from bat.company.utils import get_member
 
 
 class ProductViewSet(
@@ -83,56 +86,57 @@ class ProductViewSet(
         return context
 
     @action(detail=False, methods=["post"])
-    def update_status_bulk(self, request, *args, **kwargs):
+    def bulk_action(self, request, *args, **kwargs):
         """Set the update_status_bulk action."""
-        serializer = serializers.UpdateStatusSerializer(data=request.data)
+        serializer = serializers.BulkActionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            ids = serializer.data.get("ids")
-            try:
-                with transaction.atomic():
-                    status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
-                        serializer.data.get("status").lower()))
-                    Product.objects.filter(id__in=ids).update(status=status_obj)
+            ids = serializer.validated_data.get("ids")
+            bulk_action = serializer.validated_data.get("action").lower()
+            member = get_member(
+                company_id=self.kwargs.get("company_pk", None),
+                user_id=self.request.user.id,
+            )
+            if bulk_action == "delete":
+                if not has_permission(member, "delete_product"):
+                    return Response({"detail": _("You do not have permission to perform delete action.")}, status=status.HTTP_403_FORBIDDEN)
+                try:
+                    ids_cant_delete = []
+                    with transaction.atomic():
+                        products = Product.objects.filter(id__in=ids)
+                        for product in products:
+                            if not product.is_deletable():
+                                ids.remove(product.id)
+                                ids_cant_delete.append(
+                                    {"id": product.id, "name": product.title})
+                        products = Product.objects.filter(id__in=ids).delete()
+                    content = {"message": "All selected products are deleted."}
+                    if ids_cant_delete:
+                        content["message"] = "Can't delete few products."
+                        content["not_deleted_products"] = ids_cant_delete
                     return Response(
-                        {"detail": "Products status updated."}, status=status.HTTP_200_OK
+                        content, status=status.HTTP_200_OK
                     )
-            except IntegrityError:
-                return Response(
-                    {"detail": _("Can't update status")},
-                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                )
-
-    @action(detail=False, methods=["delete"])
-    def delete_bulk(self, request, *args, **kwargs):
-        """Set the delete_bulk action."""
-        ids = request.GET.get("ids", None)
-        if ids:
-            ids = ids.split(",")
-            ids = list(filter(None, ids))
-            if not ids:
-                return Response(
-                    {"detail": _("Id list should not empty.")},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            try:
-                with transaction.atomic():
-                    products = Product.objects.filter(id__in=ids)
-                    for product in products:
-                        if not product.is_deletable():
-                            ids.remove(str(product.id))
-                    products = Product.objects.filter(id__in=ids).delete()
-                return Response(
-                    {"detail": "Products deleted."}, status=status.HTTP_200_OK
-                )
-            except IntegrityError:
-                return Response(
-                    {"detail": _("Can't delete products")},
-                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                )
-        return Response(
-            {"detail": _("Provide id list")},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+                except IntegrityError:
+                    return Response(
+                        {"detail": _("Can't delete products")},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    )
+            else:
+                if not has_permission(member, "change_product"):
+                    return Response({"detail": _("You do not have permission to perform this action.")}, status=status.HTTP_403_FORBIDDEN)
+                try:
+                    with transaction.atomic():
+                        status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
+                            serializer.data.get("action").lower()))
+                        Product.objects.filter(id__in=ids).update(status=status_obj)
+                        return Response(
+                            {"detail": "Products status updated."}, status=status.HTTP_200_OK
+                        )
+                except IntegrityError:
+                    return Response(
+                        {"detail": _("Can't update status")},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    )
 
     @action(detail=True, methods=["post"])
     def active(self, request, *args, **kwargs):
