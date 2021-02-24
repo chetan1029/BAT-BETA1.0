@@ -70,12 +70,6 @@ class ProductExcelErrorBuilder(object):
 
             f = open(tmp_xlsx_file_path, "rb")
             return f
-            # ext = filename.split(".")[-1]
-            # response_args = {'content_type': 'application/'+ext}
-            # response = HttpResponse(f, **response_args)
-            # response['Content-Disposition'] = 'attachment; filename=' + \
-            #     f.name
-            # response['Cache-Control'] = 'no-cache'
         except Exception:
             return None
 
@@ -100,53 +94,3 @@ class ProductExcelParser(object):
                 values[key] = cell.value
             data.append(values)
         return data, header
-
-
-def import_products_bulk_excel(company, import_file):
-
-    data, columns = ProductExcelParser.parse(import_file)
-    is_successful, invalid_records = Product.objects.import_bulk(
-        data=data, columns=columns, company=company)
-
-    if is_successful:
-        if invalid_records:
-            error_file = ProductExcelErrorBuilder.write(
-                invalid_records, import_file.name)
-            if error_file:
-                ext = import_file.name.split(".")[-1]
-                response_args = {'content_type': 'application/'+ext}
-                response = HttpResponse(error_file, **response_args)
-                response['Content-Disposition'] = 'attachment; filename=' + \
-                    import_file.name
-                response['Cache-Control'] = 'no-cache'
-            else:
-                return HttpResponse({"import performed successfully but can't generate error file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            return HttpResponse({"import performed successfully."}, status=status.HTTP_200_OK)
-    else:
-        return HttpResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-def import_products_bulk_csv(company, import_file):
-
-    data, columns = ProductCSVParser.parse(import_file)
-    is_successful, invalid_records = Product.objects.import_bulk(
-        data=data, columns=columns, company=company)
-    if is_successful:
-        if invalid_records:
-            error_file = ProductCSVErrorBuilder.write(
-                invalid_records, import_file.name)
-            if error_file:
-                ext = import_file.name.split(".")[-1]
-                response_args = {'content_type': 'application/'+ext}
-                response = HttpResponse(error_file, **response_args)
-                response['Content-Disposition'] = 'attachment; filename=' + \
-                    import_file.name
-                response['Cache-Control'] = 'no-cache'
-                return response
-            else:
-                return HttpResponse({"import performed successfully but can't generate error file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            return HttpResponse({"import performed successfully."}, status=status.HTTP_200_OK)
-    else:
-        return HttpResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -37,7 +37,7 @@ from bat.product.filters import ProductFilter
 from bat.product.models import ComponentMe, Product, Image
 from bat.setting.utils import get_status
 from bat.company.models import Company, HsCode
-from bat.product.import_file import import_products_bulk_excel, import_products_bulk_csv
+from bat.product.import_file import ProductCSVErrorBuilder, ProductExcelErrorBuilder, ProductCSVParser, ProductExcelParser
 
 
 class ProductViewSet(
@@ -229,11 +229,38 @@ class ProductViewSet(
         file_format = serializer.validated_data.get("file_format")
         # get uploaded file
         import_file = serializer.validated_data.get("import_file")
+        
         if file_format == "excel":
-            return import_products_bulk_excel(company, import_file)
-        if file_format == "csv":
-            return import_products_bulk_csv(company, import_file)
-        return HttpResponse({"message": "File type is invalid."}, status=status.HTTP_400_BAD_REQUEST)
+            parser_classes = ProductExcelParser
+            error_builder = ProductExcelErrorBuilder
+        elif file_format == "csv":
+            parser_classes = ProductCSVParser
+            error_builder = ProductCSVErrorBuilder
+        else:
+            return HttpResponse({"message": "File type is invalid."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data, columns = parser_classes.parse(import_file)
+        is_successful, invalid_records = Product.objects.import_bulk(
+            data=data, columns=columns, company=company)
+
+        if is_successful:
+            if invalid_records:
+                error_file = error_builder.write(
+                    invalid_records, import_file.name)
+                if error_file:
+                    ext = import_file.name.split(".")[-1]
+                    response_args = {'content_type': 'application/'+ext}
+                    response = HttpResponse(error_file, **response_args)
+                    response['Content-Disposition'] = 'attachment; filename=' + \
+                        import_file.name
+                    response['Cache-Control'] = 'no-cache'
+                    return response
+                else:
+                    return HttpResponse(_("Data import performed successfully but can't generate error file."), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return HttpResponse(_("Data import performed successfully."), status=status.HTTP_200_OK)
+        else:
+            return HttpResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ComponentMeViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
