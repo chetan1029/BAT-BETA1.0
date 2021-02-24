@@ -11,7 +11,7 @@ from bat.company.models import HsCode, PackingBox
 from bat.company.serializers import PackingBoxSerializer
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_status_object, set_field_errors
-from bat.product.constants import PRODUCT_STATUS_DRAFT
+from bat.product.constants import PRODUCT_STATUS_DRAFT, PRODUCT_STATUS_CHOICE
 from bat.product.models import (
     ComponentMe,
     Image,
@@ -213,7 +213,6 @@ class ProductSerializer(serializers.ModelSerializer):
                 if hscode:
                     product["hscode"] = hscode
 
-
                 new_product = Product.objects.create(
                     company=member.company, **product
                 )
@@ -292,6 +291,7 @@ class UpdateProductSerializer(serializers.ModelSerializer):
             instance.tags.set(*tags)
         return instance
 
+
 class ProductSerializerField(serializers.Field):
     def to_representation(self, value):
         """
@@ -309,6 +309,7 @@ class ProductSerializerField(serializers.Field):
             raise ValidationError(
                 {"current_location": _(f"{data} is not a valid Product.")}
             )
+
 
 class ProductComponentSerializer(serializers.ModelSerializer):
 
@@ -516,3 +517,18 @@ class ComponentMeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data["status"] = get_status_object(validated_data)
         return super().update(instance, validated_data)
+
+
+class BulkActionSerializer(serializers.Serializer):
+    ids = serializers.ListField(required=True)
+    action = serializers.ChoiceField(required=True, choices=list(
+        PRODUCT_STATUS_CHOICE)+["delete", "Delete"])
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        ids = list(filter(None, data.get("ids")))
+        if not ids:
+            raise ValidationError({"ids": "Id list should not empty."})
+        data = data.copy()
+        data["ids"] = ids
+        return data

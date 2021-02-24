@@ -3,14 +3,13 @@
 import os
 import uuid
 
-from django.conf import settings
 from django.contrib.contenttypes.fields import (
     GenericForeignKey,
     GenericRelation,
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
-from django.db import models
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -22,9 +21,12 @@ from rest_framework.exceptions import ValidationError
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
 
+
 from bat.company.models import Company, File, Member, PackingBox
 from bat.product.constants import *
 from bat.setting.models import Status
+from bat.setting.utils import get_status
+
 
 STATUS_DRAFT = 4
 
@@ -39,6 +41,22 @@ def get_member_from_request(request):
         Member, company__id=company_pk, user=request.user.id
     )
     return member
+
+
+class IsDeletableMixin:
+    def is_deletable(self):
+        # get all the related object
+        for rel in self._meta.get_fields():
+            try:
+                # check if there is a relationship with at least one related object
+                if not rel.related_model.__name__ in self.ignore_rel_while_delete:
+                    related = rel.related_model.objects.filter(**{rel.field.name: self})
+                    if related.exists():
+                        # if there is return a flag
+                        return False
+            except AttributeError:  # an attribute error for field occurs when checking for AutoField
+                pass  # just pass as we dont need to check for AutoField
+        return True
 
 
 class ProductpermissionsModelmixin:
@@ -207,8 +225,28 @@ class Image(models.Model):
         return self.image.name
 
 
+class ProductManager(models.Manager):
+    def bulk_delete(self, id_list):
+        ids_cant_delete = []
+        with transaction.atomic():
+            products = Product.objects.filter(id__in=id_list)
+            products_id = list(products.values_list("id", flat=True))
+            for product in products:
+                if not product.is_deletable():
+                    products_id.remove(product.id)
+                    ids_cant_delete.append(
+                        {"id": product.id, "name": product.title})
+            products = Product.objects.filter(id__in=products_id).delete()
+        return ids_cant_delete
+
+    def bulk_status_update(self, id_list, status):
+        with transaction.atomic():
+            status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(status))
+            Product.objects.filter(id__in=id_list).update(status=status_obj)
+
+
 class Product(
-    ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model
+    ProductpermissionsModelmixin, UniqueWithinCompanyMixin, IsDeletableMixin, models.Model
 ):
     """
     Product Model.
@@ -289,6 +327,8 @@ class Product(
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
+    objects = ProductManager()
+
     # UniqueWithinCompanyMixin data
     unique_within_company = [
         "sku",
@@ -304,6 +344,8 @@ class Product(
             "Product with same manufacturer_part_number already exists."
         ),
     }
+
+    ignore_rel_while_delete = ["ProductVariationOption"]
 
     class Meta:
         """Meta Class."""
@@ -438,6 +480,10 @@ class Product(
     def has_object_restore_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "restore_product")
+
+    @staticmethod
+    def has_bulk_action_permission(request):
+        return True
 
 
 class ProductOption(models.Model):
