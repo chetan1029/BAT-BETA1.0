@@ -1,8 +1,29 @@
+from drf_yasg2.openapi import Response as SwaggerResponse
+from bat.company.utils import get_member
+from bat.product.import_file import ProductCSVErrorBuilder, ProductExcelErrorBuilder, ProductCSVParser, ProductExcelParser
+from bat.company.models import Company, HsCode
+from bat.setting.utils import get_status
+from bat.product.models import ComponentMe, Product, Image
+from bat.product.filters import ProductFilter
+from bat.product.constants import (
+    PRODUCT_STATUS,
+    PRODUCT_PARENT_STATUS,
+    PRODUCT_STATUS_ACTIVE,
+    PRODUCT_STATUS_DISCONTINUED,
+    PRODUCT_STATUS
+)
+from bat.product import serializers
+from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
+from drf_yasg2.utils import swagger_auto_schema
+from rolepermissions.checkers import has_permission
+from taggit.models import Tag
+from measurement.measures import Weight
+import openpyxl
+from taggit.models import Tag, TaggedItem
 import json
 from decimal import Decimal
 import tempfile
-
-
+from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models.signals import post_save
@@ -20,26 +41,16 @@ from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from taggit.models import Tag, TaggedItem
-import openpyxl
-from measurement.measures import Weight
 
 
-from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
-from bat.product import serializers
-from bat.product.constants import (
-    PRODUCT_PARENT_STATUS,
-    PRODUCT_STATUS_ACTIVE,
-    PRODUCT_STATUS_DISCONTINUED,
-    PRODUCT_STATUS
+@method_decorator(
+    name="bulk_action",
+    decorator=swagger_auto_schema(
+        operation_description="Performs the given action on provided set of component/product ids. Available actions are: active, archive, draft and delete.",
+        request_body=serializers.BulkActionSerializer(),
+        responses={status.HTTP_200_OK: SwaggerResponse({"details": "string"})}
+    ),
 )
-from bat.product.filters import ProductFilter
-from bat.product.models import ComponentMe, Product, Image
-from bat.setting.utils import get_status
-from bat.company.models import Company, HsCode
-from bat.product.import_file import ProductCSVErrorBuilder, ProductExcelErrorBuilder, ProductCSVParser, ProductExcelParser
-
-
 class ProductViewSet(
     ArchiveMixin,
     RestoreMixin,
@@ -97,6 +108,49 @@ class ProductViewSet(
         context["company_id"] = company_id
         context["user_id"] = self.request.user.id
         return context
+
+    @action(detail=False, methods=["post"])
+    def bulk_action(self, request, *args, **kwargs):
+        """Set the update_status_bulk action."""
+        serializer = serializers.BulkActionSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            ids = serializer.validated_data.get("ids")
+            bulk_action = serializer.validated_data.get("action").lower()
+            member = get_member(
+                company_id=self.kwargs.get("company_pk", None),
+                user_id=self.request.user.id,
+            )
+            if bulk_action == "delete":
+                if not has_permission(member, "delete_product"):
+                    return Response({"detail": _("You do not have permission to perform delete action.")}, status=status.HTTP_403_FORBIDDEN)
+                try:
+                    ids_cant_delete = Product.objects.bulk_delete(ids)
+                    content = {"detail": _("All selected components/products are deleted.")}
+                    if ids_cant_delete:
+                        content["detail"] = _("Can't delete few components/products from selected.")
+                        content["not_deleted_products"] = ids_cant_delete
+                    return Response(
+                        content, status=status.HTTP_200_OK
+                    )
+                except IntegrityError:
+                    return Response(
+                        {"detail": _("Can't delete products")},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    )
+            else:
+                if not has_permission(member, "change_product"):
+                    return Response({"detail": _("You do not have permission to perform this action.")}, status=status.HTTP_403_FORBIDDEN)
+                try:
+                    Product.objects.bulk_status_update(
+                        ids, serializer.validated_data.get("action").lower())
+                    return Response(
+                        {"detail": _("The status has been updated for selected components/products.")}, status=status.HTTP_200_OK
+                    )
+                except IntegrityError:
+                    return Response(
+                        {"detail": _("Can't update status")},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    )
 
     @action(detail=True, methods=["post"])
     def active(self, request, *args, **kwargs):
@@ -229,7 +283,7 @@ class ProductViewSet(
         file_format = serializer.validated_data.get("file_format")
         # get uploaded file
         import_file = serializer.validated_data.get("import_file")
-        
+
         if file_format == "excel":
             parser_classes = ProductExcelParser
             error_builder = ProductExcelErrorBuilder
