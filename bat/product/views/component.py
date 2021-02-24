@@ -1,3 +1,4 @@
+from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models.signals import post_save
@@ -11,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from taggit.models import Tag
 from rolepermissions.checkers import has_permission
+from drf_yasg2.utils import swagger_auto_schema
 
 
 from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
@@ -25,8 +27,17 @@ from bat.product.filters import ProductFilter
 from bat.product.models import ComponentMe, Product, Image
 from bat.setting.utils import get_status
 from bat.company.utils import get_member
+from drf_yasg2.openapi import Response as SwaggerResponse
 
 
+@method_decorator(
+    name="bulk_action",
+    decorator=swagger_auto_schema(
+        operation_description="Perform spacified action on selected products as bulk operation. Available actions are active, archive, draft, delete",
+        request_body=serializers.BulkActionSerializer(),
+        responses={status.HTTP_200_OK: SwaggerResponse({"details": "string"})}
+    ),
+)
 class ProductViewSet(
     ArchiveMixin,
     RestoreMixin,
@@ -101,9 +112,9 @@ class ProductViewSet(
                     return Response({"detail": _("You do not have permission to perform delete action.")}, status=status.HTTP_403_FORBIDDEN)
                 try:
                     ids_cant_delete = Product.objects.bulk_delete(ids)
-                    content = {"message": "All selected products are deleted."}
+                    content = {"detail": _("All selected components/products are deleted.")}
                     if ids_cant_delete:
-                        content["message"] = "Can't delete few products."
+                        content["detail"] = _("Can't delete few components/products from selected.")
                         content["not_deleted_products"] = ids_cant_delete
                     return Response(
                         content, status=status.HTTP_200_OK
@@ -120,7 +131,7 @@ class ProductViewSet(
                     Product.objects.bulk_status_update(
                         ids, serializer.validated_data.get("action").lower())
                     return Response(
-                        {"detail": "Products status updated."}, status=status.HTTP_200_OK
+                        {"detail": _("The status has been updated for selected components/products.")}, status=status.HTTP_200_OK
                     )
                 except IntegrityError:
                     return Response(
