@@ -3,14 +3,13 @@
 import os
 import uuid
 
-from django.conf import settings
 from django.contrib.contenttypes.fields import (
     GenericForeignKey,
     GenericRelation,
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
-from django.db import models
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -22,9 +21,12 @@ from rest_framework.exceptions import ValidationError
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
 
+
 from bat.company.models import Company, File, Member, PackingBox
 from bat.product.constants import *
 from bat.setting.models import Status
+from bat.setting.utils import get_status
+
 
 STATUS_DRAFT = 4
 
@@ -223,6 +225,26 @@ class Image(models.Model):
         return self.image.name
 
 
+class ProductManager(models.Manager):
+    def bulk_delete(self, id_list):
+        ids_cant_delete = []
+        with transaction.atomic():
+            products = Product.objects.filter(id__in=id_list)
+            products_id = list(products.values_list("id", flat=True))
+            for product in products:
+                if not product.is_deletable():
+                    products_id.remove(product.id)
+                    ids_cant_delete.append(
+                        {"id": product.id, "name": product.title})
+            products = Product.objects.filter(id__in=products_id).delete()
+        return ids_cant_delete
+
+    def bulk_status_update(self, id_list, status):
+        with transaction.atomic():
+            status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(status))
+            Product.objects.filter(id__in=id_list).update(status=status_obj)
+
+
 class Product(
     ProductpermissionsModelmixin, UniqueWithinCompanyMixin, IsDeletableMixin, models.Model
 ):
@@ -304,6 +326,8 @@ class Product(
     )
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+
+    objects = ProductManager()
 
     # UniqueWithinCompanyMixin data
     unique_within_company = [

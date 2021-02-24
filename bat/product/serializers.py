@@ -519,19 +519,6 @@ class ComponentMeSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class IdListSerializer(serializers.Serializer):
-    ids = serializers.ListField(required=True)
-
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        ids = list(filter(None, data.get("ids")))
-        if not ids:
-            raise ValidationError({"ids": "Id list should not empty."})
-        data = data.copy()
-        data["ids"] = ids
-        return data
-
-
 class BulkActionSerializer(serializers.Serializer):
     ids = serializers.ListField(required=True)
     action = serializers.ChoiceField(required=True, choices=list(
@@ -540,11 +527,8 @@ class BulkActionSerializer(serializers.Serializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         ids = list(filter(None, data.get("ids")))
-
         if not ids:
             raise ValidationError({"ids": "Id list should not empty."})
-        if not all(isinstance(id, int) for id in ids):
-            raise ValidationError({"ids": "Id list should be list of integers."})
         data = data.copy()
         data["ids"] = ids
         return data

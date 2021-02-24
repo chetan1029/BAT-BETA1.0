@@ -100,15 +100,7 @@ class ProductViewSet(
                 if not has_permission(member, "delete_product"):
                     return Response({"detail": _("You do not have permission to perform delete action.")}, status=status.HTTP_403_FORBIDDEN)
                 try:
-                    ids_cant_delete = []
-                    with transaction.atomic():
-                        products = Product.objects.filter(id__in=ids)
-                        for product in products:
-                            if not product.is_deletable():
-                                ids.remove(product.id)
-                                ids_cant_delete.append(
-                                    {"id": product.id, "name": product.title})
-                        products = Product.objects.filter(id__in=ids).delete()
+                    ids_cant_delete = Product.objects.bulk_delete(ids)
                     content = {"message": "All selected products are deleted."}
                     if ids_cant_delete:
                         content["message"] = "Can't delete few products."
@@ -125,13 +117,11 @@ class ProductViewSet(
                 if not has_permission(member, "change_product"):
                     return Response({"detail": _("You do not have permission to perform this action.")}, status=status.HTTP_403_FORBIDDEN)
                 try:
-                    with transaction.atomic():
-                        status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
-                            serializer.data.get("action").lower()))
-                        Product.objects.filter(id__in=ids).update(status=status_obj)
-                        return Response(
-                            {"detail": "Products status updated."}, status=status.HTTP_200_OK
-                        )
+                    Product.objects.bulk_status_update(
+                        ids, serializer.validated_data.get("action").lower())
+                    return Response(
+                        {"detail": "Products status updated."}, status=status.HTTP_200_OK
+                    )
                 except IntegrityError:
                     return Response(
                         {"detail": _("Can't update status")},
