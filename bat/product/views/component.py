@@ -33,7 +33,7 @@ from drf_yasg2.openapi import Response as SwaggerResponse
 @method_decorator(
     name="bulk_action",
     decorator=swagger_auto_schema(
-        operation_description="Perform spacified action on selected products as bulk operation. Available actions are active, archive, draft, delete",
+        operation_description="Performs the given action on provided set of component/product ids. Available actions are: active, archive, draft and delete.",
         request_body=serializers.BulkActionSerializer(),
         responses={status.HTTP_200_OK: SwaggerResponse({"details": "string"})}
     ),
