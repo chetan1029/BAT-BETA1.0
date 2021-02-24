@@ -37,7 +37,7 @@ from bat.product.filters import ProductFilter
 from bat.product.models import ComponentMe, Product, Image
 from bat.setting.utils import get_status
 from bat.company.models import Company, HsCode
-from bat.product.import_file import import_products_bulk_excel
+from bat.product.import_file import import_products_bulk_excel, import_products_bulk_csv
 
 
 class ProductViewSet(
@@ -230,10 +230,9 @@ class ProductViewSet(
         # get uploaded file
         import_file = serializer.validated_data.get("import_file")
         if file_format == "excel":
-            try:
-                return import_products_bulk_excel(company, import_file)
-            except Exception:
-                return HttpResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return import_products_bulk_excel(company, import_file)
+        if file_format == "csv":
+            return import_products_bulk_csv(company, import_file)
         return HttpResponse({"message": "File type is invalid."}, status=status.HTTP_400_BAD_REQUEST)
 
 

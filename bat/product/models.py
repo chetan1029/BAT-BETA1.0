@@ -2,6 +2,9 @@
 
 import os
 import uuid
+import json
+from decimal import Decimal
+
 
 from django.conf import settings
 from django.contrib.contenttypes.fields import (
@@ -10,6 +13,7 @@ from django.contrib.contenttypes.fields import (
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
+from django.db import transaction
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -21,12 +25,18 @@ from measurement.measures import Weight
 from rest_framework.exceptions import ValidationError
 from rolepermissions.checkers import has_permission
 from taggit.managers import TaggableManager
+from taggit.models import Tag, TaggedItem
+from django.core.exceptions import ValidationError as CoreValidationError
 
-from bat.company.models import Company, File, Member, PackingBox
+
+from bat.company.models import Company, File, Member, PackingBox, HsCode
 from bat.product.constants import *
 from bat.setting.models import Status
+from bat.setting.utils import get_status
+
 
 STATUS_DRAFT = 4
+
 
 def get_member_from_request(request):
     """
@@ -206,6 +216,133 @@ class Image(models.Model):
         return self.image.name
 
 
+class ProductManager(models.Manager):
+    def import_bulk(self, data, columns, company=None):
+        # get model_number map with map
+        products_map_tuple = Product.objects.filter(
+            company_id=company.id).values_list("model_number", "id")
+        products_map = {k: v for k, v in products_map_tuple}
+
+        # get exsisting hscoad map
+        hscode_map_tuple = HsCode.objects.filter(company_id=company.id).values_list("hscode", "id")
+        hscode_map = {k: v for k, v in hscode_map_tuple}
+
+        # get exsisting tags map
+        tags_map = {}
+        if "tags" in columns:
+            tags_map_tuple = Tag.objects.all().values_list("name", "id")
+            tags_map = {k: v for k, v in tags_map_tuple}
+
+        # grab invalid records
+        invalid_records = []
+
+        # create model objects
+        product_tags_map = {}
+        tag_objs = []
+        products_id = []
+        products_update = []
+        hscode_objs = []
+        for row in data:
+            values = {}
+            # process each value
+            for key, value in row.items():
+                if key == "manufacturer_part_number":
+                    values[key] = value if value else ""
+                elif key in ["length", "width", "depth"] and value == "":
+                    values[key] = None
+                elif key == "status":
+                    values[key] = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
+                        value.lower())) if value else None
+                elif key == "weight":
+                    value = value.replace(" g", "") if value else None
+                    value = Weight({"g": Decimal(value)})
+                    values[key] = value
+                elif key == "tags":
+                    values[key] = value.split(",") if value else None
+                    ct = ContentType.objects.get(app_label='product', model='product')
+                elif key == "hscode":
+                    try:
+                        _hscode_id = hscode_map.get(value)
+                        values[key] = value if value else ""
+                    except KeyError as e:
+                        hscode_objs.append(HsCode(company=company, hscode=value))
+                elif key in ["bullet_points", "description"]:
+                    values[key] = value if value else ""
+                elif key == "errors":
+                    pass
+                else:
+                    values[key] = value
+
+            # process on product object
+            try:
+                product_id = products_map[values.get("model_number", None)]
+                products_id.append(product_id)
+                if "tags" in columns:
+                    tags = values.pop("tags", None)
+                    if not tags is None:
+                        product_tags_map[product_id] = tags
+                        for tag in tags:
+                            try:
+                                _t = tags_map[tag]
+                            except KeyError as e:
+                                tag_objs.append(Tag(name=tag, slug=tag))
+
+                if company:
+                    product = Product(id=product_id, company=company, **values)
+                    print(product.__dict__)
+                else:
+                    product = Product(id=product_id, **values)
+                try:
+                    # validate object
+                    product.full_clean(exclude=["id"])
+                    products_update.append(product)
+                except (CoreValidationError, ValidationError) as e:
+                    # add validation error in file
+                    row["errors"] = json.dumps(e.message_dict)
+                    invalid_records.append(row)
+            except KeyError as e:
+                row["errors"] = json.dumps({"message": "have to create a new object"})
+                invalid_records.append(row)
+
+        # try:
+        # perform bulk operations
+        with transaction.atomic():
+
+            HsCode.objects.bulk_create(hscode_objs)
+
+            columns2 = columns.copy()
+            columns2.remove("tags")
+            Product.objects.bulk_update(products_update, columns2[:-1])
+
+            if "tags" in columns:
+                # delete exsisting tagitems
+                ct = ContentType.objects.get(app_label='product', model='product')
+
+                TaggedItem.objects.filter(
+                    content_type_id=ct.id, object_id__in=products_id).delete()
+
+                # create new objects
+                Tag.objects.bulk_create(tag_objs)
+
+                # create tagitems objects
+                #   > get exsisting tags map
+                tags_map2 = {}
+                if "tags" in columns:
+                    tags_map_tuple2 = Tag.objects.all().values_list("name", "id")
+                    tags_map2 = {k: v for k, v in tags_map_tuple2}
+
+                #   > tagitem objects
+                tag_item_objs = []
+                for product_id, tags in product_tags_map.items():
+                    for tag in tags:
+                        tag_item_objs.append(TaggedItem(tag_id=tags_map2.get(
+                            tag), object_id=product_id, content_type_id=ct.id))
+                TaggedItem.objects.bulk_create(tag_item_objs)
+            return True, invalid_records
+        # except Exception as e:
+        #     return False, invalid_records
+
+
 class Product(
     ProductpermissionsModelmixin, UniqueWithinCompanyMixin, models.Model
 ):
@@ -287,6 +424,8 @@ class Product(
     )
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+
+    objects = ProductManager()
 
     # UniqueWithinCompanyMixin data
     unique_within_company = [
