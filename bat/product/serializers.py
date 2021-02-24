@@ -11,7 +11,7 @@ from bat.company.models import HsCode, PackingBox
 from bat.company.serializers import PackingBoxSerializer
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_status_object, set_field_errors
-from bat.product.constants import PRODUCT_STATUS_DRAFT, PRODUCT_STATUS_CHOICE
+from bat.product.constants import PRODUCT_STATUS_DRAFT, PRODUCT_STATUS_CHOICE2
 from bat.product.models import (
     ComponentMe,
     Image,
@@ -522,7 +522,7 @@ class ComponentMeSerializer(serializers.ModelSerializer):
 class BulkActionSerializer(serializers.Serializer):
     ids = serializers.ListField(required=True)
     action = serializers.ChoiceField(required=True, choices=list(
-        PRODUCT_STATUS_CHOICE)+["delete", "Delete"])
+        PRODUCT_STATUS_CHOICE2)+["delete", "Delete"])
 
     def validate(self, attrs):
         data = super().validate(attrs)
