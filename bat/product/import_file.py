@@ -1,13 +1,19 @@
 import tempfile
 import csv
 from io import StringIO
+from decimal import Decimal
+
 
 from django.http import HttpResponse
 
 from rest_framework import status
+from measurement.measures import Weight
+
 
 import openpyxl
 from bat.product.models import Product
+from bat.setting.utils import get_status
+from bat.product.constants import PRODUCT_STATUS, PRODUCT_PARENT_STATUS
 
 
 class ProductCSVErrorBuilder(object):
@@ -37,9 +43,27 @@ class ProductCSVParser(object):
         # read file
         decoded_file = csv_file.read().decode('utf-8').splitlines()
         reader = csv.DictReader(decoded_file, delimiter=',')
+
         for row in reader:
             row.pop("id")
-            data.append(row)
+            values = {}
+            for key, value in row.items():
+                if key in ["length", "width", "depth"] and value == "":
+                    value = None
+                elif key == "status":
+                    values[key] = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
+                        value.lower())) if value != "" else None
+                elif key == "weight":
+                    value = value.replace(" g", "") if value != "" else None
+                    value = Weight({"g": Decimal(value)})
+                    values[key] = value
+                elif key == "tags":
+                    values[key] = value.split(",") if value != "" else None
+                elif key == "errors":
+                    pass
+                else:
+                    values[key] = value
+            data.append(values)
         header = reader.fieldnames
         header.remove("id")
         return data, header
@@ -91,6 +115,25 @@ class ProductExcelParser(object):
             values = {}
             # process each value
             for key, cell in zip(header, row):
-                values[key] = cell.value
+                value = cell.value
+                if key == "manufacturer_part_number":
+                    values[key] = value if value else ""
+                elif key == "status":
+                    values[key] = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
+                        value.lower())) if value else None
+                elif key == "weight":
+                    value = value.replace(" g", "") if value else None
+                    value = Weight({"g": Decimal(value)})
+                    values[key] = value
+                elif key == "tags":
+                    values[key] = value.split(",") if value else None
+                elif key == "hscode":
+                    values[key] = value if value else ""
+                elif key in ["bullet_points", "description"]:
+                    values[key] = value if value else ""
+                elif key == "errors":
+                    pass
+                else:
+                    values[key] = value
             data.append(values)
         return data, header

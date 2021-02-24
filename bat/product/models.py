@@ -17,6 +17,7 @@ from django.db import transaction
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 from django_measurement.models import MeasurementField
@@ -217,7 +218,7 @@ class Image(models.Model):
 
 
 class ProductManager(models.Manager):
-    def import_bulk(self, data, columns, company=None):
+    def import_bulk(self, data, columns, company):
         # get model_number map with map
         products_map_tuple = Product.objects.filter(
             company_id=company.id).values_list("model_number", "id")
@@ -238,41 +239,18 @@ class ProductManager(models.Manager):
 
         # create model objects
         product_tags_map = {}
-        tag_objs = []
+        new_tags = []
         products_id = []
         products_update = []
-        hscode_objs = []
+        new_hscodes = []
         for row in data:
-            values = {}
-            # process each value
-            for key, value in row.items():
-                if key == "manufacturer_part_number":
-                    values[key] = value if value else ""
-                elif key in ["length", "width", "depth"] and value == "":
-                    values[key] = None
-                elif key == "status":
-                    values[key] = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(
-                        value.lower())) if value else None
-                elif key == "weight":
-                    value = value.replace(" g", "") if value else None
-                    value = Weight({"g": Decimal(value)})
-                    values[key] = value
-                elif key == "tags":
-                    values[key] = value.split(",") if value else None
-                    ct = ContentType.objects.get(app_label='product', model='product')
-                elif key == "hscode":
-                    try:
-                        _hscode_id = hscode_map.get(value)
-                        values[key] = value if value else ""
-                    except KeyError as e:
-                        hscode_objs.append(HsCode(company=company, hscode=value))
-                elif key in ["bullet_points", "description"]:
-                    values[key] = value if value else ""
-                elif key == "errors":
-                    pass
-                else:
-                    values[key] = value
-
+            if row.get("hscode", None):
+                try:
+                    if row["hscode"] != "":
+                        _hscode_id = hscode_map[row["hscode"]]
+                except KeyError as e:
+                    new_hscodes.append(row["hscode"])
+            values = row.copy()
             # process on product object
             try:
                 product_id = products_map[values.get("model_number", None)]
@@ -280,67 +258,75 @@ class ProductManager(models.Manager):
                 if "tags" in columns:
                     tags = values.pop("tags", None)
                     if not tags is None:
+                        tags = list(set(tags))
                         product_tags_map[product_id] = tags
                         for tag in tags:
                             try:
                                 _t = tags_map[tag]
                             except KeyError as e:
-                                tag_objs.append(Tag(name=tag, slug=tag))
+                                new_tags.append(tag)
 
-                if company:
-                    product = Product(id=product_id, company=company, **values)
-                    print(product.__dict__)
-                else:
-                    product = Product(id=product_id, **values)
+                product = Product(id=product_id, company=company, **values)
                 try:
                     # validate object
                     product.full_clean(exclude=["id"])
                     products_update.append(product)
                 except (CoreValidationError, ValidationError) as e:
                     # add validation error in file
-                    row["errors"] = json.dumps(e.message_dict)
-                    invalid_records.append(row)
+                    detail = {}
+                    detail["id"] = str(product.id)
+                    detail["model_number"] = values.get("model_number", None)
+                    detail["errors"] = json.dumps(e.message_dict)
+                    invalid_records.append(detail)
             except KeyError as e:
-                row["errors"] = json.dumps({"message": "have to create a new object"})
-                invalid_records.append(row)
+                # TODO create new objects
+                pass
 
-        # try:
-        # perform bulk operations
-        with transaction.atomic():
+        try:
+            # perform bulk operations
+            with transaction.atomic():
+                # hscode objects
+                hscode_objs = []
+                new_hscodes = list(set(new_hscodes))
+                for hscode in new_hscodes:
+                    hscode_objs.append(HsCode(company=company, hscode=hscode))
+                HsCode.objects.bulk_create(hscode_objs)
 
-            HsCode.objects.bulk_create(hscode_objs)
+                columns2 = columns.copy()
+                columns2.remove("tags")
+                Product.objects.bulk_update(products_update, columns2[:-1])
 
-            columns2 = columns.copy()
-            columns2.remove("tags")
-            Product.objects.bulk_update(products_update, columns2[:-1])
-
-            if "tags" in columns:
-                # delete exsisting tagitems
-                ct = ContentType.objects.get(app_label='product', model='product')
-
-                TaggedItem.objects.filter(
-                    content_type_id=ct.id, object_id__in=products_id).delete()
-
-                # create new objects
-                Tag.objects.bulk_create(tag_objs)
-
-                # create tagitems objects
-                #   > get exsisting tags map
-                tags_map2 = {}
                 if "tags" in columns:
-                    tags_map_tuple2 = Tag.objects.all().values_list("name", "id")
-                    tags_map2 = {k: v for k, v in tags_map_tuple2}
+                    # delete exsisting tagitems
+                    ct = ContentType.objects.get(app_label='product', model='product')
 
-                #   > tagitem objects
-                tag_item_objs = []
-                for product_id, tags in product_tags_map.items():
-                    for tag in tags:
-                        tag_item_objs.append(TaggedItem(tag_id=tags_map2.get(
-                            tag), object_id=product_id, content_type_id=ct.id))
-                TaggedItem.objects.bulk_create(tag_item_objs)
-            return True, invalid_records
-        # except Exception as e:
-        #     return False, invalid_records
+                    TaggedItem.objects.filter(
+                        content_type_id=ct.id, object_id__in=products_id).delete()
+
+                    # create new objects
+                    tag_objs = []
+                    for tag in list(set(new_tags)):
+                        tag_objs.append(Tag(name=tag, slug=slugify(tag, allow_unicode=True)))
+
+                    Tag.objects.bulk_create(tag_objs)
+
+                    # create tagitems objects
+                    #   > get exsisting tags map
+                    tags_map2 = {}
+                    if "tags" in columns:
+                        tags_map_tuple2 = Tag.objects.all().values_list("name", "id")
+                        tags_map2 = {k: v for k, v in tags_map_tuple2}
+
+                    #   > tagitem objects
+                    tag_item_objs = []
+                    for product_id, tags in product_tags_map.items():
+                        for tag in tags:
+                            tag_item_objs.append(TaggedItem(tag_id=tags_map2.get(
+                                tag), object_id=product_id, content_type_id=ct.id))
+                    TaggedItem.objects.bulk_create(tag_item_objs)
+                return True, invalid_records
+        except Exception as e:
+            return False, invalid_records
 
 
 class Product(
