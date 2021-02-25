@@ -268,7 +268,7 @@ class ProductViewSet(
         # data["type_data"] = type_data
         return Response(type_data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_path="import")
     def import_bulk(self, request, *args, **kwargs):
         """Set the update_status_bulk action."""
         # get company
