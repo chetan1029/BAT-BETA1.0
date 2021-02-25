@@ -258,6 +258,7 @@ class ProductManager(models.Manager):
         products_update = []
         new_hscodes = []
         for row in data:
+            original = row.pop("_original")
             if row.get("hscode", None):
                 try:
                     if row["hscode"] != "":
@@ -265,7 +266,6 @@ class ProductManager(models.Manager):
                 except KeyError as e:
                     new_hscodes.append(row["hscode"])
             values = row.copy()
-            line_number = values.pop("line_number", None)
             # process on product object
             try:
                 product_id = products_map[values.get("model_number", None)]
@@ -288,19 +288,11 @@ class ProductManager(models.Manager):
                     products_update.append(product)
                 except (CoreValidationError, ValidationError) as e:
                     # add validation error in file
-                    if not line_number is None:
-                        detail = {}
-                        detail["id"] = str(product.id)
-                        detail["line_number"] = line_number
-                        detail["model_number"] = values.get("model_number", None)
-                        detail["errors"] = json.dumps(e.message_dict)
-                        invalid_records.append(detail)
-                    else:
-                        detail = {}
-                        detail["id"] = str(product.id)
-                        detail["model_number"] = values.get("model_number", None)
-                        detail["errors"] = json.dumps(e.message_dict)
-                        invalid_records.append(detail)
+                    errors = original.get("errors", None)
+                    if errors:
+                        original["errors"] = json.dumps({**errors, **e.message_dict})
+                    original["errors"] = json.dumps(e.message_dict)
+                    invalid_records.append(original)
             except KeyError as e:
                 # TODO create new objects
                 pass

@@ -300,8 +300,7 @@ class ProductViewSet(
         if is_successful:
             if invalid_records:
                 error_file = error_builder.write(
-                    invalid_records, import_file)
-
+                    invalid_records, import_file.name)
                 if error_file:
                     ext = import_file.name.split(".")[-1]
                     response_args = {'content_type': 'application/'+ext}
