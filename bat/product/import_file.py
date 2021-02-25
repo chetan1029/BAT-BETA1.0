@@ -1,3 +1,4 @@
+import json
 import tempfile
 import csv
 from io import StringIO
@@ -19,7 +20,7 @@ from bat.product.constants import PRODUCT_STATUS, PRODUCT_PARENT_STATUS
 class ProductCSVErrorBuilder(object):
 
     @classmethod
-    def write(cls, invalid_records, filename):
+    def write(cls, invalid_records, data_file):
 
         # header mapping
         headers = [*invalid_records[0]]
@@ -44,9 +45,12 @@ class ProductCSVParser(object):
         decoded_file = csv_file.read().decode('utf-8').splitlines()
         reader = csv.DictReader(decoded_file, delimiter=',')
 
+        line_number = 2
         for row in reader:
             row.pop("id")
-            values = {}
+            values = {"line_number": line_number}
+            line_number += 1
+
             for key, value in row.items():
                 if key in ["length", "width", "depth"] and value == "":
                     value = None
@@ -72,26 +76,28 @@ class ProductCSVParser(object):
 class ProductExcelErrorBuilder(object):
 
     @classmethod
-    def write(cls, invalid_records, filename):
+    def write(cls, invalid_records, data_file):
         # Temporary files
         tmp_dir = tempfile.TemporaryDirectory()
-        tmp_xlsx_file_path = tmp_dir.name + "/" + filename
+        tmp_xlsx_file_path = tmp_dir.name + "/" + data_file.name
 
         # create Workbook
-        wb = openpyxl.Workbook()
-        ws = wb.active
+        wb = openpyxl.load_workbook(data_file)
+        sheet = wb.active
 
         # header mapping
-        headers = [*invalid_records[0]]
-        ws.append(headers)
+        lat_col_index = len(sheet[1])+1
+        header_cell = sheet.cell(row=1, column=lat_col_index)
+        header_cell.value = "errors"
 
         try:
             # write data
             for row in invalid_records:
-                ws.append(list(row.values()))
+                row_number = row.get("line_number")
+                error_cell = sheet.cell(row=row_number, column=lat_col_index)
+                error_cell.value = row.get("errors")
             wb.save(tmp_xlsx_file_path)
             wb.close()
-
             f = open(tmp_xlsx_file_path, "rb")
             return f
         except Exception:
@@ -112,7 +118,7 @@ class ProductExcelParser(object):
         header.remove("id")
 
         for row in sheet.iter_rows(min_row=2, min_col=2):
-            values = {}
+            values = {"line_number": row[0].row}
             # process each value
             for key, cell in zip(header, row):
                 value = cell.value
