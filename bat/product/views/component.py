@@ -1,8 +1,39 @@
+from drf_yasg2.openapi import Response as SwaggerResponse
+from bat.company.utils import get_member
+from bat.product.import_file import ProductCSVErrorBuilder, ProductExcelErrorBuilder, ProductCSVParser, ProductExcelParser
+from bat.company.models import Company, HsCode
+from bat.setting.utils import get_status
+from bat.product.models import ComponentMe, Product, Image
+from bat.product.filters import ProductFilter
+from bat.product.constants import (
+    PRODUCT_STATUS,
+    PRODUCT_PARENT_STATUS,
+    PRODUCT_STATUS_ACTIVE,
+    PRODUCT_STATUS_DISCONTINUED,
+    PRODUCT_STATUS
+)
+from bat.product import serializers
+from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
+from drf_yasg2.utils import swagger_auto_schema
+from rolepermissions.checkers import has_permission
+from taggit.models import Tag
+from measurement.measures import Weight
+import openpyxl
+from taggit.models import Tag, TaggedItem
+import json
+from decimal import Decimal
+import tempfile
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models.signals import post_save
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
+from django.contrib.contenttypes.models import ContentType
+
+
 from django_filters.rest_framework import DjangoFilterBackend
 from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import mixins, status, viewsets
@@ -10,24 +41,6 @@ from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from taggit.models import Tag
-from rolepermissions.checkers import has_permission
-from drf_yasg2.utils import swagger_auto_schema
-
-
-from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
-from bat.product import serializers
-from bat.product.constants import (
-    PRODUCT_STATUS,
-    PRODUCT_PARENT_STATUS,
-    PRODUCT_STATUS_ACTIVE,
-    PRODUCT_STATUS_DISCONTINUED,
-)
-from bat.product.filters import ProductFilter
-from bat.product.models import ComponentMe, Product, Image
-from bat.setting.utils import get_status
-from bat.company.utils import get_member
-from drf_yasg2.openapi import Response as SwaggerResponse
 
 
 @method_decorator(
@@ -84,10 +97,10 @@ class ProductViewSet(
         "weight",
         "bullet_points",
         "description",
-        "tags__name",
+        "tags",
         "status__name",
     ]
-    field_header_map = {"status__name": "status", "tags__name": "tags"}
+    field_header_map = {"status__name": "status"}
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -254,6 +267,54 @@ class ProductViewSet(
         # data = {}
         # data["type_data"] = type_data
         return Response(type_data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="import")
+    def import_bulk(self, request, *args, **kwargs):
+        """Set the update_status_bulk action."""
+        # get company
+        company_id = kwargs.get("company_pk", None)
+        company = get_object_or_404(Company, pk=company_id)
+
+        #  get and validate input
+        serializer = serializers.ImportProductSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # get uploaded file type
+        file_format = serializer.validated_data.get("file_format")
+        # get uploaded file
+        import_file = serializer.validated_data.get("import_file")
+
+        if file_format == "excel":
+            parser_classes = ProductExcelParser
+            error_builder = ProductExcelErrorBuilder
+        elif file_format == "csv":
+            parser_classes = ProductCSVParser
+            error_builder = ProductCSVErrorBuilder
+        else:
+            return HttpResponse({"message": "File type is invalid."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data, columns = parser_classes.parse(import_file)
+        is_successful, invalid_records = Product.objects.import_bulk(
+            data=data, columns=columns, company=company)
+
+        if is_successful:
+            if invalid_records:
+                error_file = error_builder.write(
+                    invalid_records, import_file.name)
+                if error_file:
+                    ext = import_file.name.split(".")[-1]
+                    response_args = {'content_type': 'application/'+ext}
+                    response = HttpResponse(error_file, **response_args)
+                    response['Content-Disposition'] = 'attachment; filename=' + \
+                        import_file.name
+                    response['Cache-Control'] = 'no-cache'
+                    return response
+                else:
+                    return HttpResponse(_("Data import performed successfully but can't generate error file."), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return HttpResponse(_("Data import performed successfully."), status=status.HTTP_200_OK)
+        else:
+            return HttpResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ComponentMeViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):

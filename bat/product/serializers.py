@@ -11,7 +11,7 @@ from bat.company.models import HsCode, PackingBox
 from bat.company.serializers import PackingBoxSerializer
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_status_object, set_field_errors
-from bat.product.constants import PRODUCT_STATUS_DRAFT, PRODUCT_STATUS_CHOICE2
+from bat.product.constants import PRODUCT_STATUS_DRAFT, AVAILABLE_IMPORT_FILE_EXTENSIONS, PRODUCT_STATUS_CHOICE2
 from bat.product.models import (
     ComponentMe,
     Image,
@@ -518,6 +518,22 @@ class ComponentMeSerializer(serializers.ModelSerializer):
         validated_data["status"] = get_status_object(validated_data)
         return super().update(instance, validated_data)
 
+
+
+
+class ImportProductSerializer(serializers.Serializer):
+    import_file = serializers.FileField(required=True)
+    file_format = serializers.ChoiceField(choices=["csv", "excel"], required=True)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        file_format = attrs.get("file_format")
+        import_file = attrs.get("import_file")
+        ext = import_file.name.split(".")[-1]
+
+        if not ext in AVAILABLE_IMPORT_FILE_EXTENSIONS.get(file_format):
+            raise ValidationError({"import_file": "File type is invalid"})
+        return attrs
 
 class BulkActionSerializer(serializers.Serializer):
     ids = serializers.ListField(required=True)

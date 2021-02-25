@@ -13,6 +13,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 
+from measurement.measures.mass import Mass
+
 
 class ArchiveMixin:
     @action(detail=True, methods=["post"])
@@ -65,8 +67,15 @@ class ExportMixin:
     def xlsxeport(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
             self.get_queryset())
+        queryset_with_tags = None
         if getattr(self, "export_fields", None):
-            queryset = queryset.values(*self.export_fields)
+            if "tags" in self.export_fields:
+                fields = self.export_fields.copy()
+                fields.remove("tags")
+                queryset_with_tags = queryset
+                queryset = queryset.values(*fields)
+            else:
+                queryset = queryset.values(*self.export_fields)
 
         # get filenames
         formatted_datestring = datetime.date.today().strftime("%Y%m%d")
@@ -92,6 +101,8 @@ class ExportMixin:
             else:
                 values_qs = queryset.values()
         qs_header = list(values_qs.query.values_select)
+        if queryset_with_tags:
+            qs_header.append("tags")
         header_map = getattr(self, "field_header_map", None)
         if header_map:
             header = qs_header.copy()
@@ -109,9 +120,14 @@ class ExportMixin:
                 for row in queryset:
                     row2 = []
                     for key, value in row.items():
+                        if isinstance(value, Mass):
+                            value = str(value)
                         if isinstance(value, dict):
                             value = json.dumps(value)
                         row2.append(value)
+                    if queryset_with_tags:
+                        tags = ",".join(list(queryset_with_tags.get(pk=row.get("id")).tags.names()))
+                        row2.append(tags)
                     ws.append(row2)
             wb.save(tmp_xlsx_file_path)
             wb.close()
