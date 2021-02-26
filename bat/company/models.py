@@ -1747,7 +1747,6 @@ class CompanyCredential(models.Model):
         return has_permission(member, "restore_company_credential")
 
 
-
 class ComponentGoldenSample(models.Model):
     """
     Component Golden Sample.

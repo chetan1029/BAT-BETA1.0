@@ -117,6 +117,7 @@ LOCAL_APPS = [
     "bat.product.apps.ProductConfig",
     "bat.comments.apps.CommentsConfig",
     "bat.subscription.apps.SubscriptionConfig",
+    "bat.market.apps.MarketConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -417,3 +418,32 @@ EXISTING_INVITE_LINK = env("EXISTING_INVITE_LINK", default="")
 VENDOR_EXISTING_INVITE_LINK = env("VENDOR_EXISTING_INVITE_LINK", default="")
 
 VENDOR_DEFAULT_PASSWORD = env("VENDOR_DEFAULT_PASSWORD", default="")
+
+# Amazon oauth
+AMAZON_LWA_TOKEN_ENDPOINT = env(
+    "AMAZON_LWA_TOKEN_ENDPOINT", default="https://api.amazon.com/auth/o2/token"
+)
+
+LWA_CLIENT_ID = ""
+LWA_CLIENT_SECRET = ""
+
+# market
+
+SELLING_REGIONS = {
+    "us-east-1": {
+        "name": "North America",
+        "endpoint": "https://sellingpartnerapi-na.amazon.com",
+    },
+    "eu-west-1": {
+        "name": "Europe",
+        "endpoint": "https://sellingpartnerapi-eu.amazon.com",
+    },
+    "us-west-2": {
+        "name": "Far East",
+        "endpoint": "https://sellingpartnerapi-fe.amazon.com",
+    }
+}
+
+MARKETPLACE_ID = {
+
+}
