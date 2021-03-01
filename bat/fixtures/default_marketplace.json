@@ -1,0 +1,172 @@
+[
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 1,
+    "fields": {
+      "name": null,
+      "country": "ES",
+      "marketplaceId": "A1RKKUPIHCS9HS",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 2,
+    "fields": {
+      "name": null,
+      "country": "GB",
+      "marketplaceId": "A1F83G8C2ARO7P",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 3,
+    "fields": {
+      "name": null,
+      "country": "FR",
+      "marketplaceId": "A13V1IB3VIYZZH",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 4,
+    "fields": {
+      "name": null,
+      "country": "NL",
+      "marketplaceId": "A1805IZSGTT6HS",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 5,
+    "fields": {
+      "name": null,
+      "country": "DE",
+      "marketplaceId": "A1PA6795UKMFR9",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 6,
+    "fields": {
+      "name": null,
+      "country": "IT",
+      "marketplaceId": "APJ6JRA9NG5V4",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 7,
+    "fields": {
+      "name": null,
+      "country": "SE",
+      "marketplaceId": "A2NODRKZP88ZB9",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 8,
+    "fields": {
+      "name": null,
+      "country": "TR",
+      "marketplaceId": "A33AVAJ2PDY3EV",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 9,
+    "fields": {
+      "name": null,
+      "country": "AE",
+      "marketplaceId": "A2VIGQ35RCS4UG",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 10,
+    "fields": {
+      "name": null,
+      "country": "IN",
+      "marketplaceId": "A21TJRUUN4KGV",
+      "region": "eu-west-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 11,
+    "fields": {
+      "name": null,
+      "country": "CA",
+      "marketplaceId": "A2EUQ1WTGCTBG2",
+      "region": "us-east-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 12,
+    "fields": {
+      "name": null,
+      "country": "US",
+      "marketplaceId": "ATVPDKIKX0DER",
+      "region": "us-east-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 13,
+    "fields": {
+      "name": null,
+      "country": "MX",
+      "marketplaceId": "A1AM78C64UM0Y8",
+      "region": "us-east-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 14,
+    "fields": {
+      "name": null,
+      "country": "BR",
+      "marketplaceId": "A2Q3Y263D00KWC",
+      "region": "us-east-1"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 15,
+    "fields": {
+      "name": null,
+      "country": "SG",
+      "marketplaceId": "A19VAU5U5O7RUS",
+      "region": "us-west-2"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 16,
+    "fields": {
+      "name": null,
+      "country": "AU",
+      "marketplaceId": "A39IBJ37TRP1C6",
+      "region": "us-west-2"
+    }
+  },
+  {
+    "model": "market.amazonmarketplace",
+    "pk": 17,
+    "fields": {
+      "name": null,
+      "country": "JP",
+      "marketplaceId": "A1VC38T7YXB528",
+      "region": "us-west-2"
+    }
+  }
+]

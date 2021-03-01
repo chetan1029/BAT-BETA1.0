@@ -420,6 +420,9 @@ VENDOR_EXISTING_INVITE_LINK = env("VENDOR_EXISTING_INVITE_LINK", default="")
 VENDOR_DEFAULT_PASSWORD = env("VENDOR_DEFAULT_PASSWORD", default="")
 
 # Amazon oauth
+
+AMAZON_SELLER_CENTRAL_AUTHORIZE_URL = "https://sellercentral.amazon.com/apps/authorize/consent"
+
 AMAZON_LWA_TOKEN_ENDPOINT = env(
     "AMAZON_LWA_TOKEN_ENDPOINT", default="https://api.amazon.com/auth/o2/token"
 )
@@ -442,8 +445,4 @@ SELLING_REGIONS = {
         "name": "Far East",
         "endpoint": "https://sellingpartnerapi-fe.amazon.com",
     }
-}
-
-MARKETPLACE_ID = {
-
 }
