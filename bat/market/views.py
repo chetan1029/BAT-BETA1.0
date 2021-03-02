@@ -63,28 +63,23 @@ class AccountsReceiveAmazonCallback(APIView):
         spapi_oauth_code = request.GET.get('spapi_oauth_code')
 
         state = base64.b64decode(state.encode("ascii")).decode("ascii")
-        print("state :", state)
         dt_array = state.split("/")
 
         old_timestamp = float(dt_array[2])
-        print(old_timestamp)
         old_datetime = datetime.fromtimestamp(old_timestamp)
         datetime_now = datetime.now()
 
         timedelta = datetime_now - old_datetime
-        print(divmod(timedelta.total_seconds(), 60))
-
-        # user = User.objects.get(username=dt_array[0])
-        # company = Company.objects.get(pk=dt_array[1])
-
-        # marketplace = AmazonMarketplace.objects.get(pk=1)
-
-        # AmazonAccounts.objects.create(marketplace=marketplace,
-        #                               user=user,
-        #                               company=company,
-        #                               selling_partner_id=selling_partner_id,
-        #                               mws_auth_token=mws_auth_token,
-        #                               spapi_oauth_code=spapi_oauth_code
-        #                               )
-
+        minutes = divmod(timedelta.total_seconds(), 60)[0]
+        if minutes <= 5.0:
+            user = User.objects.get(username=dt_array[0])
+            company = Company.objects.get(pk=dt_array[1])
+            marketplace = AmazonMarketplace.objects.get(pk=1)
+            AmazonAccounts.objects.create(marketplace=marketplace,
+                                          user=user,
+                                          company=company,
+                                          selling_partner_id=selling_partner_id,
+                                          mws_auth_token=mws_auth_token,
+                                          spapi_oauth_code=spapi_oauth_code
+                                          )
         return Response()
