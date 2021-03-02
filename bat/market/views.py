@@ -66,12 +66,13 @@ class AccountsReceiveAmazonCallback(APIView):
         print("state :", state)
         dt_array = state.split("/")
 
-        # old_timestamp = dt_array[2]
-        # old_dt = datetime.fromtimestamp(old_timestamp)
-        # dt_now = datetime.now()
+        old_timestamp = float(dt_array[2])
+        print(old_timestamp)
+        old_datetime = datetime.fromtimestamp(old_timestamp)
+        datetime_now = datetime.now()
 
-        # td = dt_now - old_dt
-        # print(td)
+        timedelta = datetime_now - old_datetime
+        print(divmod(timedelta.total_seconds(), 60))
 
         # user = User.objects.get(username=dt_array[0])
         # company = Company.objects.get(pk=dt_array[1])
