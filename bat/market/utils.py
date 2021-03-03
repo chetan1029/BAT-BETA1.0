@@ -1,3 +1,6 @@
+from django.conf import settings
+
+import requests
 
 from Crypto.Cipher import AES, DES
 
@@ -23,3 +26,28 @@ class CryptoCipher(object):
         AES_obj = AES.new('This is a key123', AES.MODE_CBC, 'This is an IV456')
         plain_text = AES_obj.decrypt(text).decode("utf-8")
         return plain_text
+
+
+class AmazonAPI(object):
+
+    @classmethod
+    def get_oauth2_token(cls, amazon_account):
+        url = settings.AMAZON_LWA_TOKEN_ENDPOINT
+        form_data = {
+            "grant_type": "authorization_code",
+            "code": amazon_account.spapi_oauth_code,
+            "redirect_uri": "url",
+            "client_id": "client_id",
+            "client_secret": "client_secret"
+        }
+        try:
+            response = requests.post(url, data=form_data)
+            response_data = {}
+            if response.status_code == requests.codes.ok:
+                response_data = response.text
+                return True, response_data
+            else:
+                response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            print("error_response :", response.status_code, response.text)
+            return False, {"code": response.status_code, "data": response.text}
