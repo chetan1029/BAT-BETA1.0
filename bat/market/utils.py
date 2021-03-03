@@ -36,9 +36,9 @@ class AmazonAPI(object):
         form_data = {
             "grant_type": "authorization_code",
             "code": amazon_account.spapi_oauth_code,
-            "redirect_uri": "url",
-            "client_id": "client_id",
-            "client_secret": "client_secret"
+            # "redirect_uri": "url",
+            "client_id": settings.LWA_CLIENT_ID,
+            "client_secret": settings.LWA_CLIENT_SECRET,
         }
         try:
             response = requests.post(url, data=form_data)

@@ -40,14 +40,12 @@ class AmazonAccountsAuthorization(APIView):
         member_with_timestamp = _get_member_str_with_timestamp(member)
         print("member_with_timestamp : ", member_with_timestamp)
 
-        # while len(bytes(member_with_timestamp, encoding='utf-8')) % 16 != 0:
-        #     member_with_timestamp = member_with_timestamp + random.choice(string.ascii_letters)
 
         url = settings.AMAZON_SELLER_CENTRAL_AUTHORIZE_URL
         state = base64.b64encode(member_with_timestamp.encode("ascii")).decode("ascii")
         query_parameters = {
             "state": state,
-            "application_id": "tempid",
+            "application_id": settings.AMAZON_APPLICATION_ID,
             "version": "beta"
         }
         OAuth_uri = generate_uri(url=url, query_parameters=query_parameters)
@@ -55,7 +53,7 @@ class AmazonAccountsAuthorization(APIView):
 
 
 class AccountsReceiveAmazonCallback(APIView):
-
+    
     def post(self, request, **kwargs):
 
         state = request.GET.get('state')

@@ -421,14 +421,17 @@ VENDOR_DEFAULT_PASSWORD = env("VENDOR_DEFAULT_PASSWORD", default="")
 
 # Amazon oauth
 
-AMAZON_SELLER_CENTRAL_AUTHORIZE_URL = "https://sellercentral.amazon.com/apps/authorize/consent"
+AMAZON_SELLER_CENTRAL_AUTHORIZE_URL = env(
+    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL", default="https://sellercentral.amazon.com/apps/authorize/consent")
 
 AMAZON_LWA_TOKEN_ENDPOINT = env(
     "AMAZON_LWA_TOKEN_ENDPOINT", default="https://api.amazon.com/auth/o2/token"
 )
 
-LWA_CLIENT_ID = ""
-LWA_CLIENT_SECRET = ""
+AMAZON_APPLICATION_ID = env("AMAZON_APPLICATION_ID")
+
+LWA_CLIENT_ID = env("LWA_CLIENT_ID")
+LWA_CLIENT_SECRET = env("LWA_CLIENT_SECRET")
 
 # market
 
