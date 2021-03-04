@@ -36,4 +36,5 @@ urlpatterns = [
     path("", include("bat.product.urls", namespace="product")),
     path("", include("bat.setting.urls", namespace="setting")),
     path("", include("bat.subscription.urls", namespace="subscription")),
+    path("", include("bat.market.urls", namespace="market")),
 ]
