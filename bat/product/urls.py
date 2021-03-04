@@ -4,8 +4,8 @@ from rest_framework_nested import routers
 from bat.company.urls import router
 from bat.product.views.component import ProductViewSet, ComponentMeViewSet
 from bat.product.views.product import (
-    ProductVariationViewSet, ProductComponentViewSet, ComponentProductViewSet, ProductRrpViewSet, ProductPackingBoxViewSet
-    )
+    ProductVariationViewSet, ProductComponentViewSet, ComponentProductViewSet, ProductRrpViewSet, ProductPackingBoxViewSet, TestAmazonCallback
+)
 from bat.product.views.image import ProductImagesViewSet, ProductVariationImagesViewSet
 from bat.product.views.file import (
     ComponentMeFilesViewSet,
@@ -110,4 +110,5 @@ urlpatterns = [
     path("", include(product_packingbox_router.urls)),
     path("", include(componentme_router.urls)),
     path("", include(componentme_file_router.urls)),
+    path("test/auth-callback/amazon-marketplaces/", TestAmazonCallback.as_view())
 ]
