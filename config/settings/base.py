@@ -108,6 +108,8 @@ THIRD_PARTY_APPS = [
     "health_check.db",
     "health_check.cache",
     "health_check.storage",
+    # store the periodic celery task schedule in the database
+    "django_celery_beat",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
