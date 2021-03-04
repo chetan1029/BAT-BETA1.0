@@ -18,8 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 
 
 from bat.market import serializers
-from bat.market.models import AmazonMarketplace, AmazonAccounts, AmazonMarketplace, AmazonAccountCredentails
-from bat.market.utils import CryptoCipher, generate_uri, AmazonAPI
+from bat.market.models import AmazonAccounts, AmazonMarketplace, AmazonAccountCredentails
+from bat.market.utils import generate_uri, AmazonAPI
 from bat.company.utils import get_member
 from bat.company.models import Company
 
