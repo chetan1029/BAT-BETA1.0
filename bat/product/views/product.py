@@ -10,6 +10,12 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+#
+from urllib.parse import urlencode
+from django.views import View
+from django.http import HttpResponseRedirect
+#
+
 from bat.mixins.mixins import ArchiveMixin, ExportMixin, RestoreMixin
 from bat.product import serializers
 from bat.product.models import Product, ProductComponent, ProductPackingBox, ProductRrp
@@ -71,7 +77,6 @@ class ProductMetadatMxin(viewsets.ModelViewSet):
         )
 
 
-
 class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
     """Operations on ProductComponent."""
 
@@ -83,6 +88,7 @@ class ProductComponentViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
 
     archive_message = _("Product component  is archived")
     restore_message = _("Product component is restored")
+
 
 class ComponentProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet):
     """Operations on ComponentProduct."""
@@ -103,7 +109,6 @@ class ComponentProductViewSet(ArchiveMixin, RestoreMixin, viewsets.ModelViewSet)
         return queryset.filter(
             component__id=product_id, component__company__id=company_id
         )
-
 
 
 country_field = openapi.Parameter(
@@ -176,3 +181,12 @@ class ProductPackingBoxViewSet(ArchiveMixin, RestoreMixin, ProductMetadatMxin):
 
     archive_message = _("Product packing box  is archived")
     restore_message = _("Product packing box is restored")
+
+#
+
+
+class TestAmazonCallback(View):
+    def get(self, request, **kwargs):
+        qp = urlencode(request.GET)
+        return HttpResponseRedirect(f"http://127.0.0.1:8000/auth-callback/amazon-marketplaces/?{qp}")
+#
