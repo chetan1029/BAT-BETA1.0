@@ -419,13 +419,16 @@ VENDOR_EXISTING_INVITE_LINK = env("VENDOR_EXISTING_INVITE_LINK", default="")
 
 VENDOR_DEFAULT_PASSWORD = env("VENDOR_DEFAULT_PASSWORD", default="")
 
+MARKET_LIST_URI = env(
+    "MARKET_LIST_URI")
+
 # Amazon oauth
 
 AMAZON_SELLER_CENTRAL_AUTHORIZE_URL = env(
-    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL", default="https://sellercentral.amazon.com/apps/authorize/consent")
+    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL")
 
 AMAZON_LWA_TOKEN_ENDPOINT = env(
-    "AMAZON_LWA_TOKEN_ENDPOINT", default="https://api.amazon.com/auth/o2/token"
+    "AMAZON_LWA_TOKEN_ENDPOINT"
 )
 
 AMAZON_APPLICATION_ID = env("AMAZON_APPLICATION_ID")
@@ -436,16 +439,19 @@ LWA_CLIENT_SECRET = env("LWA_CLIENT_SECRET")
 # market
 
 SELLING_REGIONS = {
-    "us-east-1": {
+    "us_east_1": {
         "name": "North America",
         "endpoint": "https://sellingpartnerapi-na.amazon.com",
+        "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
     },
-    "eu-west-1": {
+    "eu_west_1": {
         "name": "Europe",
         "endpoint": "https://sellingpartnerapi-eu.amazon.com",
+        "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL_EUROPE"),
     },
-    "us-west-2": {
+    "us_west_2": {
         "name": "Far East",
         "endpoint": "https://sellingpartnerapi-fe.amazon.com",
+        "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
     }
 }

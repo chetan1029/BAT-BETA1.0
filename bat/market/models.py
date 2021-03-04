@@ -24,7 +24,7 @@ def file_name(instance, filename):
 
 
 class AmazonMarketplace(models.Model):
-    name = models.CharField(verbose_name=_("Name"), max_length=255, null=True, blank=True)
+    name = models.CharField(verbose_name=_("Name"), max_length=512, null=True, blank=True)
     country = CountryField(verbose_name=_("Country"))
     # TODO set countries_flag_url in CountryField for market icon
     marketplaceId = models.CharField(verbose_name=_("MarketplaceId"), max_length=255)
@@ -36,13 +36,21 @@ class AmazonMarketplace(models.Model):
         return self.region + " - " + self.country.name + " - " + self.marketplaceId + " - " + self.region
 
 
+class AmazonAccountCredentails(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    selling_partner_id = models.CharField(max_length=512, null=True)
+    mws_auth_token = models.CharField(max_length=512, null=True)
+    spapi_oauth_code = models.CharField(max_length=512, null=True)
+    access_token = models.CharField(max_length=512, null=True)
+    expires_at = models.DateTimeField(null=True)
+    refresh_token = models.CharField(max_length=512, null=True)
+    region = models.CharField(verbose_name=_("Region"), max_length=255,
+                              choices=AMAZON_REGIONS_CHOICES, default=EUROPE)
+
+
 class AmazonAccounts(models.Model):
     marketplace = models.ForeignKey(AmazonMarketplace, on_delete=models.PROTECT)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    selling_partner_id = models.CharField(max_length=255, null=True)
-    mws_auth_token = models.CharField(max_length=255, null=True)
-    spapi_oauth_code = models.CharField(max_length=255, null=True)
-    access_token = models.CharField(max_length=255, null=True)
-    expires_at = models.DateTimeField(null=True)
-    refresh_token = models.CharField(max_length=255, null=True)
+    credentails = models.ForeignKey(AmazonAccountCredentails, on_delete=models.CASCADE, null=True)
