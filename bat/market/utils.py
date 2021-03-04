@@ -1,16 +1,15 @@
 from django.conf import settings
 
 import requests
+from urllib.parse import urlencode
+
 
 from Crypto.Cipher import AES, DES
 
 
 def generate_uri(url, query_parameters):
-    uri = url + "?"
-    for key, value in query_parameters.items():
-        uri = uri + key + "=" + value + "&"
-    print(uri[:-1])
-    return uri[:-1]
+    qp = urlencode(query_parameters)
+    return url + "?" + qp
 
 
 class CryptoCipher(object):
