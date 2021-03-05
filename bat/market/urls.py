@@ -2,7 +2,8 @@ from django.urls import path
 from rest_framework import routers
 
 from bat.company.urls import router as company_router
-from bat.market.views import AmazonMarketplaceViewsets, AmazonAccountsAuthorization, AccountsReceiveAmazonCallback
+from bat.market.views import (AmazonMarketplaceViewsets, AmazonAccountsAuthorization,
+                              AccountsReceiveAmazonCallback, TestAmazonClientCatalog)
 
 router = routers.SimpleRouter()
 
@@ -17,4 +18,6 @@ urlpatterns = urlpatterns + [
          AmazonAccountsAuthorization.as_view()),
     path('auth-callback/amazon-marketplaces/',
          AccountsReceiveAmazonCallback.as_view()),
+    path('test-amazon-client/catalog',
+         TestAmazonClientCatalog.as_view()),
 ]
