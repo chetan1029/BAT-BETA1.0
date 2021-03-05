@@ -118,6 +118,7 @@ LOCAL_APPS = [
     "bat.comments.apps.CommentsConfig",
     "bat.subscription.apps.SubscriptionConfig",
     "bat.market.apps.MarketConfig",
+    "bat.autoemail.apps.AutoemailConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -419,17 +420,15 @@ VENDOR_EXISTING_INVITE_LINK = env("VENDOR_EXISTING_INVITE_LINK", default="")
 
 VENDOR_DEFAULT_PASSWORD = env("VENDOR_DEFAULT_PASSWORD", default="")
 
-MARKET_LIST_URI = env(
-    "MARKET_LIST_URI")
+MARKET_LIST_URI = env("MARKET_LIST_URI")
 
 # Amazon oauth
 
 AMAZON_SELLER_CENTRAL_AUTHORIZE_URL = env(
-    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL")
-
-AMAZON_LWA_TOKEN_ENDPOINT = env(
-    "AMAZON_LWA_TOKEN_ENDPOINT"
+    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"
 )
+
+AMAZON_LWA_TOKEN_ENDPOINT = env("AMAZON_LWA_TOKEN_ENDPOINT")
 
 AMAZON_APPLICATION_ID = env("AMAZON_APPLICATION_ID")
 
@@ -453,5 +452,5 @@ SELLING_REGIONS = {
         "name": "Far East",
         "endpoint": "https://sellingpartnerapi-fe.amazon.com",
         "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
-    }
+    },
 }
