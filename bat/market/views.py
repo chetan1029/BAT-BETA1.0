@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.views import View
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404
 
 
@@ -22,6 +22,10 @@ from bat.market.models import AmazonAccounts, AmazonMarketplace, AmazonAccountCr
 from bat.market.utils import generate_uri, AmazonAPI
 from bat.company.utils import get_member
 from bat.company.models import Company
+
+from bat.market.amazon_sp_api.amazon_sp_api import Catalog
+from sp_api.base import Marketplaces
+
 
 User = get_user_model()
 
@@ -118,3 +122,19 @@ class AccountsReceiveAmazonCallback(View):
             else:
                 return HttpResponseRedirect(settings.MARKET_LIST_URI+"?error=oauth_api_call_failed")
         return HttpResponseRedirect(settings.MARKET_LIST_URI+"?error=status_expired")
+
+
+class TestAmazonClientCatalog(View):
+    def get(self, request, **kwargs):
+        ac = AmazonAccountCredentails.objects.get(pk=2)
+
+        data = Catalog(marketplace=Marketplaces.US, refresh_token=ac.refresh_token,
+                       credentials={
+                           "refresh_token": ac.refresh_token,
+                           "lwa_app_id": settings.LWA_CLIENT_ID,
+                           "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                           "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+                           "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                           "role_arn": settings.ROLE_ARN}).list_items()
+        print("data : ", data)
+        return HttpResponse("data !")
