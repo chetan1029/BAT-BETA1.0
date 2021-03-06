@@ -1,0 +1,21 @@
+[
+  {
+    "model": "autoemail.emailtemplate",
+    "pk": 1,
+    "fields": {
+      "name": "testtemplate",
+      "subject": "testtemplate",
+      "default_cc": null,
+      "logo": "",
+      "attachment_file": "",
+      "language": "English",
+      "template": "<html>\r\n<body>\r\n\r\n<h1>Hello! Testtemplate</h1>\r\n<h3>{{user}}</h3>\r\n\r\n</body>\r\n</html>",
+      "slug": "testtemplate",
+      "company": 1,
+      "is_active": true,
+      "extra_data": "{}",
+      "create_date": "2021-03-06T05:32:12Z",
+      "update_date": "2021-03-06T05:32:12Z"
+    }
+  }
+]
