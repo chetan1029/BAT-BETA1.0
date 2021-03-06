@@ -46,6 +46,7 @@ class EmailTemplate(models.Model):
 
     name = models.CharField(verbose_name=_("Name"), max_length=512)
     subject = models.CharField(verbose_name=_("Subject"), max_length=512)
+    default_cc = models.CharField(max_length=2096, null=True, blank=True)
     logo = models.ImageField(
         upload_to=template_logo_name, blank=True, verbose_name=_("Logo")
     )
@@ -60,7 +61,8 @@ class EmailTemplate(models.Model):
         choices=EMAIL_LANG_CHOICES,
         default=EMAIL_LANG_ENGLISH,
     )
-    content = models.TextField()
+    template = models.TextField()
+    slug = models.SlugField(unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)

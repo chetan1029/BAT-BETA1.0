@@ -454,3 +454,8 @@ SELLING_REGIONS = {
         "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
     },
 }
+
+
+# auto mail
+
+MAIL_FROM_ADDRESS = env("MAIL_FROM_ADDRESS")
