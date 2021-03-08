@@ -55,8 +55,13 @@ class IsDeletableMixin:
         for rel in self._meta.get_fields():
             try:
                 # check if there is a relationship with at least one related object
-                if not rel.related_model.__name__ in self.ignore_rel_while_delete:
-                    related = rel.related_model.objects.filter(**{rel.field.name: self})
+                if (
+                    not rel.related_model.__name__
+                    in self.ignore_rel_while_delete
+                ):
+                    related = rel.related_model.objects.filter(
+                        **{rel.field.name: self}
+                    )
                     if related.exists():
                         # if there is return a flag
                         return False
@@ -235,11 +240,14 @@ class ProductManager(models.Manager):
     def import_bulk(self, data, columns, company):
         # get model_number map with map
         products_map_tuple = Product.objects.filter(
-            company_id=company.id).values_list("model_number", "id")
+            company_id=company.id
+        ).values_list("model_number", "id")
         products_map = {k: v for k, v in products_map_tuple}
 
         # get exsisting hscoad map
-        hscode_map_tuple = HsCode.objects.filter(company_id=company.id).values_list("hscode", "id")
+        hscode_map_tuple = HsCode.objects.filter(
+            company_id=company.id
+        ).values_list("hscode", "id")
         hscode_map = {k: v for k, v in hscode_map_tuple}
 
         # get exsisting tags map
@@ -290,7 +298,9 @@ class ProductManager(models.Manager):
                     # add validation error in file
                     errors = original.get("errors", None)
                     if errors:
-                        original["errors"] = json.dumps({**errors, **e.message_dict})
+                        original["errors"] = json.dumps(
+                            {**errors, **e.message_dict}
+                        )
                     original["errors"] = json.dumps(e.message_dict)
                     invalid_records.append(original)
             except KeyError as e:
@@ -313,15 +323,22 @@ class ProductManager(models.Manager):
 
                 if "tags" in columns:
                     # delete exsisting tagitems
-                    ct = ContentType.objects.get(app_label='product', model='product')
+                    ct = ContentType.objects.get(
+                        app_label="product", model="product"
+                    )
 
                     TaggedItem.objects.filter(
-                        content_type_id=ct.id, object_id__in=products_id).delete()
+                        content_type_id=ct.id, object_id__in=products_id
+                    ).delete()
 
                     # create new objects
                     tag_objs = []
                     for tag in list(set(new_tags)):
-                        tag_objs.append(Tag(name=tag, slug=slugify(tag, allow_unicode=True)))
+                        tag_objs.append(
+                            Tag(
+                                name=tag, slug=slugify(tag, allow_unicode=True)
+                            )
+                        )
 
                     Tag.objects.bulk_create(tag_objs)
 
@@ -329,15 +346,22 @@ class ProductManager(models.Manager):
                     #   > get exsisting tags map
                     tags_map2 = {}
                     if "tags" in columns:
-                        tags_map_tuple2 = Tag.objects.all().values_list("name", "id")
+                        tags_map_tuple2 = Tag.objects.all().values_list(
+                            "name", "id"
+                        )
                         tags_map2 = {k: v for k, v in tags_map_tuple2}
 
                     #   > tagitem objects
                     tag_item_objs = []
                     for product_id, tags in product_tags_map.items():
                         for tag in tags:
-                            tag_item_objs.append(TaggedItem(tag_id=tags_map2.get(
-                                tag), object_id=product_id, content_type_id=ct.id))
+                            tag_item_objs.append(
+                                TaggedItem(
+                                    tag_id=tags_map2.get(tag),
+                                    object_id=product_id,
+                                    content_type_id=ct.id,
+                                )
+                            )
                     TaggedItem.objects.bulk_create(tag_item_objs)
                 return True, invalid_records
         except Exception as e:
@@ -352,18 +376,24 @@ class ProductManager(models.Manager):
                 if not product.is_deletable():
                     products_id.remove(product.id)
                     ids_cant_delete.append(
-                        {"id": product.id, "name": product.title})
+                        {"id": product.id, "name": product.title}
+                    )
             products = Product.objects.filter(id__in=products_id).delete()
         return ids_cant_delete
 
     def bulk_status_update(self, id_list, status):
         with transaction.atomic():
-            status_obj = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(status))
+            status_obj = get_status(
+                PRODUCT_PARENT_STATUS, PRODUCT_STATUS.get(status)
+            )
             Product.objects.filter(id__in=id_list).update(status=status_obj)
 
 
 class Product(
-    ProductpermissionsModelmixin, UniqueWithinCompanyMixin, IsDeletableMixin, models.Model
+    ProductpermissionsModelmixin,
+    UniqueWithinCompanyMixin,
+    IsDeletableMixin,
+    models.Model,
 ):
     """
     Product Model.
@@ -454,11 +484,11 @@ class Product(
         "manufacturer_part_number",
     ]
     velidation_within_company_messages = {
-        "ean": _("Product with same ean already exists."),
-        "sku": _("Product with same sku already exists."),
-        "model_number": _("Product with same model_number already exists."),
+        "ean": _("Product with same EAN already exists."),
+        "sku": _("Product with same SKU already exists."),
+        "model_number": _("Product with same Model Number already exists."),
         "manufacturer_part_number": _(
-            "Product with same manufacturer_part_number already exists."
+            "Product with same Manufacturer Part Number already exists."
         ),
     }
 

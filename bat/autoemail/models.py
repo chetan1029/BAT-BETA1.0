@@ -18,7 +18,7 @@ from bat.autoemail.constants import (
     SCHEDULE_CHOICES,
 )
 from bat.company.models import Company
-from bat.market.models import AmazonMarketplace
+from bat.market.models import AmazonMarketplace, AmazonOrder
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -106,16 +106,39 @@ class EmailCampaign(models.Model):
     schedule_time = models.TimeField(default=timezone.now)
     schedule_days = models.PositiveIntegerField(default=1)
     buyer_purchase_count = MultiSelectField(
-        max_length=100,
+        max_length=512,
         verbose_name=_("Buyer's Purchase Count"),
         choices=BUYER_PURCHASE_CHOICES,
     )
     exclude_orders = MultiSelectField(
-        max_length=100,
+        max_length=512,
         verbose_name=_("Exclude Orders"),
         choices=EXCLUDE_ORDERS_CHOICES,
     )
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        """Return Value."""
+        return self.name
+
+
+class EmailQueue(models.Model):
+    """Email Queue for the auto email."""
+
+    amazonorder = models.ForeignKey(
+        AmazonOrder, on_delete=models.CASCADE, verbose_name="Select Order"
+    )
+    emailcampaign = models.ForeignKey(EmailCampaign, on_delete=models.CASCADE)
+    sent_to = models.CharField(verbose_name=_("Sent to Email"), max_length=512)
+    sent_from = models.CharField(
+        verbose_name=_("Sent from Email"), max_length=512
+    )
+    subject = models.CharField(verbose_name=_("Subject"), max_length=512)
+    template = models.TextField()
+    is_queued = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
