@@ -139,6 +139,7 @@ class EmailQueue(models.Model):
     subject = models.CharField(verbose_name=_("Subject"), max_length=512)
     template = models.TextField()
     is_queued = models.BooleanField(default=True)
+    schedule_date = models.DateTimeField(default=timezone.now)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
