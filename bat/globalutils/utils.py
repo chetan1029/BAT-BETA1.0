@@ -95,10 +95,10 @@ def pdf_file_from_html(data, template_path, file_name):
     return final_file
 
 
-def get_status_object(data):
-    if not data.get("status", None):
+def get_status_object(data, status_field="status"):
+    if not data.get(status_field, None):
         return get_status(
             PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT)
     else:
-        status_name = data.get("status", None)
+        status_name = data.get(status_field, None)
         return get_status("Basic", status_name)

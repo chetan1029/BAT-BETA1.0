@@ -10,4 +10,4 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AmazonMarketplace
-        fields = ("name", "country", "marketplaceId", "region",)
+        fields = ("id", "name", "country", "marketplaceId", "region",)

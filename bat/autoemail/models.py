@@ -137,8 +137,12 @@ class EmailQueue(models.Model):
         verbose_name=_("Sent from Email"), max_length=512
     )
     subject = models.CharField(verbose_name=_("Subject"), max_length=512)
-    template = models.TextField()
-    is_queued = models.BooleanField(default=True)
+    template = models.ForeignKey(EmailTemplate, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        Status,
+        on_delete=models.PROTECT,
+        related_name="email_queue",
+    )
     schedule_date = models.DateTimeField(default=timezone.now)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -146,4 +150,7 @@ class EmailQueue(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return self.subject + " - " + self.sent_to
+
+    def send_mail(self):
+        pass
