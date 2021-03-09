@@ -18,12 +18,34 @@ from rest_framework.permissions import IsAuthenticated
 
 
 from bat.market import serializers
-from bat.market.models import AmazonAccounts, AmazonMarketplace, AmazonAccountCredentails
+from bat.market.models import AmazonAccounts, AmazonMarketplace, AmazonAccountCredentails, AmazonProduct, AmazonOrder
 from bat.market.utils import generate_uri, AmazonAPI
 from bat.company.utils import get_member
 from bat.company.models import Company
 
 User = get_user_model()
+
+
+class AmazonProductViewsets(viewsets.ReadOnlyModelViewSet):
+    queryset = AmazonProduct.objects.all()
+    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.AmazonProductSerializer
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(amazonaccounts__company__id=company_id).order_by("-create_date")
+
+
+class AmazonOrderViewsets(viewsets.ReadOnlyModelViewSet):
+    queryset = AmazonOrder.objects.all()
+    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.AmazonOrderSerializer
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(amazonaccounts__company__id=company_id).order_by("-create_date")
 
 
 class AmazonMarketplaceViewsets(viewsets.ReadOnlyModelViewSet):
