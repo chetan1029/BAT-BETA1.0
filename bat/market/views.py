@@ -188,6 +188,8 @@ class TestAmazonClientCatalog(View):
                 "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
                 "role_arn": settings.ROLE_ARN,
             },
-        ).list_items()
-        print("data : ", data)
-        return HttpResponse("data !")
+        ).list_items(
+            MarketplaceId="ATVPDKIKX0DER", SellerSKU="US Type C 5-pack EQ"
+        )
+        print(data)
+        return HttpResponse("data!")
