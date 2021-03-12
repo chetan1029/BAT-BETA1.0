@@ -1,16 +1,20 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
 
 from bat.company.urls import router as company_router
-from bat.market.views import (AmazonMarketplaceViewsets, AmazonAccountsAuthorization,
-                              AccountsReceiveAmazonCallback, AmazonProductViewsets,
-                              AmazonOrderViewsets,)
-
+from bat.market.views import (
+    AccountsReceiveAmazonCallback,
+    AmazonAccountsAuthorization,
+    AmazonMarketplaceViewsets,
+    AmazonOrderViewsets,
+    AmazonProductViewsets,
+    TestAmazonClientCatalog,
+)
 
 router = routers.SimpleRouter()
 
-router.register('amazon-marketplaces', AmazonMarketplaceViewsets)
+router.register("amazon-marketplaces", AmazonMarketplaceViewsets)
 
 
 amazon_product_router = nested_routers.NestedSimpleRouter(
@@ -33,10 +37,15 @@ app_name = "market"
 urlpatterns = router.urls
 
 urlpatterns = urlpatterns + [
-    path('companies/<company_pk>/amazon-marketplaces/<market_pk>/authorize/',
-         AmazonAccountsAuthorization.as_view()),
-    path('auth-callback/amazon-marketplaces/',
-         AccountsReceiveAmazonCallback.as_view()),
+    path(
+        "companies/<company_pk>/amazon-marketplaces/<market_pk>/authorize/",
+        AmazonAccountsAuthorization.as_view(),
+    ),
+    path(
+        "auth-callback/amazon-marketplaces/",
+        AccountsReceiveAmazonCallback.as_view(),
+    ),
     path("", include(amazon_product_router.urls)),
     path("", include(amazon_order_router.urls)),
+    path("test-amazon-client/catalog", TestAmazonClientCatalog.as_view()),
 ]
