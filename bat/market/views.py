@@ -1,9 +1,7 @@
 import base64
-import json
-import random
-import string
 from datetime import datetime, timedelta
 
+from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseRedirect
@@ -157,7 +155,7 @@ class AccountsReceiveAmazonCallback(View):
             if is_successfull:
                 account_credentails.access_token = data.get("access_token")
                 account_credentails.refresh_token = data.get("refresh_token")
-                account_credentails.expires_at = datetime.now() + timedelta(
+                account_credentails.expires_at = timezone.now() + timedelta(
                     seconds=data.get("expires_in")
                 )
                 account_credentails.save()
@@ -175,7 +173,8 @@ class AccountsReceiveAmazonCallback(View):
 
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
-        ac = AmazonAccountCredentails.objects.get(pk=10)
+        ac = AmazonAccountCredentails.objects.get(pk=2)
+        print("ac :", ac)
 
         data = Catalog(
             marketplace=Marketplaces.US,
@@ -191,5 +190,5 @@ class TestAmazonClientCatalog(View):
         ).list_items(
             MarketplaceId="ATVPDKIKX0DER", SellerSKU="US Type C 5-pack EQ"
         )
-        print(data)
+        print("data :", data)
         return HttpResponse("data!")

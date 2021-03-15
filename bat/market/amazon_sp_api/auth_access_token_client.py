@@ -1,6 +1,9 @@
 # import pytz
 import logging
 from datetime import datetime, timedelta
+
+from django.utils import timezone
+
 from sp_api.auth.access_token_client import AccessTokenClient
 from sp_api.auth.access_token_response import AccessTokenResponse
 from cachetools import TTLCache
@@ -39,7 +42,7 @@ class AuthAccessTokenClient(AccessTokenClient):
 
             account_credentails.access_token = access_token.get("access_token")
             account_credentails.refresh_token = access_token.get("refresh_token")
-            account_credentails.expires_at = datetime.now() + timedelta(seconds=access_token.get("expires_in"))
+            account_credentails.expires_at = timezone.now() + timedelta(seconds=access_token.get("expires_in"))
             account_credentails.save()
             #
 

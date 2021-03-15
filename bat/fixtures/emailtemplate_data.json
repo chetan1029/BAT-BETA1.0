@@ -1,1 +1,61 @@
-[{"model": "autoemail.emailtemplate", "pk": 1, "fields": {"name": "testtemplate", "subject": "testtemplate", "default_cc": null, "logo": "", "attachment_file": "", "language": "English", "template": "<html>\r\n<body>\r\n\r\n<h1>Hello! Testtemplate</h1>\r\n<h3>{{user}}</h3>\r\n\r\n</body>\r\n</html>", "slug": "testtemplate", "company": 8, "is_active": true, "extra_data": "{}", "create_date": "2021-03-06T05:32:12Z", "update_date": "2021-03-06T05:32:12Z"}}, {"model": "autoemail.emailtemplate", "pk": 2, "fields": {"name": "US - Review Request", "subject": "Thank you for choosing Volutz!", "default_cc": null, "logo": "", "attachment_file": "", "language": "English", "template": "Hi there!\r\n\r\nMy name is Rabih, I designed and engineered the Volutz product you received recently (thanks for the vote of confidence btw!)\r\n\r\nI’m also the founder and CEO of Volutz. We embarked on a mission to challenge the wear & tear consumer tech industry to bring back craftsmanship spirit.\r\n\r\nWe strongly believe cheap downsized productions and generics for quick profits are resulting in marginalized and polluted communities.\r\n\r\nA wear and tear product is not only a terrible idea on a personal-responsibility level but also for the survival of our planet.\r\n\r\nWe hope you have discovered how much we care for your complete satisfaction. If you for any reason are not 100% satisfied, we are here to move heaven & earth to put a smile back on your face.\r\n\r\nLet us know {{LINK_CONTACT_SELLER}}\r\n\r\nIf you feel we delivered on our promise… Tell the world about us, the tiny Swedish brand called Volutz that challenged the industry and won you over! {{LINK_PRODUCT_REVIEW}}\r\n\r\nHave a wonderful day,\r\n\r\nRabih AL Malla\r\nProud Founder & CEO of Volutz\r\n\r\nwe are available Mo-Fr 9am-4pm GMT+2", "slug": "us-review-request", "company": 8, "is_active": true, "extra_data": "{}", "create_date": "2021-03-08T15:01:53Z", "update_date": "2021-03-08T15:01:53Z"}}, {"model": "autoemail.emailcampaign", "pk": 1, "fields": {"name": "US Feedback Request", "emailtemplate": 2, "status": 11, "amazonmarketplace": 12, "order_status": 14, "channel": "FBA,FBM", "schedule": "As soon as possible", "schedule_time": "15:12:38", "schedule_days": 0, "buyer_purchase_count": "1st Purchase,1nd Purchase,3rd Purchase,4th Purchase", "exclude_orders": "Negative Feedback(1 star),Negative Feedback(2 star),Neutral Feedback(3 star),With Returns,With Refunds", "company": 8, "extra_data": "{}", "create_date": "2021-03-08T15:12:38Z", "update_date": "2021-03-08T15:12:38Z"}}]
+[
+  {
+    "model": "autoemail.emailtemplate",
+    "pk": 1,
+    "fields": {
+      "name": "testtemplate",
+      "subject": "testtemplate",
+      "default_cc": null,
+      "logo": "",
+      "attachment_file": "",
+      "language": "English",
+      "template": "<html>\r\n<body>\r\n\r\n<h1>Hello! Testtemplate</h1>\r\n<h3>{{user}}</h3>\r\n\r\n</body>\r\n</html>",
+      "slug": "testtemplate",
+      "company": 8,
+      "is_active": true,
+      "extra_data": "{}",
+      "create_date": "2021-03-06T05:32:12Z",
+      "update_date": "2021-03-06T05:32:12Z"
+    }
+  },
+  {
+    "model": "autoemail.emailtemplate",
+    "pk": 2,
+    "fields": {
+      "name": "US - Review Request",
+      "subject": "Thank you for choosing Volutz!",
+      "default_cc": null,
+      "logo": "",
+      "attachment_file": "",
+      "language": "English",
+      "template": "Hi there!\r\n\r\nMy name is Rabih, I designed and engineered the Volutz product you received recently (thanks for the vote of confidence btw!)\r\n\r\nI’m also the founder and CEO of Volutz. We embarked on a mission to challenge the wear & tear consumer tech industry to bring back craftsmanship spirit.\r\n\r\nWe strongly believe cheap downsized productions and generics for quick profits are resulting in marginalized and polluted communities.\r\n\r\nA wear and tear product is not only a terrible idea on a personal-responsibility level but also for the survival of our planet.\r\n\r\nWe hope you have discovered how much we care for your complete satisfaction. If you for any reason are not 100% satisfied, we are here to move heaven & earth to put a smile back on your face.\r\n\r\nLet us know {{LINK_CONTACT_SELLER}}\r\n\r\nIf you feel we delivered on our promise… Tell the world about us, the tiny Swedish brand called Volutz that challenged the industry and won you over! {{LINK_PRODUCT_REVIEW}}\r\n\r\nHave a wonderful day,\r\n\r\nRabih AL Malla\r\nProud Founder & CEO of Volutz\r\n\r\nwe are available Mo-Fr 9am-4pm GMT+2",
+      "slug": "us-review-request",
+      "company": 8,
+      "is_active": true,
+      "extra_data": "{}",
+      "create_date": "2021-03-08T15:01:53Z",
+      "update_date": "2021-03-08T15:01:53Z"
+    }
+  },
+  {
+    "model": "autoemail.emailcampaign",
+    "pk": 1,
+    "fields": {
+      "name": "US Feedback Request",
+      "emailtemplate": 2,
+      "status": 11,
+      "amazonmarketplace": 12,
+      "order_status": 14,
+      "channel": "FBA,FBM",
+      "schedule": "As soon as possible",
+      "schedule_time": "15:12:38",
+      "schedule_days": 0,
+      "buyer_purchase_count": "1st Purchase,1nd Purchase,3rd Purchase,4th Purchase",
+      "exclude_orders": "Negative Feedback(1 star),Negative Feedback(2 star),Neutral Feedback(3 star),With Returns,With Refunds",
+      "company": 8,
+      "extra_data": "{}",
+      "create_date": "2021-03-08T15:12:38Z",
+      "update_date": "2021-03-08T15:12:38Z"
+    }
+  }
+]
