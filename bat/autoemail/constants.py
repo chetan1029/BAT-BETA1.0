@@ -14,7 +14,9 @@ CHANNEL_CHOICES = ((FBA, "FBA"), (FBM, "FBM"))
 
 DAILY = "Daily"
 AS_SOON_AS = "As soon as possible"
-SCHEDULE_CHOICES = ((DAILY, "Daily"), (AS_SOON_AS, "As soon as possible"))
+AS_SOON_SHIPPED = "As soon as order shipped"
+SCHEDULE_CHOICES = ((DAILY, "Daily"), (AS_SOON_AS, "As soon as possible"),
+                    (AS_SOON_SHIPPED, "As soon as order shipped"),)
 
 PURCHASE_1ST = "1st Purchase"
 PURCHASE_2ND = "1nd Purchase"

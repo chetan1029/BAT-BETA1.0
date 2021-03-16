@@ -7,3 +7,5 @@ def send_email(template_slug, recipients, cc=[], bcc=[], context={}, subject=Non
     sender = EmailNotificationSender(template, recipients, cc=cc,
                                      bcc=bcc, context=context, subject=subject)
     return sender.send()
+
+

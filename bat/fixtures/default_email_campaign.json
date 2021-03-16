@@ -1,0 +1,42 @@
+[
+  {
+    "model": "autoemail.globalemailcampaign",
+    "pk": 1,
+    "fields": {
+      "name": "test campaign 1",
+      "emailtemplate": 1,
+      "status": 4,
+      "amazonmarketplace": 12,
+      "order_status": 11,
+      "channel": "FBA,FBM",
+      "schedule": "As soon as possible",
+      "schedule_time": "09:18:04",
+      "schedule_days": 1,
+      "buyer_purchase_count": "1st Purchase",
+      "exclude_orders": "Negative Feedback(1 star),Negative Feedback(2 star)",
+      "extra_data": "{}",
+      "create_date": "2021-03-16T09:18:04Z",
+      "update_date": "2021-03-16T09:18:04Z"
+    }
+  },
+  {
+    "model": "autoemail.globalemailcampaign",
+    "pk": 2,
+    "fields": {
+      "name": "test campaign 2",
+      "emailtemplate": 2,
+      "status": 4,
+      "amazonmarketplace": 12,
+      "order_status": 11,
+      "channel": "FBA,FBM",
+      "schedule": "Daily",
+      "schedule_time": "09:18:07",
+      "schedule_days": 1,
+      "buyer_purchase_count": "3rd Purchase,4th Purchase",
+      "exclude_orders": "Neutral Feedback(3 star),Positive Feedback(4 star)",
+      "extra_data": "{}",
+      "create_date": "2021-03-16T09:18:08Z",
+      "update_date": "2021-03-16T09:18:08Z"
+    }
+  }
+]

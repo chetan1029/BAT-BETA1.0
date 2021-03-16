@@ -1,0 +1,34 @@
+[
+  {
+    "model": "autoemail.globalemailtemplate",
+    "pk": 1,
+    "fields": {
+      "name": "test template 1",
+      "subject": "test subject",
+      "default_cc": null,
+      "language": "English",
+      "template": "<html>\r\n<body>\r\n<h1>\r\n{{fname}}\r\n</h1>\r\n<h3>\r\n{{lname}}\r\n</h3>\r\n</body>\r\n</html>",
+      "slug": "test-template-1",
+      "is_active": true,
+      "extra_data": "{}",
+      "create_date": "2021-03-16T09:14:34Z",
+      "update_date": "2021-03-16T09:14:34Z"
+    }
+  },
+  {
+    "model": "autoemail.globalemailtemplate",
+    "pk": 2,
+    "fields": {
+      "name": "test template 2",
+      "subject": "test subject 2",
+      "default_cc": null,
+      "language": "English",
+      "template": "<html>\r\n<body>\r\n<h1>\r\n{{fname}}\r\n</h1>\r\n<p>\r\n{{text}}\r\n</p>\r\n</body>\r\n</html>",
+      "slug": "test-template-2",
+      "is_active": true,
+      "extra_data": "{}",
+      "create_date": "2021-03-16T09:14:37Z",
+      "update_date": "2021-03-16T09:14:37Z"
+    }
+  }
+]
