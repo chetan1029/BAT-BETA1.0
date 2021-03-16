@@ -13,6 +13,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from sp_api.base import Marketplaces
 
+from django_filters.rest_framework import DjangoFilterBackend
+
+
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
@@ -59,6 +62,15 @@ class AmazonMarketplaceViewsets(viewsets.ReadOnlyModelViewSet):
     queryset = AmazonMarketplace.objects.all()
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.AmazonMarketplaceSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["name"]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
 
 
 class AmazonAccountsAuthorization(APIView):
@@ -187,8 +199,7 @@ class TestAmazonClientCatalog(View):
                 "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
                 "role_arn": settings.ROLE_ARN,
             },
-        ).list_items(
-            MarketplaceId="ATVPDKIKX0DER", SellerSKU="US Type C 5-pack EQ"
-        )
+        ).list_items(MarketplaceId="ATVPDKIKX0DER", EAN="7350097670024")
+
         print("data :", data)
         return HttpResponse("data!")

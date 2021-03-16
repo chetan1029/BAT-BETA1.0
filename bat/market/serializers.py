@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonProduct
+from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonProduct, AmazonAccounts
 
 from bat.serializersFields.serializers_fields import CountrySerializerField
 from bat.product.serializers import ImageSerializer
@@ -9,14 +9,25 @@ from bat.serializersFields.serializers_fields import (
     StatusField,
     MoneySerializerField,
 )
+from bat.market import constants
 
 
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
     country = CountrySerializerField(required=False)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = AmazonMarketplace
-        fields = ("id", "name", "country", "marketplaceId", "region",)
+        fields = ("id", "name", "country", "marketplaceId", "region", "status", )
+
+    def get_status(self, obj):
+        company_id = self.context.get("company_id")
+        user = self.context.get("user")
+        accounts = AmazonAccounts.objects.filter(
+            marketplace_id=obj.id, user_id=user.id, company_id=company_id)
+        if accounts.exists():
+            return constants.MARKETPLACE_STATUS_ACTIVE
+        return constants.MARKETPLACE_STATUS_INACTIVE
 
 
 class SingleAmazonProductSerializer(serializers.ModelSerializer):

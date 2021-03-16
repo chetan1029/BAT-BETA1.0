@@ -1,5 +1,4 @@
 from django.urls import include, path
-from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
 
 from bat.company.urls import router as company_router
@@ -12,9 +11,12 @@ from bat.market.views import (
     TestAmazonClientCatalog,
 )
 
-router = routers.SimpleRouter()
-
-router.register("amazon-marketplaces", AmazonMarketplaceViewsets)
+amazon_marketplaces_router = nested_routers.NestedSimpleRouter(
+    company_router, "companies", lookup="company"
+)
+amazon_marketplaces_router.register(
+    "amazon-marketplaces", AmazonMarketplaceViewsets, basename="company-amazon-marketplaces"
+)
 
 
 amazon_product_router = nested_routers.NestedSimpleRouter(
@@ -34,9 +36,8 @@ amazon_order_router.register(
 
 app_name = "market"
 
-urlpatterns = router.urls
 
-urlpatterns = urlpatterns + [
+urlpatterns = [
     path(
         "companies/<company_pk>/amazon-marketplaces/<market_pk>/authorize/",
         AmazonAccountsAuthorization.as_view(),
@@ -47,5 +48,6 @@ urlpatterns = urlpatterns + [
     ),
     path("", include(amazon_product_router.urls)),
     path("", include(amazon_order_router.urls)),
+    path("", include(amazon_marketplaces_router.urls)),
     path("test-amazon-client/catalog", TestAmazonClientCatalog.as_view()),
 ]
