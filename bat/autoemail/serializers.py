@@ -24,6 +24,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
 
     email_sent = serializers.SerializerMethodField()
     email_in_queue = serializers.SerializerMethodField()
+    last_email_send_in_queue = serializers.SerializerMethodField()
 
     class Meta:
         model = EmailCampaign
@@ -43,6 +44,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             "company",
             "extra_data",
             "email_sent",
+            "last_email_send_in_queue",
             "email_in_queue",
         )
         read_only_fields = ("id", "amazonmarketplace", "company",)
@@ -55,6 +57,13 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             emailcampaign_id=obj.id,
             status__name__in=[ORDER_EMAIL_STATUS_SHEDULED, ORDER_EMAIL_STATUS_QUEUED]
         ).count()
+
+    def get_last_email_send_in_queue(self, obj):
+        last_email = EmailQueue.objects.filter(
+            emailcampaign_id=obj.id, status__name=ORDER_EMAIL_STATUS_SEND).order_by('-send_date').first()
+        if last_email:
+            return last_email.send_date
+        return None
 
     def update(self, instance, validated_data):
         validated_data["status"] = get_status_object(validated_data)

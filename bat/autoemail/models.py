@@ -258,6 +258,7 @@ class EmailQueue(models.Model):
         on_delete=models.PROTECT,
         related_name="email_queue",
     )
+    send_date = models.DateTimeField(null=True)
     schedule_date = models.DateTimeField(default=timezone.now)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
