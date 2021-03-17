@@ -12,6 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from sp_api.base import Marketplaces
+from sp_api.base.reportTypes import ReportType
+
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -19,7 +21,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
-from bat.market.amazon_sp_api.amazon_sp_api import Catalog
+from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Reports
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
@@ -28,6 +30,8 @@ from bat.market.models import (
     AmazonProduct,
 )
 from bat.market.utils import AmazonAPI, generate_uri
+
+# from sp_api.api.reports.reports import Reports
 
 User = get_user_model()
 
@@ -186,9 +190,76 @@ class AccountsReceiveAmazonCallback(View):
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
         ac = AmazonAccountCredentails.objects.get(pk=2)
-        print("ac :", ac)
+        # (not give list of products)
+        # data = Catalog(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).list_items(MarketplaceId="ATVPDKIKX0DER", EAN="7350097670024")
 
-        data = Catalog(
+        # (1)
+        # data = Reports(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     }
+        # ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
+        #                 dataStartTime='2019-12-10T20:11:24.000Z',
+        #                 marketplaceIds=[
+        #                     "ATVPDKIKX0DER"
+        #                 ])
+        # (1 - output)
+        # id = 325049018703
+
+        # (2)
+        # data = Reports(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     }
+        # ).get_report(325049018703)
+
+        # (2 - output)
+        # data : {'errors': None,
+        #        'headers': {'Date': 'Wed, 17 Mar 2021 05:56:21 GMT', 'Content-Type': 'application/json', 'Content-Length': '461', 'Connection': 'keep-alive', 'x-amzn-RequestId': 'c100eba5-f763-4128-940f-47f2fdae46d5', 'x-amz-apigw-id': 'cUUAzH4AoAMF51Q=', 'X-Amzn-Trace-Id': 'Root=1-60519a05-33793cef49e6af5c6f9b871b'},
+        #        'kwargs': {},
+        #        'next_token': None,
+        #        'pagination': None,
+        #        'payload': {'createdTime': '2021-03-17T05:54:47+00:00',
+        #                    'dataEndTime': '2021-03-17T05:54:47+00:00',
+        #                    'dataStartTime': '2019-12-10T20:11:24+00:00',
+        #                    'marketplaceIds': ['ATVPDKIKX0DER'],
+        #                    'processingEndTime': '2021-03-17T05:54:58+00:00',
+        #                    'processingStartTime': '2021-03-17T05:54:51+00:00',
+        #                    'processingStatus': 'DONE',
+        #                    'reportDocumentId': 'amzn1.tortuga.3.1cae8d45-a574-4074-b01d-85264daf0b45.T19GRB8IZKLUMC',
+        #                    'reportId': '325049018703',
+        #                    'reportType': 'GET_MERCHANT_LISTINGS_ALL_DATA'}}
+
+        # (3)
+
+        f = open("test_report.txt", "w+")
+        print("\n\n\n\n\n\n\n\nfile  : ", f)
+        data = Reports(
             marketplace=Marketplaces.US,
             refresh_token=ac.refresh_token,
             credentials={
@@ -198,8 +269,11 @@ class TestAmazonClientCatalog(View):
                 "aws_access_key": settings.AWS_ACCESS_KEY_ID,
                 "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
                 "role_arn": settings.ROLE_ARN,
-            },
-        ).list_items(MarketplaceId="ATVPDKIKX0DER", EAN="7350097670024")
+            }
+        ).get_report_document(325049018703, decrypt=True, file=f)
+
+        # (3 - output)
+        # TODO
 
         print("data :", data)
-        return HttpResponse("data!")
+        return HttpResponse(data)
