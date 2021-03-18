@@ -2,10 +2,8 @@ import os
 import uuid
 
 from django.contrib.auth import get_user_model
-
 from django.contrib.postgres.fields import HStoreField
 from django.db import IntegrityError, models, router, transaction
-
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -30,6 +28,7 @@ except ImportError:
 
     def unidecode(text):
         return text
+
 
 User = get_user_model()
 STATUS_DRAFT = 4
@@ -79,7 +78,9 @@ class GlobalEmailCampaign(models.Model):
     """Global Email Campaign for the auto email."""
 
     name = models.CharField(verbose_name=_("Name"), max_length=512)
-    emailtemplate = models.ForeignKey(GlobalEmailTemplate, on_delete=models.CASCADE)
+    emailtemplate = models.ForeignKey(
+        GlobalEmailTemplate, on_delete=models.CASCADE
+    )
     status = models.ForeignKey(
         Status,
         on_delete=models.PROTECT,
@@ -110,11 +111,13 @@ class GlobalEmailCampaign(models.Model):
         max_length=512,
         verbose_name=_("Buyer's Purchase Count"),
         choices=BUYER_PURCHASE_CHOICES,
+        blank=True,
     )
     exclude_orders = MultiSelectField(
         max_length=512,
         verbose_name=_("Exclude Orders"),
         choices=EXCLUDE_ORDERS_CHOICES,
+        blank=True,
     )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -224,11 +227,13 @@ class EmailCampaign(models.Model):
         max_length=512,
         verbose_name=_("Buyer's Purchase Count"),
         choices=BUYER_PURCHASE_CHOICES,
+        blank=True,
     )
     exclude_orders = MultiSelectField(
         max_length=512,
         verbose_name=_("Exclude Orders"),
         choices=EXCLUDE_ORDERS_CHOICES,
+        blank=True,
     )
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     extra_data = HStoreField(null=True, blank=True)
@@ -254,9 +259,7 @@ class EmailQueue(models.Model):
     subject = models.CharField(verbose_name=_("Subject"), max_length=512)
     template = models.ForeignKey(EmailTemplate, on_delete=models.PROTECT)
     status = models.ForeignKey(
-        Status,
-        on_delete=models.PROTECT,
-        related_name="email_queue",
+        Status, on_delete=models.PROTECT, related_name="email_queue"
     )
     send_date = models.DateTimeField(null=True)
     schedule_date = models.DateTimeField(default=timezone.now)
