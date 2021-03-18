@@ -27,4 +27,6 @@ class APIClient(client.Client):
         # if error:
         #     exception = get_exception_for_code(res.status_code)
         #     raise exception(error)
-        return ApiResponse(**json.loads(res.text, strict=False), headers=res.headers)
+        json_res = json.loads(res.text, strict=False)
+        print("json_res : ", json_res)
+        return ApiResponse(**json_res, headers=res.headers)
