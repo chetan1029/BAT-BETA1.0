@@ -1,11 +1,11 @@
 import base64
 from datetime import datetime, timedelta
 
-from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views import View
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -173,7 +173,7 @@ class AccountsReceiveAmazonCallback(View):
 
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
-        ac = AmazonAccountCredentails.objects.get(pk=2)
+        ac = AmazonAccountCredentails.objects.get(pk=14)
         print("ac :", ac)
 
         data = Catalog(
@@ -187,8 +187,6 @@ class TestAmazonClientCatalog(View):
                 "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
                 "role_arn": settings.ROLE_ARN,
             },
-        ).list_items(
-            MarketplaceId="ATVPDKIKX0DER", SellerSKU="US Type C 5-pack EQ"
-        )
+        ).list_items(MarketplaceId="ATVPDKIKX0DER", EAN="7350097670024")
         print("data :", data)
         return HttpResponse("data!")
