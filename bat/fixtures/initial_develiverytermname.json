@@ -1,1 +1,123 @@
-[{"model": "setting.deliverytermname", "pk": 1, "fields": {"name": "Ex Works", "code": "EXW", "detail": "The delivery is completed when buyer pick up the goods from seller at the named place (warehouse, storage or factory etc.), seller don’t clear the customs for export. Buyer controls freight from door to door. The contractual shipper on the waybill should be the buyer.\r\n\r\nThe buyer will designate one freight forwarder that will arrange to pick up the shipment from the named place and undertake booking, customs declaration, inspection, and delivery to the destination. And the relevant expenses should be at the buyer’s cost.", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 2, "fields": {"name": "Free Carrier", "code": "FCA", "detail": "", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 3, "fields": {"name": "Free Alongside Ship", "code": "FAS", "detail": "", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 4, "fields": {"name": "Free Onboard Vessel", "code": "FOB", "detail": "The seller’s delivery is completed when the goods across the ship’s rail. Buyer controls ocean freight routing. Fob terms requires that the seller also clears the goods for export. Generally, if you are importing from China this is the term most often used.\r\n\r\nThe buyer will designate one freight forwarder that will arrange the transportation after the shipment is loaded on board the ship and undertake booking, customs clearance, inspection, and delivery to the destination. And the relevant expenses should be at the buyer’s cost.", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 5, "fields": {"name": "Cost and Freight", "code": "CFR", "detail": "The seller’s delivery is completed when the goods across the ship’s rail at destination port. The seller have to pay for the shipment’s delivery to the destination port and declaration the customs for export.\r\n\r\nThe seller will designate one freight forwarder that will arrange a trailer for transportation and undertake booking, customs declaration, inspection, and delivery to the destination. And the seller’s burdens the relevant expenses.", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 6, "fields": {"name": "Cost, Insurance and Freight", "code": "CIF", "detail": "This term is the same as CFR terms except the seller agrees to purchase marine insurance in the buyer’s interest.", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 7, "fields": {"name": "Carriage Paid To", "code": "CPT", "detail": "", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 8, "fields": {"name": "Carriage and Insurance Paid to", "code": "CIP", "detail": "", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 9, "fields": {"name": "Delivered At Terminal", "code": "DAT", "detail": "", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 10, "fields": {"name": "Delivered At Place", "code": "DAP", "detail": "", "extra_data": "{}", "is_active": true}}, {"model": "setting.deliverytermname", "pk": 11, "fields": {"name": "Delivered Duty Paid", "code": "DDP", "detail": "The seller takes responsibility for carriage, delivery the good at the named place, customs clearance. And the seller should pay for the tariff and other fee .", "extra_data": "{}", "is_active": true}}]
+[
+  {
+    "model": "setting.deliverytermname",
+    "pk": 1,
+    "fields": {
+      "name": "Ex Works",
+      "code": "EXW",
+      "detail": "The delivery is completed when buyer pick up the goods from seller at the named place (warehouse, storage or factory etc.), seller don’t clear the customs for export. Buyer controls freight from door to door. The contractual shipper on the waybill should be the buyer.\r\n\r\nThe buyer will designate one freight forwarder that will arrange to pick up the shipment from the named place and undertake booking, customs declaration, inspection, and delivery to the destination. And the relevant expenses should be at the buyer’s cost.",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 2,
+    "fields": {
+      "name": "Free Carrier",
+      "code": "FCA",
+      "detail": "",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 3,
+    "fields": {
+      "name": "Free Alongside Ship",
+      "code": "FAS",
+      "detail": "",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 4,
+    "fields": {
+      "name": "Free Onboard Vessel",
+      "code": "FOB",
+      "detail": "The seller’s delivery is completed when the goods across the ship’s rail. Buyer controls ocean freight routing. Fob terms requires that the seller also clears the goods for export. Generally, if you are importing from China this is the term most often used.\r\n\r\nThe buyer will designate one freight forwarder that will arrange the transportation after the shipment is loaded on board the ship and undertake booking, customs clearance, inspection, and delivery to the destination. And the relevant expenses should be at the buyer’s cost.",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 5,
+    "fields": {
+      "name": "Cost and Freight",
+      "code": "CFR",
+      "detail": "The seller’s delivery is completed when the goods across the ship’s rail at destination port. The seller have to pay for the shipment’s delivery to the destination port and declaration the customs for export.\r\n\r\nThe seller will designate one freight forwarder that will arrange a trailer for transportation and undertake booking, customs declaration, inspection, and delivery to the destination. And the seller’s burdens the relevant expenses.",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 6,
+    "fields": {
+      "name": "Cost, Insurance and Freight",
+      "code": "CIF",
+      "detail": "This term is the same as CFR terms except the seller agrees to purchase marine insurance in the buyer’s interest.",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 7,
+    "fields": {
+      "name": "Carriage Paid To",
+      "code": "CPT",
+      "detail": "",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 8,
+    "fields": {
+      "name": "Carriage and Insurance Paid to",
+      "code": "CIP",
+      "detail": "",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 9,
+    "fields": {
+      "name": "Delivered At Terminal",
+      "code": "DAT",
+      "detail": "",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 10,
+    "fields": {
+      "name": "Delivered At Place",
+      "code": "DAP",
+      "detail": "",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "setting.deliverytermname",
+    "pk": 11,
+    "fields": {
+      "name": "Delivered Duty Paid",
+      "code": "DDP",
+      "detail": "The seller takes responsibility for carriage, delivery the good at the named place, customs clearance. And the seller should pay for the tariff and other fee .",
+      "extra_data": "{}",
+      "is_active": true
+    }
+  }
+]

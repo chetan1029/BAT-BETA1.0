@@ -7,3 +7,6 @@ AMAZON_REGIONS_CHOICES = (
     (EUROPE, "Europe"),
     (FAR_EAST, "Far East"),
 )
+
+MARKETPLACE_STATUS_ACTIVE = "active"
+MARKETPLACE_STATUS_INACTIVE = "inactive"

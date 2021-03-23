@@ -226,7 +226,9 @@ def get_status_json(obj):
 
 class StatusField(ChoiceField):
     def __init__(self, **kwargs):
-        choices = list(PRODUCT_STATUS_CHOICE)
+        choices = kwargs.pop("choices", None)
+        if choices is None:
+            choices = list(PRODUCT_STATUS_CHOICE)
         super().__init__(choices=choices, **kwargs)
 
     def to_representation(self, value):
