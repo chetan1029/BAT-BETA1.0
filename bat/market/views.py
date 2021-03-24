@@ -26,7 +26,7 @@ from bat.market.models import (
     AmazonOrder,
     AmazonProduct,
 )
-from bat.market.utils import AmazonAPI, generate_uri
+from bat.market.utils import AmazonAPI, generate_uri, set_default_email_campaign_templates
 
 # from sp_api.api.reports.reports import Reports
 
@@ -153,7 +153,7 @@ class AccountsReceiveAmazonCallback(View):
                 },
             )
 
-            _new_account, _c = AmazonAccounts.objects.get_or_create(
+            _new_account, amazon_accounts_is_created = AmazonAccounts.objects.get_or_create(
                 marketplace=marketplace,
                 user=user,
                 company=company,
@@ -172,12 +172,24 @@ class AccountsReceiveAmazonCallback(View):
                     seconds=data.get("expires_in")
                 )
                 account_credentails.save()
+
+                try:
+                    if amazon_accounts_is_created:
+                        set_default_email_campaign_templates(
+                            company=company, marketplace=marketplace)
+                except Exception as e:
+                    return HttpResponseRedirect(
+                        settings.MARKET_LIST_URI + "?error=" + e
+                    )
+
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "?success=account_created"
+                    settings.MARKET_LIST_URI + "?success=Your " +
+                    marketplace.name + "marketplace account successfully linked."
                 )
             else:
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "?error=oauth_api_call_failed"
+                    settings.MARKET_LIST_URI + "?error=Your " + marketplace.name +
+                    "marketplace account couldn't be linked due to: oauth_api_call_failed"
                 )
         return HttpResponseRedirect(
             settings.MARKET_LIST_URI + "?error=status_expired"
@@ -219,37 +231,37 @@ class TestAmazonClientCatalog(View):
         #                     "ATVPDKIKX0DER"
         #                 ])
         # (1 - output)
-        # id = 325049018703
+        # id = 325868018710
 
         # (2)
-        # data = Reports(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     }
-        # ).get_report(325049018703)
+        data = Reports(
+            marketplace=Marketplaces.US,
+            refresh_token=ac.refresh_token,
+            credentials={
+                "refresh_token": ac.refresh_token,
+                "lwa_app_id": settings.LWA_CLIENT_ID,
+                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                "role_arn": settings.ROLE_ARN,
+            }
+        ).get_report(325868018710)
 
         # (2 - output)
-        # data : {'errors': None,
-        #        'headers': {'Date': 'Wed, 17 Mar 2021 05:56:21 GMT', 'Content-Type': 'application/json', 'Content-Length': '461', 'Connection': 'keep-alive', 'x-amzn-RequestId': 'c100eba5-f763-4128-940f-47f2fdae46d5', 'x-amz-apigw-id': 'cUUAzH4AoAMF51Q=', 'X-Amzn-Trace-Id': 'Root=1-60519a05-33793cef49e6af5c6f9b871b'},
+        # data: {'errors': None,
+        #        'headers': {'Date': 'Wed, 24 Mar 2021 10:23:46 GMT', 'Content-Type': 'application/json', 'Content-Length': '461', 'Connection': 'keep-alive', 'x-amzn-RequestId': 'c0b68a07-142b-408b-889f-d5e0c0ee50a9', 'x-amz-apigw-id': 'cr_v5GEMoAMFXZA=', 'X-Amzn-Trace-Id': 'Root=1-605b1332-73b18e4811d7db1f76f99e2a'},
         #        'kwargs': {},
         #        'next_token': None,
         #        'pagination': None,
-        #        'payload': {'createdTime': '2021-03-17T05:54:47+00:00',
-        #                    'dataEndTime': '2021-03-17T05:54:47+00:00',
+        #        'payload': {'createdTime': '2021-03-24T10:22:46+00:00',
+        #                    'dataEndTime': '2021-03-24T10:22:46+00:00',
         #                    'dataStartTime': '2019-12-10T20:11:24+00:00',
         #                    'marketplaceIds': ['ATVPDKIKX0DER'],
-        #                    'processingEndTime': '2021-03-17T05:54:58+00:00',
-        #                    'processingStartTime': '2021-03-17T05:54:51+00:00',
+        #                    'processingEndTime': '2021-03-24T10:23:03+00:00',
+        #                    'processingStartTime': '2021-03-24T10:22:56+00:00',
         #                    'processingStatus': 'DONE',
-        #                    'reportDocumentId': 'amzn1.tortuga.3.1cae8d45-a574-4074-b01d-85264daf0b45.T19GRB8IZKLUMC',
-        #                    'reportId': '325049018703',
+        #                    'reportDocumentId': 'amzn1.tortuga.3.4dad800a-5f65-4add-8fad-fdeb3f7ecc6f.T16V43KQE2QBY5',
+        #                    'reportId': '325868018710',
         #                    'reportType': 'GET_MERCHANT_LISTINGS_ALL_DATA'}}
 
         # (3)
@@ -267,7 +279,7 @@ class TestAmazonClientCatalog(View):
                 "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
                 "role_arn": settings.ROLE_ARN,
             },
-        ).get_report_document(325049018703, decrypt=True, file=f)
+        ).get_report_document("amzn1.tortuga.3.4dad800a-5f65-4add-8fad-fdeb3f7ecc6f.T16V43KQE2QBY5", decrypt=True, file=f)
 
         # (3 - output)
         # TODO

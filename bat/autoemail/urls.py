@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework_nested import routers
 
 from bat.company.urls import router
-from bat.autoemail.views import EmailCampaignViewsets, EmailQueueViewsets
+from bat.autoemail.views import EmailCampaignViewsets, EmailQueueViewsets, DashboardAPIView
 
 
 email_campaign_router = routers.NestedSimpleRouter(
@@ -25,4 +25,5 @@ app_name = "autoemail"
 urlpatterns = [
     path("", include(email_campaign_router.urls)),
     path("", include(email_queue_router.urls)),
+    path("companies/<company_pk>/email-campaign-dashboard/", DashboardAPIView.as_view(), name="email-campaign-dashboard")
 ]
