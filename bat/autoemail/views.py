@@ -67,7 +67,7 @@ class EmailQueueViewsets(
 
 class DashboardAPIView(APIView):
     def get(self, request, company_pk=None, **kwargs):
-        
+
         dt_format = "%m/%d/%Y"
 
         all_amazon_orders = AmazonOrder.objects.filter(amazonaccounts__company_id=company_pk)
@@ -99,6 +99,15 @@ class DashboardAPIView(APIView):
 
             all_email_queue = all_email_queue.filter(
                 emailcampaign__amazonmarketplace_id=marketplace.id)
+
+        currency = request.GET.get("currency", None)
+        if currency:
+            currency = currency.upper()
+            all_amazon_orders = all_amazon_orders.filter(
+                amount_currency=currency)
+
+            all_email_queue = all_email_queue.filter(
+                amazonorder__amount_currency=currency)
 
         total_orders = all_amazon_orders.count()
 
