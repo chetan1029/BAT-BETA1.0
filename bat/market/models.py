@@ -4,7 +4,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import HStoreField
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
@@ -15,6 +15,7 @@ from bat.company.models import Company
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
 from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
 from bat.setting.models import Status
+
 
 User = get_user_model()
 
@@ -121,8 +122,9 @@ class AmazonProductManager(models.Manager):
             else:
                 amazon_product_objects.append(AmazonProduct(**row, amazonaccounts=amazonaccount))
         try:
-            AmazonProduct.objects.bulk_create(amazon_product_objects)
-            AmazonProduct.objects.bulk_update(amazon_product_objects_update, columns)
+            with transaction.atomic():
+                AmazonProduct.objects.bulk_create(amazon_product_objects)
+                AmazonProduct.objects.bulk_update(amazon_product_objects_update, columns)
         except Exception as e:
             return False
         return True

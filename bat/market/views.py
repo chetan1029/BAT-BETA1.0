@@ -1,4 +1,5 @@
 import csv
+import time
 import base64
 from datetime import datetime, timedelta
 
@@ -217,42 +218,52 @@ class TestAmazonClientCatalog(View):
         # ).list_items(MarketplaceId="ATVPDKIKX0DER", EAN="7350097670024")
 
         # (1)
-        # data1 = Reports(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     }
-        # ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
-        #                 dataStartTime='2019-12-10T20:11:24.000Z',
-        #                 marketplaceIds=[
-        #                     "ATVPDKIKX0DER"
-        #                 ])
+        data1 = Reports(
+            marketplace=Marketplaces["US"],
+            refresh_token=ac.refresh_token,
+            credentials={
+                "refresh_token": ac.refresh_token,
+                "lwa_app_id": settings.LWA_CLIENT_ID,
+                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                "role_arn": settings.ROLE_ARN,
+            }
+        ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
+                        dataStartTime='2019-12-10T20:11:24.000Z',
+                        marketplaceIds=[
+                            "ATVPDKIKX0DER"
+                        ])
         # # (1 - output)
         # # id = 325974018711
-        # reportId = int(data1.payload["reportId"])
+        reportId = int(data1.payload["reportId"])
 
         # print("\n\nreportId : ", reportId)
         # (2)
-        # data2 = Reports(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     }
-        # ).get_report(325974018711)
+        iteration = 1
+        payload2 = {}
+        while payload2.get("processingStatus", None) != "DONE":
+            data2 = Reports(
+                marketplace=Marketplaces.US,
+                refresh_token=ac.refresh_token,
+                credentials={
+                    "refresh_token": ac.refresh_token,
+                    "lwa_app_id": settings.LWA_CLIENT_ID,
+                    "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                    "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+                    "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                    "role_arn": settings.ROLE_ARN,
+                }
+            ).get_report(reportId)
+            payload2 = data2.payload
+            if payload2.get("processingStatus", None) != "DONE":
+                time.sleep(10)
+            print(iteration, "\n")
+            iteration = iteration + 1
+            if(iteration > 10):
+                break
 
-        # print("data2......... :", data2)
+        print("payload2......... :", payload2)
 
         # (2 - output)
         # {'errors': None,
@@ -276,20 +287,20 @@ class TestAmazonClientCatalog(View):
         #  }
 
         # (3)
-        # f = open("test_report.csv", "w+")
-        # print("\n\n\n\n\n\n\n\nfile  : ", f)
-        # data = Reports(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).get_report_document("amzn1.tortuga.3.ff562099-f1c5-4863-8d60-f32da0f7b06f.T3PZ31IOV78VCG", decrypt=True, file=f)
+        f = open("test_report.csv", "w+")
+        print("\n\n\n\n\n\n\n\nfile  : ", f)
+        data = Reports(
+            marketplace=Marketplaces.US,
+            refresh_token=ac.refresh_token,
+            credentials={
+                "refresh_token": ac.refresh_token,
+                "lwa_app_id": settings.LWA_CLIENT_ID,
+                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                "role_arn": settings.ROLE_ARN,
+            },
+        ).get_report_document(payload2["reportDocumentId"], decrypt=True, file=f)
 
         # (3 - output)
         # test_report.csv
