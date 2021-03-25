@@ -102,6 +102,18 @@ class AmazonAccounts(models.Model):
     )
 
 
+class AmazonProductManager(models.Manager):
+    def create_bulk(self, data, amazonaccount):
+        amazon_product_objects = []
+        for row in data:
+            amazon_product_objects.append(AmazonProduct(**row, amazonaccounts=amazonaccount))
+        try:
+            AmazonProduct.objects.bulk_create(amazon_product_objects)
+        except Exception as e:
+            return False
+        return True
+
+
 class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
     """
     Amazon Product Model.
@@ -147,6 +159,8 @@ class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
     )
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+
+    objects = AmazonProductManager()
 
     # UniqueWithinCompanyMixin data
     unique_within_company = ["sku", "ean", "asin"]
