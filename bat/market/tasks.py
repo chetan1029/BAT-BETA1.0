@@ -91,7 +91,7 @@ def amazon_products_sync_account(amazonaccount_id):
 
     report_csv = open(tmp_csv_file_path, "r")
     data, columns = ReportAmazonProductCSVParser.parse(report_csv)
-    AmazonProduct.objects.create_bulk(data, amazonaccount, columns)
+    AmazonProduct.objects.import_bulk(data, amazonaccount, columns)
 
 
 @app.task

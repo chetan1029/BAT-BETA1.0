@@ -104,7 +104,7 @@ class AmazonAccounts(models.Model):
 
 
 class AmazonProductManager(models.Manager):
-    def create_bulk(self, data, amazonaccount, columns):
+    def import_bulk(self, data, amazonaccount, columns):
         amazon_product_objects = []
         amazon_product_objects_update = []
 
@@ -218,6 +218,19 @@ class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
         return []
 
 
+class AmazonOrdersManager(models.Manager):
+    def create_bulk(self, data):
+        amazon_order_objects = []
+
+        for row in data:
+            amazon_order_objects.append(AmazonOrder(**row))
+        try:
+            AmazonOrder.objects.bulk_create(amazon_order_objects)
+        except Exception as e:
+            return False
+        return True
+
+
 class AmazonOrder(models.Model):
     """
     Order Model.
@@ -243,35 +256,35 @@ class AmazonOrder(models.Model):
         max_length=10, blank=True, null=True, default="false"
     )
     amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
-    tax = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    tax = MoneyField(max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True)
     shipping_price = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     shipping_tax = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     gift_wrap_price = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     gift_wrap_tax = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     item_promotional_discount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     ship_promotional_discount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     fba_fullfilment_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     amazon_comission_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     manufacturing_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     amazonaccounts = models.ForeignKey(
         AmazonAccounts,
@@ -281,6 +294,8 @@ class AmazonOrder(models.Model):
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+
+    objects = AmazonOrdersManager()
 
     class Meta:
         """Meta for the model."""
