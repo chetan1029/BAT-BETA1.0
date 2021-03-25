@@ -120,6 +120,7 @@ LOCAL_APPS = [
     "bat.comments.apps.CommentsConfig",
     "bat.subscription.apps.SubscriptionConfig",
     "bat.market.apps.MarketConfig",
+    "bat.autoemail.apps.AutoemailConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -465,7 +466,11 @@ SELLING_REGIONS = {
 }
 
 # setting cookies
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SAMESITE = "None"
+# CSRF_COOKIE_SECURE = False
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SAMESITE = "None"
+# SESSION_COOKIE_SAMESITE = "None"
+
+# auto mail
+
+MAIL_FROM_ADDRESS = env("MAIL_FROM_ADDRESS")

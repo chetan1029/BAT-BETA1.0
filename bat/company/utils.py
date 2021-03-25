@@ -3,7 +3,8 @@ from collections import OrderedDict
 from django.shortcuts import get_object_or_404
 from rolepermissions.roles import RolesManager
 
-from bat.company.models import Member, Company, CompanyPaymentTerms
+
+from bat.company.models import Company, CompanyPaymentTerms, Member
 from bat.setting.models import PaymentTerms
 
 
@@ -12,9 +13,13 @@ def get_member(company_id=None, user_id=None, raise_exception=True):
     get member based on company and user
     """
     if raise_exception:
-        member = get_object_or_404(Member, company__id=company_id, user=user_id)
+        member = get_object_or_404(
+            Member, company__id=company_id, user=user_id
+        )
     else:
-        member = Member.objects.filter(company__id=company_id, user=user_id).first()
+        member = Member.objects.filter(
+            company__id=company_id, user=user_id
+        ).first()
     return member
 
 
@@ -27,7 +32,12 @@ def get_list_of_roles_permissions():
         role_name = role.get_name()
 
         all_roles[role_name] = {
-            "permissions": [{'name': name, 'default': value} for name, value in getattr(role, 'available_permissions', {}).items()]
+            "permissions": [
+                {"name": name, "default": value}
+                for name, value in getattr(
+                    role, "available_permissions", {}
+                ).items()
+            ]
         }
     return all_roles
 
@@ -63,3 +73,5 @@ def set_default_company_payment_terms(company):
                 data["is_active"] = global_payment_term.is_active
                 data["extra_data"] = global_payment_term.extra_data
                 CompanyPaymentTerms.objects.create(**data)
+
+
