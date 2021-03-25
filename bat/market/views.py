@@ -18,7 +18,7 @@ from sp_api.base.reportTypes import ReportType
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
-from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Reports
+from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Reports, Orders
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
@@ -198,7 +198,7 @@ class AccountsReceiveAmazonCallback(View):
 
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
-        ac = AmazonAccountCredentails.objects.get(pk=2)
+        ac = AmazonAccountCredentails.objects.get(pk=5)
         # (not give list of products)
         # data = Catalog(
         #     marketplace=Marketplaces.US,
@@ -234,18 +234,18 @@ class TestAmazonClientCatalog(View):
         # id = 325868018710
 
         # (2)
-        data = Reports(
-            marketplace=Marketplaces.US,
-            refresh_token=ac.refresh_token,
-            credentials={
-                "refresh_token": ac.refresh_token,
-                "lwa_app_id": settings.LWA_CLIENT_ID,
-                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-                "role_arn": settings.ROLE_ARN,
-            }
-        ).get_report(325868018710)
+        # data = Reports(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     }
+        # ).get_report(325868018710)
 
         # (2 - output)
         # data: {'errors': None,
@@ -266,9 +266,91 @@ class TestAmazonClientCatalog(View):
 
         # (3)
 
-        f = open("test_report.txt", "w+")
-        print("\n\n\n\n\n\n\n\nfile  : ", f)
-        data = Reports(
+        # f = open("test_report.txt", "w+")
+        # print("\n\n\n\n\n\n\n\nfile  : ", f)
+        # data = Reports(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).get_report_document("amzn1.tortuga.3.4dad800a-5f65-4add-8fad-fdeb3f7ecc6f.T16V43KQE2QBY5", decrypt=True, file=f)
+
+        # (3 - output)
+        # TODO
+
+        # ###### Orders ######
+        # Step 1
+        # data = Orders(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).get_orders(CreatedAfter=(datetime.utcnow() - timedelta(days=7)).isoformat())
+
+        # Data point mapping
+        # AmazonOrderId = order_id
+        # SellerOrderId = order_seller_id
+        # PurchaseDate = purchase_date
+        # PurchaseDate = payment_date
+        # EarliestShipDate = shipment_date
+        # LastUpdateDate = reporting_date
+        # IsReplacementOrder = replacement
+        # OrderStatus = status
+        # SalesChannel = sales_channel
+        # NumberOfItemsShipped+NumberOfItemsUnshipped = quantity
+        # OrderTotal = amount
+
+
+        # Step 2
+        # data = Orders(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).get_orders(NextToken="dDdI0vs+k1+aJqJYLDm0ZAmQazDrhw3CHTJ/zv29E0up4C3IooSzsd7esAsmOZE/xqXyQLkGMBs8VhF73Xgy+yTblQpDnvEh/unRE/xR1g+trH1GgFXlfjF5lP3E/zB8InTAy+XKVmRZBY+oaVuyc8QON+K1yc/Yg/R6kzihMS39VWV70XCFUoDVKBrPeIm5f2GLmUGyr9UGnxD0RJmrryegoU0IPZxX3MIKt8yJvvZD7jny/H+CE4etQtsX9RiYMBO/reDY2s8hGWNNu3VwFU0hrIUQcumU7YYXwRo+g8JZuOJFtyFGVNuZ3sLNMwtc+6yOUF4uPytdOS8IuQUxNRSqtVg4P1PkUWkN2ddBLiseo6Iy3POXz/xIag8FjboEgBA1U0I3ScuBA1KyEG2j/CeqJo2yYXnKQAM6OwepcaTY77Fzx9jKEA==")
+
+        # Step 3
+        # data = Orders(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).get_order_items("111-9508492-9812214")
+
+        # Data point mapping
+        # OrderItemId = item_id
+        # ASIN and SellerSKU check on amazonproduct = amazonproduct
+        # NumberOfItems = quantity
+        # ASIN = asin
+        # ItemPrice = item_price
+        # ItemTax = item_tax
+        # PromotionDiscount = item_promotional_discount
+
+        data = Orders(
             marketplace=Marketplaces.US,
             refresh_token=ac.refresh_token,
             credentials={
@@ -279,10 +361,10 @@ class TestAmazonClientCatalog(View):
                 "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
                 "role_arn": settings.ROLE_ARN,
             },
-        ).get_report_document("amzn1.tortuga.3.4dad800a-5f65-4add-8fad-fdeb3f7ecc6f.T16V43KQE2QBY5", decrypt=True, file=f)
+        ).get_order_buyer_info("111-9508492-9812214")
 
-        # (3 - output)
-        # TODO
+        # BuyerEmail = buyer_email in the Amazonorder table
+
 
         print("data :", data)
         return HttpResponse(data)
