@@ -211,7 +211,7 @@ django-queryset-csv==1.1.0
 # for encryption
 pycrypto==2.6.1
 
+python-amazon-sp-api==0.3.1
 
 # Celery
 django-celery-beat==2.2.0
-python-amazon-sp-api==0.3.1
