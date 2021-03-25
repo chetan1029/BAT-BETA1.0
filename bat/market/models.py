@@ -103,12 +103,26 @@ class AmazonAccounts(models.Model):
 
 
 class AmazonProductManager(models.Manager):
-    def create_bulk(self, data, amazonaccount):
+    def create_bulk(self, data, amazonaccount, columns):
         amazon_product_objects = []
+        amazon_product_objects_update = []
+
+        amazon_product_map_tuple = AmazonProduct.objects.filter(
+            amazonaccounts_id=amazonaccount.id
+        ).values_list("sku", "ean", "asin", "id")
+        amazon_product_map = {k1 + k2 + k3: v for k1, k2, k3, v in amazon_product_map_tuple}
+
         for row in data:
-            amazon_product_objects.append(AmazonProduct(**row, amazonaccounts=amazonaccount))
+            product_id = amazon_product_map.get(
+                row.get("sku") + row.get("ean") + row.get("asin"), None)
+            if product_id:
+                amazon_product_objects_update.append(
+                    AmazonProduct(id=product_id, amazonaccounts=amazonaccount, **row))
+            else:
+                amazon_product_objects.append(AmazonProduct(**row, amazonaccounts=amazonaccount))
         try:
             AmazonProduct.objects.bulk_create(amazon_product_objects)
+            AmazonProduct.objects.bulk_update(amazon_product_objects_update, columns)
         except Exception as e:
             return False
         return True

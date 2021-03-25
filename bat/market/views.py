@@ -276,7 +276,6 @@ class TestAmazonClientCatalog(View):
         #  }
 
         # (3)
-
         # f = open("test_report.csv", "w+")
         # print("\n\n\n\n\n\n\n\nfile  : ", f)
         # data = Reports(
@@ -290,7 +289,7 @@ class TestAmazonClientCatalog(View):
         #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
         #         "role_arn": settings.ROLE_ARN,
         #     },
-        # ).get_report_document(data2.payload["reportDocumentId"], decrypt=True, file=f)
+        # ).get_report_document("amzn1.tortuga.3.ff562099-f1c5-4863-8d60-f32da0f7b06f.T3PZ31IOV78VCG", decrypt=True, file=f)
 
         # (3 - output)
         # test_report.csv
@@ -298,6 +297,6 @@ class TestAmazonClientCatalog(View):
 
         # (4)
         report_csv = open("test_report.csv", "r")
-        data = ReportAmazonProductCSVParser.parse(report_csv)
-        is_created = AmazonProduct.objects.create_bulk(data, amazon_account)
+        data, columns = ReportAmazonProductCSVParser.parse(report_csv)
+        is_created = AmazonProduct.objects.create_bulk(data, amazon_account, columns)
         return HttpResponse(data)

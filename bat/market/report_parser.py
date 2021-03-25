@@ -36,4 +36,4 @@ class ReportAmazonProductCSVParser(object):
                 values["status"] = product_status.get(row.get("status", None), None)
                 values["url"] = "https://www.amazon.com/dp/" + row.get("asin1", None) + "/"
                 data.append(values)
-        return data
+        return data, ["title", "description", "status", "url"]
