@@ -108,6 +108,8 @@ THIRD_PARTY_APPS = [
     "health_check.db",
     "health_check.cache",
     "health_check.storage",
+    # store the periodic celery task schedule in the database
+    "django_celery_beat",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -419,17 +421,15 @@ VENDOR_EXISTING_INVITE_LINK = env("VENDOR_EXISTING_INVITE_LINK", default="")
 
 VENDOR_DEFAULT_PASSWORD = env("VENDOR_DEFAULT_PASSWORD", default="")
 
-MARKET_LIST_URI = env(
-    "MARKET_LIST_URI")
+MARKET_LIST_URI = env("MARKET_LIST_URI")
 
 # Amazon oauth
 
 AMAZON_SELLER_CENTRAL_AUTHORIZE_URL = env(
-    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL")
-
-AMAZON_LWA_TOKEN_ENDPOINT = env(
-    "AMAZON_LWA_TOKEN_ENDPOINT"
+    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"
 )
+
+AMAZON_LWA_TOKEN_ENDPOINT = env("AMAZON_LWA_TOKEN_ENDPOINT")
 
 AMAZON_APPLICATION_ID = env("AMAZON_APPLICATION_ID")
 
@@ -461,5 +461,11 @@ SELLING_REGIONS = {
         "name": "Far East",
         "endpoint": "https://sellingpartnerapi-fe.amazon.com",
         "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
-    }
+    },
 }
+
+# setting cookies
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None"

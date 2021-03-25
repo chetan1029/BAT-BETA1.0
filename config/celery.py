@@ -21,13 +21,20 @@ app.conf.update(
     CELERY_RESULT_SERIALIZER="json",
     CELERY_TASK_RESULT_EXPIRES=3600,
     CELERY_TIMEZONE="UTC",
-    CELERYBEAT_SCHEDULE={
-        "task1": {
-            "task": "bat.users.tasks.task1",
-            "schedule": crontab(minute="*/30"),
-        }
-    },
+    CELERYBEAT_SCHEDULER="django_celery_beat.schedulers:DatabaseScheduler"
+    # CELERYBEAT_SCHEDULE={
+    #     "task1": {
+    #         "task": "bat.users.tasks.task1",
+    #         "schedule": crontab(minute="*/30"),
+    #     }
+    # },
 )
+
+
+@app.task(bind=True)
+def debug_task(self):
+    print('Request: {0!r}'.format(self.request))
+
 
 if __name__ == "__main__":
     app.start()
