@@ -40,7 +40,7 @@ def amazon_products_sync_account(amazonaccount_id):
             "role_arn": settings.ROLE_ARN,
         }
     ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
-                    dataStartTime='2019-12-10T20:11:24.000Z',
+                    dataStartTime=(datetime.utcnow()).isoformat(),
                     marketplaceIds=[
                         marketplace.marketplaceId
                     ])

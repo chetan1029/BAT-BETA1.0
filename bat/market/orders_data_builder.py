@@ -36,3 +36,4 @@ class AmazonOrderProcessData(object):
                     "Amount")), order_total.get("CurrencyCode"))
             data.append(values)
         return data
+# 113-0328161-1244203

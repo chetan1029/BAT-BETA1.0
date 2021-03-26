@@ -29,7 +29,7 @@ from bat.market.models import (
     AmazonProduct,
 )
 from bat.market.utils import AmazonAPI, generate_uri, set_default_email_campaign_templates
-from bat.market.report_parser import ReportAmazonProductCSVParser
+from bat.market.report_parser import ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser
 from bat.market.orders_data_builder import AmazonOrderProcessData
 
 # from sp_api.api.reports.reports import Reports
@@ -230,16 +230,16 @@ class TestAmazonClientCatalog(View):
         #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
         #         "role_arn": settings.ROLE_ARN,
         #     }
-        # ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
-        #                 dataStartTime='2019-12-10T20:11:24.000Z',
+        #     # ).create_report(reportType=ReportType.GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL,
+        # ).create_report(reportType=ReportType.GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL,
+        #                 dataStartTime=(datetime.utcnow() - timedelta(days=6)).isoformat(),
+        #                 dataEndTime=(datetime.utcnow()).isoformat(),
         #                 marketplaceIds=[
         #                     "ATVPDKIKX0DER"
         #                 ])
-        # # (1 - output)
-        # # id = 325974018711
+        # print("data1 : ", data1)
         # reportId = int(data1.payload["reportId"])
 
-        # print("\n\nreportId : ", reportId)
         # (2)
         # iteration = 1
         # payload2 = {}
@@ -266,31 +266,11 @@ class TestAmazonClientCatalog(View):
 
         # print("payload2......... :", payload2)
 
-        # (2 - output)
-        # {'errors': None,
-        #  'headers': {'Date': 'Thu, 25 Mar 2021 05:56:19 GMT',
-        #              'Content-Type': 'application/json',
-        #              'Content-Length': '461',
-        #              'Connection': 'keep-alive',
-        #              'x-amzn-RequestId': '84c51c4f-f595-4633-9aa9-efedbae99caf',
-        #              'x-amz-apigw-id': 'curgnHqMIAMF28A=',
-        #              'X-Amzn-Trace-Id': 'Root=1-605c2603-5124138d3f3d604430eb4d98'
-        #              }, 'kwargs': {}, 'next_token': None, 'pagination': None,
-        #  'payload': {'createdTime': '2021-03-25T05:52:13+00:00',
-        #              'dataEndTime': '2021-03-25T05:52:13+00:00',
-        #              'dataStartTime': '2019-12-10T20:11:24+00:00',
-        #              'marketplaceIds': ['ATVPDKIKX0DER'],
-        #              'processingEndTime': '2021-03-25T05:52:25+00:00',
-        #              'processingStartTime': '2021-03-25T05:52:18+00:00',
-        #              'processingStatus': 'DONE',
-        #              'reportDocumentId': 'amzn1.tortuga.3.ff562099-f1c5-4863-8d60-f32da0f7b06f.T3PZ31IOV78VCG',
-        #              'reportId': '325961018711', 'reportType': 'GET_MERCHANT_LISTINGS_ALL_DATA'}
-        #  }
-
         # (3)
-        # f = open("test_report.csv", "w+")
+        # f = open("GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL.csv", "w+")
+        # f = open("GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL.csv", "w+")
         # print("\n\n\n\n\n\n\n\nfile  : ", f)
-        # data = Reports(
+        # data3 = Reports(
         #     marketplace=Marketplaces.US,
         #     refresh_token=ac.refresh_token,
         #     credentials={
@@ -303,9 +283,17 @@ class TestAmazonClientCatalog(View):
         #     },
         # ).get_report_document(payload2["reportDocumentId"], decrypt=True, file=f)
 
-        # (3 - output)
-        # test_report.csv
-        # TODO
+        # (4)
+        orders_items_report_csv = open("GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL.csv", "r")
+        orders_report_csv = open("GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL.csv", "r")
+        data, order_columns, item_columns = ReportAmazonOrdersCSVParser.parse(
+            orders_report_csv, orders_items_report_csv)
+        print("\n\n\n\n\n\n\n\n\n\n\n\n")
+        print("data : ", data)
+        is_created = AmazonOrder.objects.create_bulk(
+            data, amazon_account, order_columns, item_columns)
+        print("\n\n\n\n\n\n\n\n\n\n\n\n")
+        print(is_created)
 
         # (4)
         # report_csv = open("test_report.csv", "r")
@@ -314,23 +302,22 @@ class TestAmazonClientCatalog(View):
 
         # ###### Orders ######
         # Step 1
-        data = Orders(
-            marketplace=Marketplaces.US,
-            refresh_token=ac.refresh_token,
-            credentials={
-                "refresh_token": ac.refresh_token,
-                "lwa_app_id": settings.LWA_CLIENT_ID,
-                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-                "role_arn": settings.ROLE_ARN,
-            },
-        ).get_orders(CreatedAfter=(datetime.utcnow() - timedelta(days=6)).isoformat())
-        print(data)
-        c_data = AmazonOrderProcessData.builder(data.payload["Orders"], amazon_account)
-        print("\n\n\n\n\n\n\n\n\n\n\n")
-        print(c_data)
-        # is_created = AmazonOrder.objects.create_bulk(c_data)
+        # data = Orders(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).get_orders(CreatedAfter=(datetime.utcnow() - timedelta(days=6)).isoformat())
+        # print(data)
+        # c_data = AmazonOrderProcessData.builder(data.payload["Orders"], amazon_account)
+        # print("\n\n\n\n\n\n\n\n\n\n\n")
+        # print(c_data)
 
         # Data point mapping
         # AmazonOrderId = order_id
@@ -346,29 +333,34 @@ class TestAmazonClientCatalog(View):
         # OrderTotal = amount
 
         # Step 2
-        next_token = data.next_token
-        while next_token:
-            data2 = Orders(
-                marketplace=Marketplaces.US,
-                refresh_token=ac.refresh_token,
-                credentials={
-                    "refresh_token": ac.refresh_token,
-                    "lwa_app_id": settings.LWA_CLIENT_ID,
-                    "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                    "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                    "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-                    "role_arn": settings.ROLE_ARN,
-                },
-            ).get_orders(NextToken=next_token)
+        # next_token = data.next_token
+        # while next_token:
+        #     data2 = Orders(
+        #         marketplace=Marketplaces.US,
+        #         refresh_token=ac.refresh_token,
+        #         credentials={
+        #             "refresh_token": ac.refresh_token,
+        #             "lwa_app_id": settings.LWA_CLIENT_ID,
+        #             "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #             "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #             "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #             "role_arn": settings.ROLE_ARN,
+        #         },
+        #     ).get_orders(NextToken=next_token)
 
-            next_token = data2.next_token
+        #     next_token = data2.next_token
 
-            c_data = c_data + \
-                AmazonOrderProcessData.builder(data2.payload["Orders"], amazon_account)
+        #     c_data = c_data + \
+        #         AmazonOrderProcessData.builder(data2.payload["Orders"], amazon_account)
 
-            print("\n\n\n\n\n\n\n\n\n\n\n")
+        #     print("\n\n\n\n\n\n\n\n\n\n\n")
+        #     print("next_token : ", next_token)
 
-        print(c_data)
+        #     print("\n\n\n\n\n\n\n\n\n\n\n")
+
+        # print(c_data)
+
+        # is_created = AmazonOrder.objects.create_bulk(c_data)
 
         # Step 3
         # data = Orders(
@@ -408,4 +400,4 @@ class TestAmazonClientCatalog(View):
 
         # BuyerEmail = buyer_email in the Amazonorder table
 
-        return HttpResponse(data)
+        return HttpResponse()
