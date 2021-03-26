@@ -219,13 +219,64 @@ class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
 
 
 class AmazonOrdersManager(models.Manager):
-    def create_bulk(self, data):
-        amazon_order_objects = []
+    def create_bulk(self, data, amazonaccount, order_columns, item_columns):
 
+        amazon_products = AmazonProduct.objects.filter(
+            amazonaccounts_id=amazonaccount.id).values_list("sku", "id")
+        amazon_product_map = {k: v for k, v in amazon_products}
+
+        amazon_orders = AmazonOrder.objects.filter(
+            amazonaccounts_id=amazonaccount.id).values_list("order_id", "id")
+        amazon_orders_map = {k: v for k, v in amazon_orders}
+
+        amazon_order_items = AmazonOrderItem.objects.filter(
+            amazonorder__amazonaccounts_id=amazonaccount.id).values_list("amazonorder_id", "item_id", "item_shipment_id", "id")
+        amazon_order_items_map = {str(k1) + str(k2) + str(k3): v for k1,
+                                  k2, k3, v in amazon_order_items}
+
+        amazon_order_objects = []
+        amazon_order_objects_update = []
+        amazon_order_item_objects = []
+        amazon_order_item_objects_update = []
+        amazon_order_items = []
         for row in data:
-            amazon_order_objects.append(AmazonOrder(**row))
+            row_args = row.copy()
+            amazon_order_items += row_args.pop("items", [])
+            order_pk = amazon_orders_map.get(row.get("order_id"), None)
+
+            if order_pk:
+                amazon_order_objects_update.append(
+                    AmazonOrder(id=order_pk, amazonaccounts_id=amazonaccount.id, **row_args))
+            else:
+                amazon_order_objects.append(AmazonOrder(
+                    amazonaccounts_id=amazonaccount.id, **row_args))
+
         try:
-            AmazonOrder.objects.bulk_create(amazon_order_objects)
+            with transaction.atomic():
+                AmazonOrder.objects.bulk_update(amazon_order_objects_update, order_columns)
+                orders = AmazonOrder.objects.bulk_create(amazon_order_objects)
+
+                amazon_new_order_map = {}
+                for order in orders:
+                    amazon_new_order_map[order.order_id] = order.id
+
+                for order_item in amazon_order_items:
+                    sku = order_item.pop("sku", "")
+                    order_id = order_item.pop("order_id", "")
+                    order_item["amazonproduct_id"] = amazon_product_map.get(sku)
+                    order_item["amazonorder_id"] = amazon_new_order_map.get(
+                        order_id, amazon_orders_map.get(order_id))
+
+                    item_pk = amazon_order_items_map.get(
+                        str(order_item["amazonorder_id"]) + str(order_item.get("item_id")) + str(order_item.get("item_shipment_id")), None)
+                    if item_pk:
+                        amazon_order_item_objects_update.append(
+                            AmazonOrderItem(id=item_pk, **order_item))
+                    else:
+                        amazon_order_item_objects.append(AmazonOrderItem(**order_item))
+
+                AmazonOrderItem.objects.bulk_update(amazon_order_item_objects_update, item_columns)
+                AmazonOrderItem.objects.bulk_create(amazon_order_item_objects)
         except Exception as e:
             return False
         return True
@@ -321,6 +372,7 @@ class AmazonOrderItem(models.Model):
         related_name="orderitem_order",
     )
     item_id = models.CharField(max_length=300)
+    item_shipment_id = models.CharField(max_length=300)
     amazonproduct = models.ForeignKey(
         AmazonProduct,
         on_delete=models.CASCADE,
@@ -331,37 +383,37 @@ class AmazonOrderItem(models.Model):
     quantity = models.PositiveIntegerField(blank=True, null=True)
     asin = models.CharField(max_length=300, blank=True, null=True)
     item_price = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     item_tax = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     shipping_price = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     shipping_tax = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     gift_wrap_price = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     gift_wrap_tax = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     item_promotional_discount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     ship_promotional_discount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     fba_fullfilment_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     amazon_comission_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     manufacturing_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
+        max_digits=14, decimal_places=2, default_currency="USD", null=True, blank=True
     )
     item_return = models.PositiveIntegerField(default=0)
     extra_data = HStoreField(null=True, blank=True)
@@ -370,8 +422,7 @@ class AmazonOrderItem(models.Model):
 
     class Meta:
         """Meta for the model."""
-
-        unique_together = ("amazonorder", "item_id")
+        unique_together = ("amazonorder", "item_id", "item_shipment_id")
 
     def __str__(self):
         """Return Value."""
