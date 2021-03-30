@@ -8,7 +8,6 @@ from bat.market.views import (
     AmazonMarketplaceViewsets,
     AmazonOrderViewsets,
     AmazonProductViewsets,
-    TestAmazonClientCatalog,
 )
 
 amazon_marketplaces_router = nested_routers.NestedSimpleRouter(
@@ -49,5 +48,4 @@ urlpatterns = [
     path("", include(amazon_product_router.urls)),
     path("", include(amazon_order_router.urls)),
     path("", include(amazon_marketplaces_router.urls)),
-    path("test-amazon-client/catalog", TestAmazonClientCatalog.as_view()),
 ]

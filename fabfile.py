@@ -79,4 +79,4 @@ def deploy_frontend(args):
 @task
 def deploy(args):
     deploy_backend(args)
-    deploy_frontend(args)
+    # deploy_frontend(args)

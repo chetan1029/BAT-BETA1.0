@@ -1,3 +1,5 @@
+import csv
+import time
 import base64
 from datetime import datetime, timedelta
 
@@ -18,7 +20,7 @@ from sp_api.base.reportTypes import ReportType
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
-from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Reports
+from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Reports, Orders
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
@@ -27,6 +29,9 @@ from bat.market.models import (
     AmazonProduct,
 )
 from bat.market.utils import AmazonAPI, generate_uri, set_default_email_campaign_templates
+from bat.market.report_parser import ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser
+from bat.market.orders_data_builder import AmazonOrderProcessData
+from bat.market.tasks import amazon_account_products_orders_sync
 
 # from sp_api.api.reports.reports import Reports
 
@@ -153,7 +158,7 @@ class AccountsReceiveAmazonCallback(View):
                 },
             )
 
-            _new_account, amazon_accounts_is_created = AmazonAccounts.objects.get_or_create(
+            new_account, amazon_accounts_is_created = AmazonAccounts.objects.get_or_create(
                 marketplace=marketplace,
                 user=user,
                 company=company,
@@ -181,6 +186,8 @@ class AccountsReceiveAmazonCallback(View):
                     return HttpResponseRedirect(
                         settings.MARKET_LIST_URI + "?error=" + e
                     )
+                # call task to collect data from amazon account
+                amazon_account_products_orders_sync.delay(new_account.id, last_no_of_days=8)
 
                 return HttpResponseRedirect(
                     settings.MARKET_LIST_URI + "?success=Your " +
@@ -192,97 +199,5 @@ class AccountsReceiveAmazonCallback(View):
                     "marketplace account couldn't be linked due to: oauth_api_call_failed"
                 )
         return HttpResponseRedirect(
-            settings.MARKET_LIST_URI + "?error=status_expired"
+            settings.MARKET_LIST_URI + "?error=status has been expired"
         )
-
-
-class TestAmazonClientCatalog(View):
-    def get(self, request, **kwargs):
-        ac = AmazonAccountCredentails.objects.get(pk=2)
-        # (not give list of products)
-        # data = Catalog(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).list_items(MarketplaceId="ATVPDKIKX0DER", EAN="7350097670024")
-
-        # (1)
-        # data = Reports(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     }
-        # ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
-        #                 dataStartTime='2019-12-10T20:11:24.000Z',
-        #                 marketplaceIds=[
-        #                     "ATVPDKIKX0DER"
-        #                 ])
-        # (1 - output)
-        # id = 325868018710
-
-        # (2)
-        data = Reports(
-            marketplace=Marketplaces.US,
-            refresh_token=ac.refresh_token,
-            credentials={
-                "refresh_token": ac.refresh_token,
-                "lwa_app_id": settings.LWA_CLIENT_ID,
-                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-                "role_arn": settings.ROLE_ARN,
-            }
-        ).get_report(325868018710)
-
-        # (2 - output)
-        # data: {'errors': None,
-        #        'headers': {'Date': 'Wed, 24 Mar 2021 10:23:46 GMT', 'Content-Type': 'application/json', 'Content-Length': '461', 'Connection': 'keep-alive', 'x-amzn-RequestId': 'c0b68a07-142b-408b-889f-d5e0c0ee50a9', 'x-amz-apigw-id': 'cr_v5GEMoAMFXZA=', 'X-Amzn-Trace-Id': 'Root=1-605b1332-73b18e4811d7db1f76f99e2a'},
-        #        'kwargs': {},
-        #        'next_token': None,
-        #        'pagination': None,
-        #        'payload': {'createdTime': '2021-03-24T10:22:46+00:00',
-        #                    'dataEndTime': '2021-03-24T10:22:46+00:00',
-        #                    'dataStartTime': '2019-12-10T20:11:24+00:00',
-        #                    'marketplaceIds': ['ATVPDKIKX0DER'],
-        #                    'processingEndTime': '2021-03-24T10:23:03+00:00',
-        #                    'processingStartTime': '2021-03-24T10:22:56+00:00',
-        #                    'processingStatus': 'DONE',
-        #                    'reportDocumentId': 'amzn1.tortuga.3.4dad800a-5f65-4add-8fad-fdeb3f7ecc6f.T16V43KQE2QBY5',
-        #                    'reportId': '325868018710',
-        #                    'reportType': 'GET_MERCHANT_LISTINGS_ALL_DATA'}}
-
-        # (3)
-
-        f = open("test_report.txt", "w+")
-        print("\n\n\n\n\n\n\n\nfile  : ", f)
-        data = Reports(
-            marketplace=Marketplaces.US,
-            refresh_token=ac.refresh_token,
-            credentials={
-                "refresh_token": ac.refresh_token,
-                "lwa_app_id": settings.LWA_CLIENT_ID,
-                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-                "role_arn": settings.ROLE_ARN,
-            },
-        ).get_report_document("amzn1.tortuga.3.4dad800a-5f65-4add-8fad-fdeb3f7ecc6f.T16V43KQE2QBY5", decrypt=True, file=f)
-
-        # (3 - output)
-        # TODO
-
-        print("data :", data)
-        return HttpResponse(data)
