@@ -219,7 +219,7 @@ class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
 
 
 class AmazonOrdersManager(models.Manager):
-    def create_bulk(self, data, amazonaccount, order_columns, item_columns):
+    def import_bulk(self, data, amazonaccount, order_columns, item_columns):
 
         amazon_products = AmazonProduct.objects.filter(
             amazonaccounts_id=amazonaccount.id).values_list("sku", "id")

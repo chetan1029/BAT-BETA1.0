@@ -31,6 +31,7 @@ from bat.market.models import (
 from bat.market.utils import AmazonAPI, generate_uri, set_default_email_campaign_templates
 from bat.market.report_parser import ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser
 from bat.market.orders_data_builder import AmazonOrderProcessData
+from bat.market.tasks import amazon_account_products_orders_sync
 
 # from sp_api.api.reports.reports import Reports
 
@@ -157,7 +158,7 @@ class AccountsReceiveAmazonCallback(View):
                 },
             )
 
-            _new_account, amazon_accounts_is_created = AmazonAccounts.objects.get_or_create(
+            new_account, amazon_accounts_is_created = AmazonAccounts.objects.get_or_create(
                 marketplace=marketplace,
                 user=user,
                 company=company,
@@ -185,6 +186,8 @@ class AccountsReceiveAmazonCallback(View):
                     return HttpResponseRedirect(
                         settings.MARKET_LIST_URI + "?error=" + e
                     )
+                # call task to collect data from amazon account
+                amazon_account_products_orders_sync.delay(new_account.id, last_no_of_days=8)
 
                 return HttpResponseRedirect(
                     settings.MARKET_LIST_URI + "?success=Your " +
@@ -196,208 +199,5 @@ class AccountsReceiveAmazonCallback(View):
                     "marketplace account couldn't be linked due to: oauth_api_call_failed"
                 )
         return HttpResponseRedirect(
-            settings.MARKET_LIST_URI + "?error=status_expired"
+            settings.MARKET_LIST_URI + "?error=status has been expired"
         )
-
-
-class TestAmazonClientCatalog(View):
-    def get(self, request, **kwargs):
-        ac = AmazonAccountCredentails.objects.get(pk=2)
-        amazon_account = AmazonAccounts.objects.get(pk=25)
-        # (not give list of products)
-        # data = Catalog(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).list_items(MarketplaceId="ATVPDKIKX0DER", EAN="7350097670024")
-
-        # (1)
-        # data1 = Reports(
-        #     marketplace=Marketplaces["US"],
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     }
-        #     # ).create_report(reportType=ReportType.GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL,
-        # ).create_report(reportType=ReportType.GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL,
-        #                 dataStartTime=(datetime.utcnow() - timedelta(days=6)).isoformat(),
-        #                 dataEndTime=(datetime.utcnow()).isoformat(),
-        #                 marketplaceIds=[
-        #                     "ATVPDKIKX0DER"
-        #                 ])
-        # print("data1 : ", data1)
-        # reportId = int(data1.payload["reportId"])
-
-        # (2)
-        # iteration = 1
-        # payload2 = {}
-        # while payload2.get("processingStatus", None) != "DONE":
-        #     data2 = Reports(
-        #         marketplace=Marketplaces.US,
-        #         refresh_token=ac.refresh_token,
-        #         credentials={
-        #             "refresh_token": ac.refresh_token,
-        #             "lwa_app_id": settings.LWA_CLIENT_ID,
-        #             "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #             "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #             "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #             "role_arn": settings.ROLE_ARN,
-        #         }
-        #     ).get_report(reportId)
-        #     payload2 = data2.payload
-        #     if payload2.get("processingStatus", None) != "DONE":
-        #         time.sleep(10)
-        #     print(iteration, "\n")
-        #     iteration = iteration + 1
-        #     if(iteration > 10):
-        #         break
-
-        # print("payload2......... :", payload2)
-
-        # (3)
-        # f = open("GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL.csv", "w+")
-        # f = open("GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL.csv", "w+")
-        # print("\n\n\n\n\n\n\n\nfile  : ", f)
-        # data3 = Reports(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).get_report_document(payload2["reportDocumentId"], decrypt=True, file=f)
-
-        # (4)
-        orders_items_report_csv = open("GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL.csv", "r")
-        orders_report_csv = open("GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL.csv", "r")
-        data, order_columns, item_columns = ReportAmazonOrdersCSVParser.parse(
-            orders_report_csv, orders_items_report_csv)
-        print("\n\n\n\n\n\n\n\n\n\n\n\n")
-        print("data : ", data)
-        is_created = AmazonOrder.objects.create_bulk(
-            data, amazon_account, order_columns, item_columns)
-        print("\n\n\n\n\n\n\n\n\n\n\n\n")
-        print(is_created)
-
-        # (4)
-        # report_csv = open("test_report.csv", "r")
-        # data, columns = ReportAmazonProductCSVParser.parse(report_csv)
-        # is_created = AmazonProduct.objects.import_bulk(data, amazon_account, columns)
-
-        # ###### Orders ######
-        # Step 1
-        # data = Orders(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).get_orders(CreatedAfter=(datetime.utcnow() - timedelta(days=6)).isoformat())
-        # print(data)
-        # c_data = AmazonOrderProcessData.builder(data.payload["Orders"], amazon_account)
-        # print("\n\n\n\n\n\n\n\n\n\n\n")
-        # print(c_data)
-
-        # Data point mapping
-        # AmazonOrderId = order_id
-        # SellerOrderId = order_seller_id
-        # PurchaseDate = purchase_date
-        # PurchaseDate = payment_date
-        # EarliestShipDate = shipment_date
-        # LastUpdateDate = reporting_date
-        # IsReplacementOrder = replacement
-        # OrderStatus = status
-        # SalesChannel = sales_channel
-        # NumberOfItemsShipped+NumberOfItemsUnshipped = quantity
-        # OrderTotal = amount
-
-        # Step 2
-        # next_token = data.next_token
-        # while next_token:
-        #     data2 = Orders(
-        #         marketplace=Marketplaces.US,
-        #         refresh_token=ac.refresh_token,
-        #         credentials={
-        #             "refresh_token": ac.refresh_token,
-        #             "lwa_app_id": settings.LWA_CLIENT_ID,
-        #             "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #             "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #             "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #             "role_arn": settings.ROLE_ARN,
-        #         },
-        #     ).get_orders(NextToken=next_token)
-
-        #     next_token = data2.next_token
-
-        #     c_data = c_data + \
-        #         AmazonOrderProcessData.builder(data2.payload["Orders"], amazon_account)
-
-        #     print("\n\n\n\n\n\n\n\n\n\n\n")
-        #     print("next_token : ", next_token)
-
-        #     print("\n\n\n\n\n\n\n\n\n\n\n")
-
-        # print(c_data)
-
-        # is_created = AmazonOrder.objects.create_bulk(c_data)
-
-        # Step 3
-        # data = Orders(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).get_order_items("111-9508492-9812214")
-
-        # Data point mapping
-        # OrderItemId = item_id
-        # ASIN and SellerSKU check on amazonproduct = amazonproduct
-        # NumberOfItems = quantity
-        # ASIN = asin
-        # ItemPrice = item_price
-        # ItemTax = item_tax
-        # PromotionDiscount = item_promotional_discount
-
-        # data = Orders(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).get_order_buyer_info("111-9508492-9812214")
-
-        # BuyerEmail = buyer_email in the Amazonorder table
-
-        return HttpResponse()

@@ -1,4 +1,9 @@
+import time
+from datetime import datetime
+
 from django.conf import settings
+
+from sp_api.base import Marketplaces
 
 import requests
 from urllib.parse import urlencode
@@ -11,6 +16,8 @@ from bat.autoemail.models import (
 )
 
 from bat.company.models import Company
+from bat.market.amazon_sp_api.amazon_sp_api import Reports
+from bat.market.constants import MARKETPLACE_CODES
 
 
 def generate_uri(url, query_parameters):
@@ -102,3 +109,73 @@ def set_default_email_campaign_templates(company, marketplace):
                 email_campaign_objects.append(EmailCampaign(**data))
 
             EmailCampaign.objects.bulk_create(email_campaign_objects)
+
+
+def get_amazon_report(amazonaccount, reportType, report_file, dataStartTime, dataEndTime=None, marketplaceIds=None):
+    credentails = amazonaccount.credentails
+    marketplace = amazonaccount.marketplace
+
+    kw_args = {"reportType": reportType,
+               "dataStartTime": dataStartTime
+               }
+    if marketplaceIds:
+        kw_args["marketplaceIds"] = marketplaceIds
+    else:
+        kw_args["marketplaceIds"] = [marketplace.marketplaceId]
+
+    if dataEndTime:
+        kw_args["dataEndTime"] = dataEndTime
+
+    response_1 = Reports(
+        marketplace=Marketplaces[MARKETPLACE_CODES.get(marketplace.marketplaceId)],
+        refresh_token=credentails.refresh_token,
+        credentials={
+            "refresh_token": credentails.refresh_token,
+            "lwa_app_id": settings.LWA_CLIENT_ID,
+            "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+            "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+            "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+            "role_arn": settings.ROLE_ARN,
+        }
+    ).create_report(reportType=reportType,
+                    dataStartTime=dataStartTime,
+                    marketplaceIds=[
+                        marketplace.marketplaceId
+                    ])
+
+    reportId = int(response_1.payload["reportId"])
+
+    iteration = 1
+    response_2_payload = {}
+    while response_2_payload.get("processingStatus", None) != "DONE":
+        response_2 = Reports(
+            marketplace=Marketplaces.US,
+            refresh_token=credentails.refresh_token,
+            credentials={
+                "refresh_token": credentails.refresh_token,
+                "lwa_app_id": settings.LWA_CLIENT_ID,
+                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                "role_arn": settings.ROLE_ARN,
+            }
+        ).get_report(reportId)
+        response_2_payload = response_2.payload
+        if response_2_payload.get("processingStatus", None) != "DONE":
+            time.sleep(10)
+        iteration = iteration + 1
+        if(iteration > 10):
+            break
+
+    Reports(
+        marketplace=Marketplaces.US,
+        refresh_token=credentails.refresh_token,
+        credentials={
+            "refresh_token": credentails.refresh_token,
+            "lwa_app_id": settings.LWA_CLIENT_ID,
+            "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+            "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+            "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+            "role_arn": settings.ROLE_ARN,
+        },
+    ).get_report_document(response_2_payload["reportDocumentId"], decrypt=True, file=report_file)
