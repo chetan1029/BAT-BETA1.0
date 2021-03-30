@@ -92,7 +92,6 @@ class Reports(APIClient):
         """
         res = self._request(fill_query_params(kwargs.pop(
             'path'), document_id), add_marketplace=False)
-        print("res.payload :", res.payload)
         if decrypt:
             document = self.decrypt_report_document(
                 res.payload.get('url'),
