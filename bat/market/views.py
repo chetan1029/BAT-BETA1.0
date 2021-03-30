@@ -225,8 +225,9 @@ class TestAmazonClientCatalog(View):
         #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
         #         "role_arn": settings.ROLE_ARN,
         #     }
-        # ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
-        #                 dataStartTime='2019-12-10T20:11:24.000Z',
+        # ).create_report(reportType=ReportType.GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL,
+        #                 dataStartTime='2021-02-01T20:11:24.000Z',
+        #                 dataEndTime='2021-02-10T20:11:24.000Z',
         #                 marketplaceIds=[
         #                     "ATVPDKIKX0DER"
         #                 ])
@@ -245,7 +246,7 @@ class TestAmazonClientCatalog(View):
         #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
         #         "role_arn": settings.ROLE_ARN,
         #     }
-        # ).get_report(325868018710)
+        # ).get_report(326137018712)
 
         # (2 - output)
         # data: {'errors': None,
@@ -266,20 +267,20 @@ class TestAmazonClientCatalog(View):
 
         # (3)
 
-        # f = open("test_report.txt", "w+")
-        # print("\n\n\n\n\n\n\n\nfile  : ", f)
-        # data = Reports(
-        #     marketplace=Marketplaces.US,
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).get_report_document("amzn1.tortuga.3.4dad800a-5f65-4add-8fad-fdeb3f7ecc6f.T16V43KQE2QBY5", decrypt=True, file=f)
+        f = open("test_report.txt", "w+")
+        print("\n\n\n\n\n\n\n\nfile  : ", f)
+        data = Reports(
+            marketplace=Marketplaces.US,
+            refresh_token=ac.refresh_token,
+            credentials={
+                "refresh_token": ac.refresh_token,
+                "lwa_app_id": settings.LWA_CLIENT_ID,
+                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                "role_arn": settings.ROLE_ARN,
+            },
+        ).get_report_document("amzn1.tortuga.3.7eb92a0c-e9a5-42f1-941b-43c3aa7c1b59.T1T46USQPH4LZJ", decrypt=True, file=f)
 
         # (3 - output)
         # TODO
@@ -350,18 +351,18 @@ class TestAmazonClientCatalog(View):
         # ItemTax = item_tax
         # PromotionDiscount = item_promotional_discount
 
-        data = Orders(
-            marketplace=Marketplaces.US,
-            refresh_token=ac.refresh_token,
-            credentials={
-                "refresh_token": ac.refresh_token,
-                "lwa_app_id": settings.LWA_CLIENT_ID,
-                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-                "role_arn": settings.ROLE_ARN,
-            },
-        ).get_order_buyer_info("111-9508492-9812214")
+        # data = Orders(
+        #     marketplace=Marketplaces.US,
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).get_order_buyer_info("111-9508492-9812214")
 
         # BuyerEmail = buyer_email in the Amazonorder table
 
