@@ -1,5 +1,4 @@
 import time
-from datetime import datetime
 
 from django.conf import settings
 
@@ -149,7 +148,7 @@ def get_amazon_report(amazonaccount, reportType, report_file, dataStartTime, dat
     response_2_payload = {}
     while response_2_payload.get("processingStatus", None) != "DONE":
         response_2 = Reports(
-            marketplace=Marketplaces.US,
+            marketplace=Marketplaces[MARKETPLACE_CODES.get(marketplace.marketplaceId)],
             refresh_token=credentails.refresh_token,
             credentials={
                 "refresh_token": credentails.refresh_token,
@@ -168,7 +167,7 @@ def get_amazon_report(amazonaccount, reportType, report_file, dataStartTime, dat
             break
 
     Reports(
-        marketplace=Marketplaces.US,
+        marketplace=Marketplaces[MARKETPLACE_CODES.get(marketplace.marketplaceId)],
         refresh_token=credentails.refresh_token,
         credentials={
             "refresh_token": credentails.refresh_token,
