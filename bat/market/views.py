@@ -32,6 +32,7 @@ from bat.market.utils import AmazonAPI, generate_uri, set_default_email_campaign
 from bat.market.report_parser import ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser
 from bat.market.orders_data_builder import AmazonOrderProcessData
 from bat.market.tasks import amazon_account_products_orders_sync
+from bat.company.utils import get_member
 
 # from sp_api.api.reports.reports import Reports
 
@@ -45,6 +46,9 @@ class AmazonProductViewsets(viewsets.ReadOnlyModelViewSet):
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
+        _member = get_member(
+            company_id=company_id, user_id=self.request.user.id
+        )
         queryset = super().filter_queryset(queryset)
         return queryset.filter(
             amazonaccounts__company__id=company_id
@@ -58,6 +62,9 @@ class AmazonOrderViewsets(viewsets.ReadOnlyModelViewSet):
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
+        _member = get_member(
+            company_id=company_id, user_id=self.request.user.id
+        )
         queryset = super().filter_queryset(queryset)
         return queryset.filter(
             amazonaccounts__company__id=company_id
@@ -74,6 +81,9 @@ class AmazonMarketplaceViewsets(viewsets.ReadOnlyModelViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         company_id = self.kwargs.get("company_pk", None)
+        _member = get_member(
+            company_id=company_id, user_id=self.request.user.id
+        )
         context["company_id"] = company_id
         context["user"] = self.request.user
         return context
