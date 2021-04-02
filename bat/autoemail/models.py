@@ -278,5 +278,5 @@ class EmailQueue(models.Model):
         for product in products:
             products_title_s += product.amazonproduct.title + ", "
         context = {"order_id": self.amazonorder.order_id,
-                   "Product_title_s": products_title_s, "Seller_name": "abc"}
+                   "Product_title_s": products_title_s, "Seller_name": self.amazonorder.amazonaccounts.company.name}
         send_email(self.template, self.sent_to, context=context)
