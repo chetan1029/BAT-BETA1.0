@@ -214,7 +214,7 @@ class AccountsReceiveAmazonCallback(View):
 
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
-        ac = AmazonAccountCredentails.objects.get(pk=2)
+        ac = AmazonAccountCredentails.objects.get(pk=15)
         # (not give list of products)
         # data = Catalog(
         #     marketplace=Marketplaces.US,
