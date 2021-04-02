@@ -235,11 +235,11 @@ class TestAmazonClientCatalog(View):
             refresh_token=ac.refresh_token,
             credentials={
                 "refresh_token": ac.refresh_token,
-                "lwa_app_id": settings.LWA_CLIENT_ID,
-                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
-                "role_arn": settings.ROLE_ARN,
+                "lwa_app_id": "amzn1.application-oa2-client.917bd5dac38d45aab08f38300dacc750",
+                "lwa_client_secret": "0c84a6743168af7130f23d68d5b200874aa7b0f50faf8643ba2ee2cba416cb3c",
+                "aws_access_key": "AKIAQN2XWGKVRXH3ZA6X",
+                "aws_secret_key": "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",
+                "role_arn": "arn:aws:iam::029711807147:role/SP-API-ROLE-1.0",
             }
         ).create_report(reportType=ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
                         dataStartTime='2019-12-10T20:11:24.000Z',
