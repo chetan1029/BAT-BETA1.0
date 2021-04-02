@@ -226,14 +226,20 @@ class AmazonOrdersManager(models.Manager):
         amazon_product_map = {k: v for k, v in amazon_products}
 
         amazon_orders = AmazonOrder.objects.filter(
-            amazonaccounts_id=amazonaccount.id).values_list("order_id", "id")
-        amazon_orders_map = {k: v for k, v in amazon_orders}
+            amazonaccounts_id=amazonaccount.id).values_list("order_id", "id", "status__name")
+
+        amazon_orders_map = {}
+        amazon_orders_old_status_map = {}
+        for order_id, pk, status in amazon_orders:
+            amazon_orders_map[order_id] = pk
+            amazon_orders_old_status_map[str(pk)] = status
 
         amazon_order_items = AmazonOrderItem.objects.filter(
             amazonorder__amazonaccounts_id=amazonaccount.id).values_list("amazonorder_id", "item_id", "item_shipment_id", "id")
         amazon_order_items_map = {str(k1) + str(k2) + str(k3): v for k1,
                                   k2, k3, v in amazon_order_items}
 
+        amazon_updated_orders_pk = []
         amazon_order_objects = []
         amazon_order_objects_update = []
         amazon_order_item_objects = []
@@ -247,39 +253,42 @@ class AmazonOrdersManager(models.Manager):
             if order_pk:
                 amazon_order_objects_update.append(
                     AmazonOrder(id=order_pk, amazonaccounts_id=amazonaccount.id, **row_args))
+                amazon_updated_orders_pk.append(order_pk)
             else:
                 amazon_order_objects.append(AmazonOrder(
                     amazonaccounts_id=amazonaccount.id, **row_args))
 
-        try:
-            with transaction.atomic():
-                AmazonOrder.objects.bulk_update(amazon_order_objects_update, order_columns)
-                orders = AmazonOrder.objects.bulk_create(amazon_order_objects)
+        with transaction.atomic():
+            AmazonOrder.objects.bulk_update(
+                amazon_order_objects_update, order_columns+["update_date"])
+            orders = AmazonOrder.objects.bulk_create(amazon_order_objects)
 
-                amazon_new_order_map = {}
-                for order in orders:
-                    amazon_new_order_map[order.order_id] = order.id
+            amazon_new_order_map = {}
+            amazon_created_orders_pk = []
+            for order in orders:
+                amazon_new_order_map[order.order_id] = order.id
+                amazon_created_orders_pk.append(order.id)
 
-                for order_item in amazon_order_items:
-                    sku = order_item.pop("sku", "")
-                    order_id = order_item.pop("order_id", "")
-                    order_item["amazonproduct_id"] = amazon_product_map.get(sku)
-                    order_item["amazonorder_id"] = amazon_new_order_map.get(
-                        order_id, amazon_orders_map.get(order_id))
+            for order_item in amazon_order_items:
+                sku = order_item.pop("sku", "")
+                order_id = order_item.pop("order_id", "")
+                order_item["amazonproduct_id"] = amazon_product_map.get(sku)
+                order_item["amazonorder_id"] = amazon_new_order_map.get(
+                    order_id, amazon_orders_map.get(order_id))
 
-                    item_pk = amazon_order_items_map.get(
-                        str(order_item["amazonorder_id"]) + str(order_item.get("item_id")) + str(order_item.get("item_shipment_id")), None)
-                    if item_pk:
-                        amazon_order_item_objects_update.append(
-                            AmazonOrderItem(id=item_pk, **order_item))
-                    else:
-                        amazon_order_item_objects.append(AmazonOrderItem(**order_item))
+                item_pk = amazon_order_items_map.get(
+                    str(order_item["amazonorder_id"]) + str(order_item.get("item_id")) + str(order_item.get("item_shipment_id")), None)
+                if item_pk:
+                    amazon_order_item_objects_update.append(
+                        AmazonOrderItem(id=item_pk, update_date=timezone.now, **order_item))
+                else:
+                    amazon_order_item_objects.append(AmazonOrderItem(**order_item))
 
-                AmazonOrderItem.objects.bulk_update(amazon_order_item_objects_update, item_columns)
-                AmazonOrderItem.objects.bulk_create(amazon_order_item_objects)
-        except Exception as e:
-            return False
-        return True
+            AmazonOrderItem.objects.bulk_update(
+                amazon_order_item_objects_update, item_columns)
+            AmazonOrderItem.objects.bulk_create(amazon_order_item_objects)
+
+        return amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map
 
 
 class AmazonOrder(models.Model):
@@ -289,7 +298,7 @@ class AmazonOrder(models.Model):
     Model for Orders.
     """
 
-    order_id = models.CharField(max_length=300, unique=True)
+    order_id = models.CharField(max_length=300)
     order_seller_id = models.CharField(max_length=300, blank=True, null=True)
     purchase_date = models.DateTimeField()
     payment_date = models.DateTimeField(blank=True, null=True)

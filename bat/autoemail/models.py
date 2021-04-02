@@ -21,6 +21,7 @@ from bat.autoemail.constants import (
 from bat.company.models import Company
 from bat.market.models import AmazonMarketplace, AmazonOrder
 from bat.setting.models import Status
+from bat.autoemail.utils import send_email
 
 try:
     from unidecode import unidecode
@@ -261,7 +262,7 @@ class EmailQueue(models.Model):
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, related_name="email_queue"
     )
-    send_date = models.DateTimeField(null=True)
+    send_date = models.DateTimeField(null=True, blank=True)
     schedule_date = models.DateTimeField(default=timezone.now)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -272,4 +273,10 @@ class EmailQueue(models.Model):
         return self.subject + " - " + self.sent_to
 
     def send_mail(self):
-        pass
+        products = self.amazonorder.orderitem_order.all()
+        products_title_s = ""
+        for product in products:
+            products_title_s += product.amazonproduct.title + ", "
+        context = {"order_id": self.amazonorder.order_id,
+                   "Product_title_s": products_title_s, "Seller_name": "abc"}
+        send_email(self.template, self.sent_to, context=context)
