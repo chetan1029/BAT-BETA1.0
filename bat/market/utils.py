@@ -136,11 +136,7 @@ def get_amazon_report(amazonaccount, reportType, report_file, dataStartTime, dat
             "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
             "role_arn": settings.ROLE_ARN,
         }
-    ).create_report(reportType=reportType,
-                    dataStartTime=dataStartTime,
-                    marketplaceIds=[
-                        marketplace.marketplaceId
-                    ])
+    ).create_report(**kw_args)
 
     reportId = int(response_1.payload["reportId"])
 

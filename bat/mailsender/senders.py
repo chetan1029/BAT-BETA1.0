@@ -48,7 +48,10 @@ class EmailNotificationSender(MessageParser):
             return emails
 
     def _get_subject(self):
-        return self._kwargs.get("subject") if self._kwargs.get("subject") is not None else self._template.subject
+        subject = self._kwargs.get("subject") if self._kwargs.get(
+            "subject") is not None else self._template.subject
+        tpl = djtemplate.Template(subject)
+        return tpl.render(Context(self._context))
 
     def send(self):
         msg = send_mail(

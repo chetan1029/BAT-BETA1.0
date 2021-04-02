@@ -53,7 +53,7 @@ from bat.company.utils import (
     get_member,
 )
 from bat.globalutils.utils import get_cbm, get_status_object, set_field_errors
-from bat.product.constants import PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT
+from bat.product.constants import PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT, PRODUCT_STATUS_DISCONTINUED
 from bat.serializersFields.serializers_fields import (
     CountrySerializerField,
     MoneySerializerField,
@@ -779,8 +779,6 @@ class CompanyCredentialSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
 
-
-
 class ComponentGoldenSampleSerializer(serializers.ModelSerializer):
     """Serializer for Component Golden Sample."""
 
@@ -1373,7 +1371,7 @@ class CompanyOrderCaseSerializers(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         if not attrs.get("status", None):
-            attrs["status"] = get_status("Basic", PRODUCT_STATUS_DRAFT)
+            attrs["status"] = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT)
         return super().validate(attrs)
 
     def create(self, validated_data):

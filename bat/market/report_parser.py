@@ -11,6 +11,10 @@ from bat.product.constants import (
     PRODUCT_STATUS_ACTIVE,
     PRODUCT_STATUS_INACTIVE,
     PRODUCT_PARENT_STATUS,
+)
+
+from bat.market.constants import (
+    ORDER_PARENT_STATUS,
     ORDER_STATUS_CANCELED,
     ORDER_STATUS_PENDING,
     ORDER_STATUS_SHIPPED,
@@ -94,11 +98,11 @@ class ReportAmazonOrdersCSVParser(object):
             return item_data
 
         order_status_pending = get_status(
-            PRODUCT_PARENT_STATUS, ORDER_STATUS_PENDING)
+            ORDER_PARENT_STATUS, ORDER_STATUS_PENDING)
         order_status_shipped = get_status(
-            PRODUCT_PARENT_STATUS, ORDER_STATUS_SHIPPED)
+            ORDER_PARENT_STATUS, ORDER_STATUS_SHIPPED)
         order_status_canceled = get_status(
-            PRODUCT_PARENT_STATUS, ORDER_STATUS_CANCELED)
+            ORDER_PARENT_STATUS, ORDER_STATUS_CANCELED)
         order_status = {
             "Pending": order_status_pending,
             "Shipped": order_status_shipped,

@@ -8,12 +8,12 @@ from celery.schedules import crontab
 from django.conf import settings
 
 # set the default Django settings module for the 'celery' program.
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 app = Celery(
     "bat",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["bat.users.tasks", "bat.setting.tasks", "bat.market.tasks"],
+    include=["bat.users.tasks", "bat.setting.tasks", "bat.market.tasks", "bat.autoemail.tasks"],
 )
 
 app.conf.update(
