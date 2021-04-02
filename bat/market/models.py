@@ -36,7 +36,7 @@ class AmazonMarketplace(models.Model):
     """
 
     name = models.CharField(
-        verbose_name=_("Name"), max_length=512, null=True, blank=True
+        verbose_name=_("Name"), max_length=512,
     )
     country = CountryField(verbose_name=_("Country"))
     # TODO set countries_flag_url in CountryField for market icon
