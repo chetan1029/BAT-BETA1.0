@@ -132,8 +132,8 @@ def get_amazon_report(amazonaccount, reportType, report_file, dataStartTime, dat
             "refresh_token": credentails.refresh_token,
             "lwa_app_id": settings.LWA_CLIENT_ID,
             "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-            "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-            "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+            "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
+            "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
             "role_arn": settings.ROLE_ARN,
         }
     ).create_report(**kw_args)
@@ -150,8 +150,8 @@ def get_amazon_report(amazonaccount, reportType, report_file, dataStartTime, dat
                 "refresh_token": credentails.refresh_token,
                 "lwa_app_id": settings.LWA_CLIENT_ID,
                 "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+                "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
+                "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
                 "role_arn": settings.ROLE_ARN,
             }
         ).get_report(reportId)
@@ -169,8 +169,8 @@ def get_amazon_report(amazonaccount, reportType, report_file, dataStartTime, dat
             "refresh_token": credentails.refresh_token,
             "lwa_app_id": settings.LWA_CLIENT_ID,
             "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-            "aws_access_key": settings.AWS_ACCESS_KEY_ID,
-            "aws_secret_key": settings.AWS_SECRET_ACCESS_KEY,
+            "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
+            "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
             "role_arn": settings.ROLE_ARN,
         },
     ).get_report_document(response_2_payload["reportDocumentId"], decrypt=True, file=report_file)
