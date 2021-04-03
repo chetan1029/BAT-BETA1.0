@@ -30,7 +30,8 @@ def add_order_email_in_queue(amazon_order_id, email_campaign_id):
     email_queue_data = {}
     email_queue_data["amazonorder"] = order
     email_queue_data["emailcampaign"] = email_campaign
-    email_queue_data["sent_to"] = order.buyer_email
+    # email_queue_data["sent_to"] = order.buyer_email
+    email_queue_data["sent_to"] = "chetan@volutz.com"
     email_queue_data["sent_from"] = settings.MAIL_FROM_ADDRESS
     email_queue_data["subject"] = email_campaign.emailtemplate.subject
     email_queue_data["template"] = email_campaign.emailtemplate
