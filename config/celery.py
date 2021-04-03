@@ -13,7 +13,7 @@ app = Celery(
     "bat",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["bat.users.tasks", "bat.setting.tasks", "bat.market.tasks"],
+    include=["bat.users.tasks", "bat.setting.tasks", "bat.market.tasks", "bat.autoemail.tasks"],
 )
 
 app.conf.update(

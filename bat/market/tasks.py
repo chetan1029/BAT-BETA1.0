@@ -19,6 +19,8 @@ from bat.market.models import (
 )
 from bat.market.report_parser import (ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser,)
 from bat.market.utils import get_amazon_report
+from bat.autoemail.models import EmailQueue
+from bat.autoemail.tasks import email_queue_create_for_orders
 
 logger = get_task_logger(__name__)
 
@@ -65,6 +67,8 @@ def amazon_orders_sync_account(amazonaccount_id, last_no_of_days=1):
     amazonaccount = AmazonAccounts.objects.get(pk=amazonaccount_id)
     logger.info("celery amazon_orders_sync_account task")
 
+    print("\n\n\n amazonaccount : ", amazonaccount.marketplace.name, "............")
+
     # Temporary files
     timestamp = datetime.timestamp(datetime.now())
     tmp_dir = tempfile.TemporaryDirectory()
@@ -92,8 +96,13 @@ def amazon_orders_sync_account(amazonaccount_id, last_no_of_days=1):
         orders_report_csv, orders_items_report_csv)
 
     # import formated data
-    AmazonOrder.objects.import_bulk(
+    amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map = AmazonOrder.objects.import_bulk(
         data, amazonaccount, order_columns, item_columns)
+
+    # auto campaign
+    if last_no_of_days == 1:
+        email_queue_create_for_orders.delay(
+            amazonaccount_id, amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map)
 
 
 @app.task
