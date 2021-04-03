@@ -121,13 +121,9 @@ class AmazonProductManager(models.Manager):
                     AmazonProduct(id=product_id, amazonaccounts=amazonaccount, **row))
             else:
                 amazon_product_objects.append(AmazonProduct(**row, amazonaccounts=amazonaccount))
-        try:
-            with transaction.atomic():
-                AmazonProduct.objects.bulk_create(amazon_product_objects)
-                AmazonProduct.objects.bulk_update(amazon_product_objects_update, columns)
-        except Exception as e:
-            return False
-        return True
+        with transaction.atomic():
+            AmazonProduct.objects.bulk_create(amazon_product_objects)
+            AmazonProduct.objects.bulk_update(amazon_product_objects_update, columns)
 
 
 class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
