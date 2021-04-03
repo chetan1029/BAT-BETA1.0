@@ -198,7 +198,6 @@ class AccountsReceiveAmazonCallback(View):
                     )
                 # call task to collect data from amazon account
                 amazon_account_products_orders_sync.delay(new_account.id, last_no_of_days=8)
-
                 return HttpResponseRedirect(
                     settings.MARKET_LIST_URI + "?success=Your " +
                     marketplace.name + "marketplace account successfully linked."
