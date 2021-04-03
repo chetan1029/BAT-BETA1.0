@@ -95,7 +95,7 @@ def email_queue_create_for_orders(amazonaccount_id, amazon_created_orders_pk, am
                 add_order_email_in_queue.delay(pk, email_campaign_pk)
 
     for order_pk in amazon_created_orders_pk:
-        object_pk = str(object_pk)
+        order_pk = str(order_pk)
         email_campaigns_with_status = email_campaigns_map.get(
             amazon_created_orders_status_map[order_pk], [])
         for email_campaign_pk in email_campaigns_with_status:

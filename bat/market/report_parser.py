@@ -8,6 +8,9 @@ from bat.market.models import AmazonProduct
 from bat.setting.utils import get_status
 
 from bat.product.constants import (
+    PRODUCT_STATUS_DRAFT,
+    PRODUCT_STATUS_INCOMPLETE,
+    PRODUCT_STATUS_PENDING,
     PRODUCT_STATUS_ACTIVE,
     PRODUCT_STATUS_INACTIVE,
     PRODUCT_PARENT_STATUS,
@@ -30,9 +33,17 @@ class ReportAmazonProductCSVParser(object):
             PRODUCT_PARENT_STATUS, PRODUCT_STATUS_ACTIVE)
         product_status_inactive = get_status(
             PRODUCT_PARENT_STATUS, PRODUCT_STATUS_INACTIVE)
+        product_status_incomplete = get_status(
+            PRODUCT_PARENT_STATUS, PRODUCT_STATUS_INCOMPLETE)
+        product_status_draft = get_status(
+            PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT)
+        product_status_pending = get_status(
+            PRODUCT_PARENT_STATUS, PRODUCT_STATUS_PENDING)
         product_status = {
             "Active": product_status_active,
-            "Inactive": product_status_inactive
+            "Inactive": product_status_inactive,
+            "Incomplete": product_status_incomplete,
+            "Draft": product_status_draft,
         }
         # read file
         reader = csv.DictReader(csv_file, delimiter='\t')
@@ -46,7 +57,8 @@ class ReportAmazonProductCSVParser(object):
                 values["sku"] = html.unescape(row.get("seller-sku", None))
                 values["asin"] = row.get("asin1", None)
                 values["ean"] = row.get("product-id", None)
-                values["status"] = product_status.get(row.get("status", None), None)
+                values["status"] = product_status.get(
+                    row.get("status", None), product_status_pending)
                 values["url"] = "https://www.amazon.com/dp/" + row.get("asin1", None) + "/"
                 data.append(values)
         return data, ["title", "description", "status", "url"]
