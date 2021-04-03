@@ -46,7 +46,7 @@ def add_order_email_in_queue(amazon_order_id, email_campaign_id):
         email_queue_data["schedule_date"] = datetime.utcnow()
     else:
         email_queue_data["schedule_date"] = datetime.utcnow(
-        ) - timedelta(days=email_campaign.schedule_days)
+        ) + timedelta(days=email_campaign.schedule_days)
 
     EmailQueue.objects.create(**email_queue_data)
 
@@ -76,7 +76,7 @@ def add_initial_order_email_in_queue(amazon_order_id, email_campaign_id):
             email_queue_data["schedule_date"] = datetime.utcnow()
         else:
             email_queue_data["schedule_date"] = datetime.utcnow(
-            ) - timedelta(days=day_diff)
+            ) + timedelta(days=day_diff)
 
     EmailQueue.objects.create(**email_queue_data)
 
