@@ -14,7 +14,7 @@ from bat.market.models import (
 )
 from bat.market.report_parser import (ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser,)
 from bat.market.utils import get_amazon_report
-from bat.autoemail.tasks import email_queue_create_for_orders
+from bat.autoemail.tasks import email_queue_create_for_orders, email_queue_create_for_initial_orders
 
 logger = get_task_logger(__name__)
 
@@ -97,6 +97,9 @@ def amazon_orders_sync_account(amazonaccount_id, last_no_of_days=1):
     if last_no_of_days == 1:
         email_queue_create_for_orders.delay(
             amazonaccount_id, amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map)
+    else:
+        email_queue_create_for_initial_orders.delay(
+            amazonaccount_id, amazon_created_orders_pk)
 
 
 @app.task
