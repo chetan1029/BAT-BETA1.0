@@ -6,7 +6,8 @@
       "name": "Spain",
       "country": "ES",
       "marketplaceId": "A1RKKUPIHCS9HS",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.es"
     }
   },
   {
@@ -16,7 +17,8 @@
       "name": "United Kingdom",
       "country": "GB",
       "marketplaceId": "A1F83G8C2ARO7P",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.co.uk"
     }
   },
   {
@@ -26,7 +28,8 @@
       "name": "France",
       "country": "FR",
       "marketplaceId": "A13V1IB3VIYZZH",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.fr"
     }
   },
   {
@@ -36,7 +39,8 @@
       "name": "Netherlands",
       "country": "NL",
       "marketplaceId": "A1805IZSGTT6HS",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.nl"
     }
   },
   {
@@ -46,7 +50,8 @@
       "name": "Germany",
       "country": "DE",
       "marketplaceId": "A1PA6795UKMFR9",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.de"
     }
   },
   {
@@ -56,7 +61,8 @@
       "name": "Italy",
       "country": "IT",
       "marketplaceId": "APJ6JRA9NG5V4",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.it"
     }
   },
   {
@@ -66,7 +72,8 @@
       "name": "Sweden",
       "country": "SE",
       "marketplaceId": "A2NODRKZP88ZB9",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.se"
     }
   },
   {
@@ -76,7 +83,8 @@
       "name": "Turkey",
       "country": "TR",
       "marketplaceId": "A33AVAJ2PDY3EV",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.com.tr"
     }
   },
   {
@@ -86,7 +94,8 @@
       "name": "United Arab Emirates",
       "country": "AE",
       "marketplaceId": "A2VIGQ35RCS4UG",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.ae"
     }
   },
   {
@@ -96,7 +105,8 @@
       "name": "India",
       "country": "IN",
       "marketplaceId": "A21TJRUUN4KGV",
-      "region": "eu_west_1"
+      "region": "eu_west_1",
+      "sales_channel_name": "Amazon.in"
     }
   },
   {
@@ -106,7 +116,8 @@
       "name": "Canada",
       "country": "CA",
       "marketplaceId": "A2EUQ1WTGCTBG2",
-      "region": "us_east_1"
+      "region": "us_east_1",
+      "sales_channel_name": "Amazon.ca"
     }
   },
   {
@@ -116,7 +127,8 @@
       "name": "United States of America",
       "country": "US",
       "marketplaceId": "ATVPDKIKX0DER",
-      "region": "us_east_1"
+      "region": "us_east_1",
+      "sales_channel_name": "Amazon.com"
     }
   },
   {
@@ -126,7 +138,8 @@
       "name": "Mexico",
       "country": "MX",
       "marketplaceId": "A1AM78C64UM0Y8",
-      "region": "us_east_1"
+      "region": "us_east_1",
+      "sales_channel_name": "Amazon.com.mx"
     }
   },
   {
@@ -136,7 +149,8 @@
       "name": "Brazil",
       "country": "BR",
       "marketplaceId": "A2Q3Y263D00KWC",
-      "region": "us_east_1"
+      "region": "us_east_1",
+      "sales_channel_name": "Amazon.com.br"
     }
   },
   {
@@ -146,7 +160,8 @@
       "name": "Singapore",
       "country": "SG",
       "marketplaceId": "A19VAU5U5O7RUS",
-      "region": "us_west_2"
+      "region": "us_west_2",
+      "sales_channel_name": "Amazon.sg"
     }
   },
   {
@@ -156,7 +171,8 @@
       "name": "Australia",
       "country": "AU",
       "marketplaceId": "A39IBJ37TRP1C6",
-      "region": "us_west_2"
+      "region": "us_west_2",
+      "sales_channel_name": "Amazon.com.au"
     }
   },
   {
@@ -166,7 +182,8 @@
       "name": "Japan",
       "country": "JP",
       "marketplaceId": "A1VC38T7YXB528",
-      "region": "us_west_2"
+      "region": "us_west_2",
+      "sales_channel_name": "Amazon.co.jp"
     }
   }
 ]
