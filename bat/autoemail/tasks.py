@@ -60,7 +60,7 @@ def add_initial_order_email_in_queue(amazon_order_id, email_campaign_id):
     email_queue_data["amazonorder"] = order
     email_queue_data["emailcampaign"] = email_campaign
     # email_queue_data["sent_to"] = order.buyer_email
-    email_queue_data["sent_to"] = "chetan@volutz.com"
+    email_queue_data["sent_to"] = "chetanbadgujar92@gmail.com"
     email_queue_data["sent_from"] = settings.MAIL_FROM_ADDRESS
     email_queue_data["subject"] = email_campaign.emailtemplate.subject
     email_queue_data["template"] = email_campaign.emailtemplate
@@ -91,18 +91,17 @@ def send_email(email_queue_id):
 
 @app.task
 def send_email_from_queue():
+    current_time = datetime.utcnow()
     queued_emails = EmailQueue.objects.filter(
         status__name=ORDER_EMAIL_STATUS_QUEUED,
-        schedule_date__lte=datetime.utcnow(
-        ))
+        schedule_date__lte=current_time)
 
     for email in queued_emails:
         send_email.delay(email.id)
 
     EmailQueue.objects.filter(
         status__name=ORDER_EMAIL_STATUS_QUEUED,
-        schedule_date__lte=datetime.utcnow(
-        )).update(status=get_status(ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SCHEDULED))
+        schedule_date__lte=current_time).update(status=get_status(ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SCHEDULED))
 
 
 @app.task
