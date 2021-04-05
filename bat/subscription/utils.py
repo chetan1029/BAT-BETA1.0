@@ -30,10 +30,13 @@ def set_subscription_plan_on_company(plan, company):
         data = {}
         data["company"] = company
         data["plan"] = plan
-        data["billing_start_date"] = current
-        data["billing_end_date"] = current
-        data["last_billing_date"] = current
-        data["next_billing_date"] = current
+        if plan.cost == 0:
+            data["is_free"] = True
+        else:
+            data["billing_start_date"] = current
+            data["billing_end_date"] = current
+            data["last_billing_date"] = current
+            data["next_billing_date"] = current
         data["status"] = get_status(
             PARENT_SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_ACTIVE)
         Subscription.objects.create(**data)
