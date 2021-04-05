@@ -28,7 +28,6 @@ from bat.company.models import (
     ComponentGoldenSample,
     ComponentPrice,
 )
-from bat.product.models import ComponentMe
 from bat.mixins.mixins import ArchiveMixin, RestoreMixin
 
 
@@ -84,7 +83,6 @@ class CompanyCredentialViewSet(CompanySettingBaseViewSet):
 
     archive_message = _("Company credential is archived")
     restore_message = _("Company credential is restored")
-
 
 
 class ComponentGoldenSampleViewSet(

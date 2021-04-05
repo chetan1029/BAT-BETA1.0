@@ -133,11 +133,12 @@ class Subscription(models.Model):
     plan = models.ForeignKey(
         Plan, on_delete=models.PROTECT, related_name="subscriptions"
     )
-    billing_start_date = models.DateTimeField()
-    billing_end_date = models.DateTimeField()
-    last_billing_date = models.DateTimeField()
-    next_billing_date = models.DateTimeField()
+    billing_start_date = models.DateTimeField(null=True, blank=True)
+    billing_end_date = models.DateTimeField(null=True, blank=True)
+    last_billing_date = models.DateTimeField(null=True, blank=True)
+    next_billing_date = models.DateTimeField(null=True, blank=True)
     status = models.ForeignKey(Status, on_delete=models.PROTECT)
+    is_free = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
