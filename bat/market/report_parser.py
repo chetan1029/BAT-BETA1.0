@@ -67,7 +67,7 @@ class ReportAmazonProductCSVParser(object):
 class ReportAmazonOrdersCSVParser(object):
 
     @classmethod
-    def parse(cls, orders_report_csv, orders_items_report_csv):
+    def parse(cls, orders_report_csv, orders_items_report_csv, amazonaccount=None):
 
         def _get_item_data(row_data):
             item_price = row_data.get("item-price", None)
@@ -194,54 +194,59 @@ class ReportAmazonOrdersCSVParser(object):
 
                 order_items_map[row.get("amazon-order-id")]["items"].append(item_data)
             else:
-                values = {}
-                values["order_id"] = row.get("amazon-order-id", None)
-                values["order_seller_id"] = row.get("amazon-order-id ", None)
-                values["purchase_date"] = row.get("purchase-date", None)
-                values["payment_date"] = row.get("payments-date", None)
-                values["shipment_date"] = row.get("shipment-date", None)
-                values["reporting_date"] = row.get("reporting-date", None)
-                values["buyer_email"] = row.get("buyer-email", None)
-                values["sales_channel"] = row.get("sales-channel", None)
-                values["status"] = order_status.get(
-                    order_status_map.get(values["order_id"], default_order_status))
+                add_order = True
+                if amazonaccount:
+                    if row.get("sales-channel", None) != amazonaccount.marketplace.sales_channel_name:
+                        add_order = False
+                if add_order:
+                    values = {}
+                    values["order_id"] = row.get("amazon-order-id", None)
+                    values["order_seller_id"] = row.get("amazon-order-id ", None)
+                    values["purchase_date"] = row.get("purchase-date", None)
+                    values["payment_date"] = row.get("payments-date", None)
+                    values["shipment_date"] = row.get("shipment-date", None)
+                    values["reporting_date"] = row.get("reporting-date", None)
+                    values["buyer_email"] = row.get("buyer-email", None)
+                    values["sales_channel"] = row.get("sales-channel", None)
+                    values["status"] = order_status.get(
+                        order_status_map.get(values["order_id"], default_order_status))
 
-                item_data = _get_item_data(row)
-                if "item_price" in item_data:
-                    values["amount"] = Money(item_data.get(
-                        "item_price").amount, row.get("currency", "USD"))
+                    item_data = _get_item_data(row)
+                    if "item_price" in item_data:
+                        values["amount"] = Money(item_data.get(
+                            "item_price").amount, row.get("currency", "USD"))
 
-                if "item_tax" in item_data:
-                    values["tax"] = Money(item_data.get("item_tax").amount,
-                                          row.get("currency", "USD"))
+                    if "item_tax" in item_data:
+                        values["tax"] = Money(item_data.get("item_tax").amount,
+                                              row.get("currency", "USD"))
 
-                if "shipping_price" in item_data:
-                    values["shipping_price"] = Money(item_data.get(
-                        "shipping_price").amount, row.get("currency", "USD"))
+                    if "shipping_price" in item_data:
+                        values["shipping_price"] = Money(item_data.get(
+                            "shipping_price").amount, row.get("currency", "USD"))
 
-                if "shipping_tax" in item_data:
-                    values["shipping_tax"] = Money(item_data.get(
-                        "shipping_tax").amount, row.get("currency", "USD"))
+                    if "shipping_tax" in item_data:
+                        values["shipping_tax"] = Money(item_data.get(
+                            "shipping_tax").amount, row.get("currency", "USD"))
 
-                if "gift_wrap_price" in item_data:
-                    values["gift_wrap_price"] = Money(item_data.get(
-                        "gift_wrap_price").amount, row.get("currency", "USD"))
+                    if "gift_wrap_price" in item_data:
+                        values["gift_wrap_price"] = Money(item_data.get(
+                            "gift_wrap_price").amount, row.get("currency", "USD"))
 
-                if "gift_wrap_tax" in item_data:
-                    values["gift_wrap_tax"] = Money(item_data.get(
-                        "gift_wrap_tax").amount, row.get("currency", "USD"))
+                    if "gift_wrap_tax" in item_data:
+                        values["gift_wrap_tax"] = Money(item_data.get(
+                            "gift_wrap_tax").amount, row.get("currency", "USD"))
 
-                if "item_promotional_discount" in item_data:
-                    values["item_promotional_discount"] = Money(item_data.get(
-                        "item_promotional_discount").amount, row.get("currency", "USD"))
+                    if "item_promotional_discount" in item_data:
+                        values["item_promotional_discount"] = Money(item_data.get(
+                            "item_promotional_discount").amount, row.get("currency", "USD"))
 
-                if "ship_promotional_discount" in item_data:
-                    values["ship_promotional_discount"] = Money(item_data.get(
-                        "ship_promotional_discount").amount, row.get("currency", "USD"))
+                    if "ship_promotional_discount" in item_data:
+                        values["ship_promotional_discount"] = Money(item_data.get(
+                            "ship_promotional_discount").amount, row.get("currency", "USD"))
 
-                values["items"] = [item_data]
+                    values["items"] = [item_data]
 
-                order_items_map[values["order_id"]] = values
+                    order_items_map[values["order_id"]] = values
 
         order_columns = ["order_seller_id", "purchase_date", "payment_date",
                          "shipment_date", "reporting_date", "buyer_email", "sales_channel",

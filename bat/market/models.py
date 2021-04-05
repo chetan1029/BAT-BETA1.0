@@ -39,7 +39,6 @@ class AmazonMarketplace(models.Model):
         verbose_name=_("Name"), max_length=512,
     )
     country = CountryField(verbose_name=_("Country"))
-    # TODO set countries_flag_url in CountryField for market icon
     marketplaceId = models.CharField(
         verbose_name=_("MarketplaceId"), max_length=255
     )
@@ -49,6 +48,7 @@ class AmazonMarketplace(models.Model):
         choices=AMAZON_REGIONS_CHOICES,
         default=EUROPE,
     )
+    sales_channel_name = models.CharField(verbose_name=_("Sales Channel Name"), max_length=255)
 
     def __str__(self):
         """Return Value."""
