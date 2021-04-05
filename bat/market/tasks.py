@@ -87,7 +87,7 @@ def amazon_orders_sync_account(amazonaccount_id, last_no_of_days=1):
 
     # process data for import
     data, order_columns, item_columns = ReportAmazonOrdersCSVParser.parse(
-        orders_report_csv, orders_items_report_csv)
+        orders_report_csv, orders_items_report_csv, amazonaccount)
 
     # import formated data
     amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map = AmazonOrder.objects.import_bulk(
