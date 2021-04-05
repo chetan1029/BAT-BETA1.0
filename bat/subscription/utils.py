@@ -18,7 +18,7 @@ def set_subscription_plan_on_company(plan, company):
             roles = get_user_roles(member)
             for role in roles:
                 permission_list_for_this_role = permission_list.get(
-                    role.get_name(), None)
+                    role.get_name(), [])
                 for perm in role.permission_names_list():
                     if perm not in permission_list_for_this_role:
                         revoke_permission(member, perm)
