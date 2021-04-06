@@ -194,19 +194,19 @@ class AccountsReceiveAmazonCallback(View):
                             company=company, marketplace=marketplace)
                 except Exception as e:
                     return HttpResponseRedirect(
-                        settings.MARKET_LIST_URI + "?error=" + e
+                        settings.MARKET_LIST_URI + "auto-emails/"+company.id+"/campaigns?error=" + e
                     )
                 # call task to collect data from amazon account
                 amazon_account_products_orders_sync.delay(new_account.id, last_no_of_days=8)
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "?success=Your " +
+                    settings.MARKET_LIST_URI + "auto-emails/"+company.id+"/campaigns?success=Your " +
                     marketplace.name + "marketplace account successfully linked."
                 )
             else:
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "?error=Your " + marketplace.name +
+                    settings.MARKET_LIST_URI + "auto-emails/"+company.id+"/campaigns?error=Your " + marketplace.name +
                     "marketplace account couldn't be linked due to: oauth_api_call_failed"
                 )
         return HttpResponseRedirect(
-            settings.MARKET_LIST_URI + "?error=status has been expired"
+            settings.MARKET_LIST_URI + "auto-emails/"+company.id+"/campaigns?error=status has been expired"
         )
