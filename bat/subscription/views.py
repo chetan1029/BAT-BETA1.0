@@ -11,6 +11,12 @@ class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SubscriptionSerializer
     permission_classes = (IsAuthenticated,)
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        return context
+
     def filter_queryset(self, queryset):
         """
         filter subscription for current company.
