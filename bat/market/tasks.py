@@ -21,6 +21,7 @@ logger = get_task_logger(__name__)
 
 @app.task
 def amazon_account_products_orders_sync(amazonaccount_id, last_no_of_days=1, is_orders_sync=True):
+    logger.info("Amazon Product "+str(amazonaccount_id))
     amazonaccount = AmazonAccounts.objects.get(pk=amazonaccount_id)
     logger.info("celery amazon_account_products_orders_sync task")
 
