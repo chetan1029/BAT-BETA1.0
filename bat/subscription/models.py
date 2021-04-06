@@ -20,6 +20,7 @@ class Plan(models.Model):
     name = models.CharField(
         verbose_name=_("Name"),
         max_length=200,
+        unique=True,
         help_text=_("the name of the subscription plan"),
     )
     description = models.TextField(verbose_name=_("Description"), blank=True)
@@ -163,7 +164,14 @@ class SubscriptionTransaction(models.Model):
     )
     date_of_transaction = models.DateTimeField()
     billing_end_date = models.DateTimeField()
-    amount = models.DateTimeField()
+    amount = MoneyField(
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        null=True,
+        blank=True,
+        help_text=_("the amount per transaction for the plan subscription"),
+    )
     status = models.ForeignKey(Status, on_delete=models.PROTECT)
     is_active = models.BooleanField(default=True)
     transaction_type = models.CharField(
@@ -202,7 +210,7 @@ class PlanQuotaManager(models.Manager):
 
 
 class PlanQuota(models.Model):
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="plan_quotas")
     quota = models.ForeignKey(Quota, on_delete=models.CASCADE)
     value = models.IntegerField(default=1, null=True, blank=True)
 
@@ -211,3 +219,16 @@ class PlanQuota(models.Model):
     class Meta:
         verbose_name = _("Plan quota")
         verbose_name_plural = _("Plans quotas")
+        unique_together = ("plan", "quota")
+
+
+class Feature(models.Model):
+    plan_quota = models.ForeignKey(PlanQuota, on_delete=models.CASCADE)
+    consumption = models.IntegerField(default=0, null=True, blank=True)
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, related_name="Features"
+    )
+
+    class Meta:
+        """Meta for the model."""
+        unique_together = ("plan_quota", "company")
