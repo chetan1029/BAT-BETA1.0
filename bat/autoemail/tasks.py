@@ -22,7 +22,7 @@ from bat.autoemail.constants import (
     DAILY,
     AS_SOON_AS,
 )
-
+from bat.subscription.utils import get_feature_by_quota_code
 
 logger = get_task_logger(__name__)
 
@@ -83,10 +83,16 @@ def add_initial_order_email_in_queue(amazon_order_id, email_campaign_id):
 
 @app.task
 def send_email(email_queue_id):
+
     email_queue = EmailQueue.objects.get(pk=email_queue_id)
-    email_queue.send_mail()
-    email_queue.status = get_status(ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SEND)
-    email_queue.save()
+    feature = get_feature_by_quota_code(email_queue.get_company(), codename="FREE-EMAIL")
+
+    if feature.consumption > 0:
+        email_queue.send_mail()
+        email_queue.status = get_status(ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SEND)
+        email_queue.save()
+        feature.consumption = feature.consumption - 1
+        feature.save()
 
 
 @app.task

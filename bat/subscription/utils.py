@@ -3,9 +3,19 @@ from rolepermissions.roles import get_user_roles, RolesManager
 from rolepermissions.permissions import revoke_permission, grant_permission
 from rolepermissions.checkers import has_permission
 from bat.company.models import Company, Member
-from bat.subscription.models import Plan, Subscription
+from bat.subscription.models import Plan, Subscription, PlanQuota, Feature
 from bat.setting.utils import get_status
 from bat.subscription.constants import PARENT_SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_ACTIVE
+
+
+def get_plan_for_company(company):
+    return company.subscriptions.filter(status__name=SUBSCRIPTION_STATUS_ACTIVE).first().plan
+
+
+def get_feature_by_quota_code(company, codename):
+    plan = get_plan_for_company(company)
+
+    return Feature.objects.get(plan_quota__plan_id=plan.id, plan_quota__quota__codename=codename, company_id=company.id)
 
 
 def set_subscription_plan_on_company(plan, company):
@@ -30,7 +40,7 @@ def set_subscription_plan_on_company(plan, company):
         data = {}
         data["company"] = company
         data["plan"] = plan
-        if plan.cost == 0:
+        if plan.cost is None:
             data["is_free"] = True
         else:
             data["billing_start_date"] = current
@@ -41,10 +51,17 @@ def set_subscription_plan_on_company(plan, company):
             PARENT_SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_ACTIVE)
         Subscription.objects.create(**data)
 
+    def _set_quota(company, plan):
+        plan_quotas = PlanQuota.objects.filter(plan_id=plan.id)
+        for plan_quota in plan_quotas:
+            Feature.objects.create(
+                company=company, consumption=plan_quota.value, plan_quota=plan_quota)
+
     if isinstance(company, Company) and isinstance(plan, Plan):
         permission_list = plan.permission_list
         _assign_permissions_to_all_members(company, permission_list)
         _create_subscription(company, plan)
+        _set_quota(company, plan)
 
 
 def set_default_subscription_plan_on_company(company):

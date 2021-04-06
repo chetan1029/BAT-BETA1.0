@@ -272,11 +272,17 @@ class EmailQueue(models.Model):
         """Return Value."""
         return self.subject + " - " + self.sent_to
 
+    def get_company(self):
+        return self.template.company
+
     def send_mail(self):
         products = self.amazonorder.orderitem_order.all()
         products_title_s = ""
         for product in products:
             products_title_s += product.amazonproduct.title + ", "
-        context = {"order_id": self.amazonorder.order_id,
-                   "Product_title_s": products_title_s, "Seller_name": self.amazonorder.amazonaccounts.company.name}
+        context = {
+            "order_id": self.amazonorder.order_id,
+            "Product_title_s": products_title_s,
+            "Seller_name": self.get_company().name
+        }
         send_email(self.template, self.sent_to, context=context)

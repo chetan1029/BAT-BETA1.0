@@ -21,9 +21,7 @@ class APIClient(client.Client):
 
     @staticmethod
     def _check_response(res) -> ApiResponse:
-        # print("res.text : ", res.text)
         # error = json.loads(res.text, strict=False).get('errors', None)
-        # print("error : ", error, "\n\n status_code", res.status_code)
         # if error:
         #     exception = get_exception_for_code(res.status_code)
         #     raise exception(error)
