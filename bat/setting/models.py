@@ -1,18 +1,29 @@
 """Model classes for setting."""
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
+from django_countries.fields import CountryField
+from djmoney.models.fields import MoneyField
 from mptt.models import MPTTModel, TreeForeignKey
+
+from bat.setting.constants import *
 
 User = get_user_model()
 
 
-# Create your models here.
+class CategoryManager(models.Manager):
+    def vendor_categories(self):
+        return self.filter(is_vendor_category=True)
+
+    def sales_channel_categories(self):
+        return self.filter(is_sales_channel_category=True)
+
+
 class Category(MPTTModel):
     """
     Category Model used for product, shipping, vendors etc.
@@ -35,6 +46,15 @@ class Category(MPTTModel):
     is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+    is_vendor_category = models.BooleanField(
+        _("Is Vendor Category?"), default=False
+    )
+    is_sales_channel_category = models.BooleanField(
+        _("Is Sales Channel Category?"), default=False
+    )
+    extra_data = HStoreField(null=True, blank=True)
+
+    objects = CategoryManager()
 
     class MPTTMeta:
         """Meta class for MPTT with some special functions."""
@@ -98,11 +118,7 @@ class Status(MPTTModel):
 
         unique_together = (("name", "parent"),)
         ordering = ["name"]
-        verbose_name_plural = _("Statuses")
-
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("setting:status_list")
+        verbose_name_plural = _("Status")
 
     @property
     def full_path(self):
@@ -162,9 +178,131 @@ class PaymentTerms(models.Model):
 
         verbose_name_plural = _("PaymentTerms")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("setting:paymentterms_list")
+    def __str__(self):
+        """Return Value."""
+        return self.title
+
+
+class DeliveryTermName(models.Model):
+    """
+    Delivery Terms name Model.
+
+    Model for Vendor Delivery Term name.
+    """
+
+    name = models.CharField(
+        max_length=200, unique=True, verbose_name=_("Delivery Terms Title")
+    )
+    code = models.CharField(
+        max_length=50, unique=True, verbose_name=_("Delivery Terms Code")
+    )
+    detail = models.TextField(blank=True)
+    extra_data = HStoreField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Delivery Terms Name")
+
+    def __str__(self):
+        """Return Value."""
+        return self.name
+
+
+class DeliveryTerms(models.Model):
+    """
+    Delivery Terms Model.
+
+    Model for Vendor Delivery Terms.
+    """
+
+    deliverytermname = models.ForeignKey(
+        DeliveryTermName,
+        on_delete=models.PROTECT,
+        related_name="deliveryterms",
+    )
+    service_name = models.CharField(max_length=100)
+    who_pays = models.CharField(
+        max_length=20,
+        choices=DELIVERY_WHO_PAYS,
+        verbose_name=_("Who pays for the service"),
+    )
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Delivery Terms")
+
+    def __str__(self):
+        """Return Value."""
+        return (
+            str(self.deliverytermname.name)
+            + " - "
+            + str(self.service_name)
+            + " - Paid by "
+            + str(self.who_pays)
+        )
+
+
+class LogisticLeadTime(models.Model):
+    """
+    Logistic Lead Time Model.
+
+    Model to store overall data for Logistic services.
+    """
+
+    title = models.CharField(
+        max_length=200,
+        unique=True,
+        blank=True,
+        verbose_name=_("Logistic Title"),
+    )
+    from_country = CountryField()
+    to_country = CountryField()
+    ship_type = models.CharField(
+        max_length=20, choices=SHIP_TYPE, verbose_name=_("Shipment type")
+    )
+    shipping_time = models.PositiveIntegerField(
+        verbose_name=_("Shipping time (in days)")
+    )
+    misc_time = models.PositiveIntegerField(
+        verbose_name=_("Misc time (in days)")
+    )
+    estimated_avg_rate = MoneyField(
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        verbose_name="Estimated Shipment Avg rate",
+    )
+    rate_type = models.CharField(
+        max_length=20,
+        choices=SHIPRATE_TYPE,
+        verbose_name=_("Shipment Rate type"),
+    )
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    is_active = models.BooleanField(default=True)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Logistic Lead Time")
+
+    def save(self, *args, **kwargs):
+        """Pre save."""
+        self.title = (
+            str(self.ship_type)
+            + " shipment from "
+            + str(self.from_country.name)
+            + " to "
+            + str(self.to_country.name)
+        )
+        super(LogisticLeadTime, self).save(*args, **kwargs)
 
     def __str__(self):
         """Return Value."""

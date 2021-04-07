@@ -1,116 +1,20 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status, viewsets
+
+from djmoney.settings import CURRENCY_CHOICES
 
 
-<<<<<<< HEAD
+class CurrencyChoicesViewSet(viewsets.ViewSet):
 
-class HomePage(TemplateView):
-    """Home page."""
-
-    template_name = "index.html"
-
-    def get(self, request, *args, **kwargs):
+    def list(self, request):
         """
-        Forward loggedin user to dashboard.
-
-        We are using get method because when url called this method called and
-        we can access user instance with request and check user is loggedin or
-        not.
+        list available currency choices in system
         """
-        if self.request.user.is_authenticated:
-            return HttpResponseRedirect("/dashboard/")
-        return super().get(request, *args, **kwargs)
-
-
-class DashboardPage(LoginRequiredMixin, TemplateView):
-    """View Class to show dashboard after login."""
-
-    template_name = "dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["today"] = timezone.now()
-        context["language"] = self.request.session.get(
-            LANGUAGE_SESSION_KEY, "en"
-        )
-        context["active_menu"] = {
-            "dashboard": "global",
-            "menu1": "dashboard",
-            "menu2": "basic",
-        }
-        return context
-
-
-class AmazonDashboardPage(LoginRequiredMixin, TemplateView):
-    """View Class to show dashboard after login."""
-
-    template_name = "amazon-dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["active_menu"] = {
-            "dashboard": "amazon",
-            "menu1": "amazon-dashboard",
-            "menu2": "basic",
-        }
-        return context
-
-
-class SupplyChainDashboardPage(LoginRequiredMixin, TemplateView):
-    """View Class to show Supply Chain dashboard after login."""
-
-    template_name = "supply-chain-dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["active_menu"] = {
-            "dashboard": "global",
-            "menu1": "basic",
-            "menu2": "dashboard",
-        }
-        return context
-
-
-class SalesDashboardPage(LoginRequiredMixin, TemplateView):
-    """View Class to show Sales dashboard after login."""
-
-    template_name = "sales-dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["active_menu"] = {
-            "dashboard": "global",
-            "menu1": "sales",
-            "menu2": "dashboard",
-        }
-        return context
-
-
-class AmazonSalesDashboardPage(LoginRequiredMixin, TemplateView):
-    """View Class to show Sales dashboard after login."""
-
-    template_name = "amazonsales-dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        """Define extra context data that need to pass on template."""
-        context = super().get_context_data(**kwargs)
-        context["active_menu"] = {
-            "dashboard": "amazon",
-            "menu1": "sales",
-            "menu2": "dashboard",
-        }
-        return context
-
-
-class LogoutPage(TemplateView):
-    """Template name and url for logout page."""
-
-    template_name = "user/logout.html"
-=======
-# Create your views here.
->>>>>>> 242e299ce7ebe8c92c10714cfb789faf649fd693
+        currency_choices = []
+        for code, name in CURRENCY_CHOICES:
+            currency_choices.append({
+                "code": code,
+                "name": name
+            })
+        return Response(currency_choices, status=status.HTTP_200_OK)

@@ -104,6 +104,12 @@ THIRD_PARTY_APPS = [
     "drf_yasg2",
     # model translation
     "modeltranslation",
+    "health_check",
+    "health_check.db",
+    "health_check.cache",
+    "health_check.storage",
+    # store the periodic celery task schedule in the database
+    "django_celery_beat",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -111,6 +117,10 @@ LOCAL_APPS = [
     "bat.company.apps.CompanyConfig",
     "bat.setting.apps.SettingConfig",
     "bat.product.apps.ProductConfig",
+    "bat.comments.apps.CommentsConfig",
+    "bat.subscription.apps.SubscriptionConfig",
+    "bat.market.apps.MarketConfig",
+    "bat.autoemail.apps.AutoemailConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -130,7 +140,7 @@ AUTHENTICATION_BACKENDS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
 AUTH_USER_MODEL = "users.User"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
-LOGIN_REDIRECT_URL = "home"
+# LOGIN_REDIRECT_URL = "users:"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-url
 LOGIN_URL = "account_login"
 
@@ -165,7 +175,6 @@ MIDDLEWARE = [
     # Cors Middleware
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     # "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -317,11 +326,11 @@ ACCOUNT_ALLOW_REGISTRATION = env.bool(
     "DJANGO_ACCOUNT_ALLOW_REGISTRATION", True
 )
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_AUTHENTICATION_METHOD = "username"
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_EMAIL_REQUIRED = True
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "optional"  # "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "none"  # "mandatory"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_ADAPTER = "bat.users.adapters.AccountAdapter"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
@@ -342,12 +351,12 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend"
     ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 50,
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
-CORS_URLS_REGEX = r"^/api/.*$"
-# Your stuff...
-# ------------------------------------------------------------------------------
+CORS_URLS_REGEX = r"^/.*$"
 
 # rest-auth
 SITE_ID = 1
@@ -357,7 +366,8 @@ REST_AUTH_REGISTER_SERIALIZERS = {
     "REGISTER_SERIALIZER": "bat.users.serializers.RestAuthRegisterSerializer"
 }
 REST_AUTH_SERIALIZERS = {
-    "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer"
+    "USER_DETAILS_SERIALIZER": "bat.users.serializers.UserSerializer",
+    "PASSWORD_RESET_SERIALIZER": "bat.users.serializers.PasswordSerializer",
 }
 
 # jwt
@@ -393,3 +403,78 @@ DEFAULT_FROM_EMAIL = env(
     "DJANGO_DEFAULT_FROM_EMAIL",
     default="bat-beta1.0 <noreply@beta.thebatonline.com>",
 )
+
+# cors
+CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS").split(",")
+
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
+    },
+    "USE_SESSION_AUTH": DEBUG,
+}
+
+FORGET_PASSWORD_PAGE_LINK = env("FORGET_PASSWORD_PAGE_LINK", default="")
+INVITE_LINK = env("INVITE_LINK", default="")
+EXISTING_INVITE_LINK = env("EXISTING_INVITE_LINK", default="")
+
+VENDOR_EXISTING_INVITE_LINK = env("VENDOR_EXISTING_INVITE_LINK", default="")
+
+VENDOR_DEFAULT_PASSWORD = env("VENDOR_DEFAULT_PASSWORD", default="")
+
+MARKET_LIST_URI = env("MARKET_LIST_URI")
+
+# Amazon oauth
+
+AMAZON_SELLER_CENTRAL_AUTHORIZE_URL = env(
+    "AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"
+)
+
+AMAZON_LWA_TOKEN_ENDPOINT = env("AMAZON_LWA_TOKEN_ENDPOINT")
+
+AMAZON_APPLICATION_ID = env("AMAZON_APPLICATION_ID")
+
+LWA_CLIENT_ID = env("LWA_CLIENT_ID")
+LWA_CLIENT_SECRET = env("LWA_CLIENT_SECRET")
+
+
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+
+
+SP_AWS_ACCESS_KEY_ID = env("SP_AWS_ACCESS_KEY_ID")
+SP_AWS_SECRET_ACCESS_KEY = env("SP_AWS_SECRET_ACCESS_KEY")
+
+
+ROLE_ARN = env("ROLE_ARN")
+
+
+# market
+
+SELLING_REGIONS = {
+    "us_east_1": {
+        "name": "North America",
+        "endpoint": "https://sellingpartnerapi-na.amazon.com",
+        "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
+    },
+    "eu_west_1": {
+        "name": "Europe",
+        "endpoint": "https://sellingpartnerapi-eu.amazon.com",
+        "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL_EUROPE"),
+    },
+    "us_west_2": {
+        "name": "Far East",
+        "endpoint": "https://sellingpartnerapi-fe.amazon.com",
+        "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
+    },
+}
+
+# setting cookies
+# CSRF_COOKIE_SECURE = False
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SAMESITE = "None"
+# SESSION_COOKIE_SAMESITE = "None"
+
+# auto mail
+
+MAIL_FROM_ADDRESS = env("MAIL_FROM_ADDRESS")

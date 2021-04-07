@@ -1,12 +1,18 @@
 """Model classes for company."""
 import logging
 import os
+import uuid
 
 import pytz
 from defender.models import AccessAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import HStoreField
 from django.db import models
 from django.shortcuts import get_object_or_404
@@ -22,8 +28,10 @@ from multiselectfield import MultiSelectField
 from rolepermissions.checkers import has_permission
 from rolepermissions.roles import get_user_roles
 
+from bat.comments.models import Comment
 from bat.company.constants import *
 from bat.globalprop.validator import validator
+from bat.globalutils.utils import pdf_file_from_html
 from bat.setting.models import Category, Status
 
 User = get_user_model()
@@ -39,17 +47,13 @@ def get_member_from_request(request):
     """
     kwargs = request.resolver_match.kwargs
     company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
-    member = get_object_or_404(
-        Member, company__id=company_pk, user=request.user.id
-    )
+    # member = get_object_or_404(
+    #     Member, company__id=company_pk, user=request.user.id
+    # )
+    member = Member.objects.filter(
+        company__id=company_pk, user=request.user.id
+    ).first()
     return member
-
-
-# Create your models here.
-def companylogo_name(instance, filename):
-    """Manage path and name for vendor logo."""
-    name, extension = os.path.splitext(filename)
-    return "company/{0}/logo/logo{1}".format(instance.id, extension)
 
 
 class Address(models.Model):
@@ -112,6 +116,22 @@ class Address(models.Model):
         return address.strip(",")
 
 
+def company_logo_name(instance, filename):
+    """Manage path and name for vendor logo."""
+    name, extension = os.path.splitext(filename)
+    return "company/{0}/{1}/{2}_{3}{4}".format(
+        "company", "logo", str(name), uuid.uuid4(), extension
+    )
+
+
+def license_file_name(instance, filename):
+    """Change name of license file."""
+    name, extension = os.path.splitext(filename)
+    return "company/{0}/{1}/{2}_{3}{4}".format(
+        "company", "license", str(name), uuid.uuid4(), extension
+    )
+
+
 class Company(Address):
     """
     Company Model.
@@ -126,7 +146,7 @@ class Company(Address):
     )
     email = models.EmailField(max_length=100, verbose_name=_("Email"))
     logo = models.ImageField(
-        upload_to=companylogo_name, blank=True, verbose_name=_("Logo")
+        upload_to=company_logo_name, blank=True, verbose_name=_("Logo")
     )
     phone_number = models.CharField(
         validators=[phone_validator],
@@ -144,7 +164,8 @@ class Company(Address):
         max_length=50,
         choices=CURRENCY_CHOICES,
         verbose_name=_("Currency"),
-        default=DEFAULT_CURRENCY,
+        null=True,
+        blank=True,
     )
     unit_system = models.CharField(
         max_length=20,
@@ -168,7 +189,11 @@ class Company(Address):
         max_length=50,
         verbose_name=_("Time Zone"),
         choices=[(x, x) for x in pytz.common_timezones],
-        default=settings.TIME_ZONE,
+        blank=True,
+        null=True,
+    )
+    license_file = models.FileField(
+        upload_to=license_file_name, blank=True, verbose_name=_("File")
     )
     is_active = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)
@@ -185,10 +210,17 @@ class Company(Address):
         return str(self.id) + " - " + self.name
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         return True
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_list_permission(request):
+        return True
+
+    def has_object_list_permission(self, request):
         return True
 
     @staticmethod
@@ -207,6 +239,10 @@ class Company(Address):
     def has_object_create_permission(self, request):
         return True
 
+    @staticmethod
+    def has_read_permission(request):
+        return True
+
 
 class CompanyType(models.Model):
     """
@@ -222,24 +258,139 @@ class CompanyType(models.Model):
         Company, on_delete=models.PROTECT, related_name="companytype_company"
     )
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, related_name="companytype_company"
+        Category, on_delete=models.PROTECT, related_name="companytype_category"
     )
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
+
+    is_active = models.BooleanField(default=True)
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_type")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_type")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_type")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_type")
+
+    @staticmethod
+    def has_read_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_type")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_type")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_type")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_type")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_type")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     class Meta:
         """Meta Class."""
 
         verbose_name_plural = _("Company Types")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        # return reverse("vendor:vendor_detail", kwargs={"pk": self.pk})
-
     def __str__(self):
         """Return Value."""
         return self.company.name
+
+    def get_company(self):
+        return self.company
+
+
+def file_name(instance, filename):
+    """Change name of image."""
+    name, extension = os.path.splitext(filename)
+    return "files/{0}_{1}/{2}_{3}{4}".format(
+        instance.content_type.app_label,
+        instance.content_type.model,
+        str(name),
+        uuid.uuid4(),
+        extension,
+    )
+
+
+class File(models.Model):
+    """
+    This table will store files that stored in AWS.
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
+    title = models.CharField(max_length=200, verbose_name=_("File Title"))
+    version = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        verbose_name=_("File Version"),
+        default="1.0",
+    )
+    file = models.FileField(
+        upload_to=file_name, blank=True, verbose_name=_("File")
+    )
+    note = models.TextField(blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    def delete(self, *args, **kwargs):
+        self.file.delete(save=False)  # delete file
+        super(File, self).delete(*args, **kwargs)
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.title) + " " + str(self.version)
 
 
 class MemberPermissionsMixin(models.Model):
@@ -314,10 +465,6 @@ class Member(MemberPermissionsMixin):
 
         verbose_name_plural = _("Members")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:member_detail", kwargs={"pk": self.pk})
-
     def get_member_roles(self):
         """Get Member for the company from roles and permisions."""
         return get_user_roles(self)
@@ -360,11 +507,11 @@ class Member(MemberPermissionsMixin):
         )
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_staff_member")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_staff_member")
 
@@ -461,10 +608,6 @@ class CompanyPaymentTerms(models.Model):
 
         verbose_name_plural = _("PaymentTerms")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingspaymentterms_list")
-
     def archive(self):
         """
         archive model instance
@@ -484,11 +627,11 @@ class CompanyPaymentTerms(models.Model):
         return self.title
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_payment_terms")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_payment_terms")
 
@@ -556,7 +699,9 @@ class Bank(Address):
     Model to store information for bank detail.
     """
 
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="banks"
+    )
     name = models.CharField(max_length=200, verbose_name=_("Bank Name"))
     benificary = models.CharField(
         max_length=100, verbose_name=_("Benificary Name")
@@ -579,10 +724,6 @@ class Bank(Address):
 
         verbose_name_plural = _("Banks")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingsbank_detail", kwargs={"pk": self.pk})
-
     def archive(self):
         """
         archive model instance
@@ -602,11 +743,11 @@ class Bank(Address):
         return self.name
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_banks")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_banks")
 
@@ -686,10 +827,6 @@ class Location(Address):
 
         verbose_name_plural = _("Locations")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingslocation_list")
-
     def archive(self):
         """
         archive model instance
@@ -709,11 +846,11 @@ class Location(Address):
         return self.name
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_locations")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_company_locations")
 
@@ -815,10 +952,6 @@ class PackingBox(models.Model):
 
         verbose_name_plural = _("Packing Boxes")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingspackingbox_list")
-
     def archive(self):
         """
         archive model instance
@@ -835,14 +968,14 @@ class PackingBox(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return self.name + " - " + str(self.company.id)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_packing_box")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_packing_box")
 
@@ -928,10 +1061,6 @@ class HsCode(models.Model):
 
         verbose_name_plural = _("Company HSCodes")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingshscode_list")
-
     def archive(self):
         """
         archive model instance
@@ -951,11 +1080,11 @@ class HsCode(models.Model):
         return self.hscode
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_hscode")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_hscode")
 
@@ -1043,10 +1172,6 @@ class Tax(models.Model):
 
         verbose_name_plural = _("Company Taxes")
 
-    def get_absolute_url(self):
-        """Set url of the page after adding/editing/deleting object."""
-        return reverse("company:settingstax_list")
-
     def archive(self):
         """
         archive model instance
@@ -1066,11 +1191,11 @@ class Tax(models.Model):
         return str(self.from_country) + "-" + str(self.to_country)
 
     @staticmethod
-    def has_read_permission(request):
+    def has_retrieve_permission(request):
         member = get_member_from_request(request)
         return has_permission(member, "view_taxes")
 
-    def has_object_read_permission(self, request):
+    def has_object_retrieve_permission(self, request):
         member = get_member_from_request(request)
         return has_permission(member, "view_taxes")
 
@@ -1131,6 +1256,237 @@ class Tax(models.Model):
         return has_permission(member, "restore_taxes")
 
 
+def asset_file_name(instance, filename):
+    """Change name of asset file."""
+    name, extension = os.path.splitext(filename)
+    return "company/{0}/{1}/{2}_{3}{4}".format(
+        "company", "assets", str(name), uuid.uuid4(), extension
+    )
+
+
+class Asset(models.Model):
+    """
+    Company Assets Model.
+
+    To store detail about company assets with files reciept etc.
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    asset_id = models.CharField(
+        max_length=200, verbose_name=_("Unique ID for Asset")
+    )
+    title = models.CharField(max_length=200, verbose_name=_("Asset Title"))
+    type = models.CharField(
+        max_length=200, blank=True, verbose_name=_("Asset Type")
+    )
+    detail = models.TextField(blank=True)
+    price = MoneyField(
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        verbose_name="Asset Price",
+    )
+    date = models.DateTimeField()
+    receipt = models.FileField(
+        upload_to=asset_file_name, blank=True, verbose_name=_("Receipt")
+    )
+    current_location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Assets")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+
+    def __str__(self):
+        """Return Value."""
+        return self.title
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset")
+
+    @staticmethod
+    def has_get_types_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_asset")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_asset")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_asset")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_asset")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_asset")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_asset")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_asset")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_asset")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_asset")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_asset")
+
+
+class AssetTransfer(models.Model):
+    """
+    Company Assets Trasnfer Model.
+
+    To store detail about company assets trasnfer with files receiving receipt etc.
+    """
+
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    from_location = models.ForeignKey(
+        Location, on_delete=models.CASCADE, related_name="asset_from_location"
+    )
+    to_location = models.ForeignKey(
+        Location, on_delete=models.CASCADE, related_name="asset_to_location"
+    )
+    date = models.DateTimeField()
+    receipt = models.FileField(
+        upload_to=asset_file_name, blank=True, verbose_name=_("Receipt")
+    )
+    note = models.TextField(blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Asset Trasnfers")
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.from_location.name) + " " + str(self.to_location.name)
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset_transfer")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset_transfer")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset_transfer")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_asset_transfer")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_asset_transfer")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_asset_transfer")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_asset_transfer")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_asset_transfer")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_asset_transfer")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_asset_transfer")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_asset_transfer")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_asset_transfer")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_asset_transfer")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_asset_transfer")
+
+
 class CompanyContract(models.Model):
     """
     Company Contract.
@@ -1144,9 +1500,11 @@ class CompanyContract(models.Model):
     intiated and updated.
     """
 
-    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    companytype = models.ForeignKey(
+        CompanyType, on_delete=models.CASCADE, related_name="company_contracts"
+    )
     title = models.CharField(max_length=200, verbose_name=_("Contract Title"))
-    file = models.CharField(max_length=500, verbose_name=_("Contract File"))
+    files = GenericRelation(File)
     note = models.TextField(blank=True)
     partner_member = models.ForeignKey(
         Member, on_delete=models.CASCADE, related_name="partner_member"
@@ -1167,6 +1525,7 @@ class CompanyContract(models.Model):
     # like inventory rotations, margins etc for the sales channels that we will save in extra_data.
     # Extra field for Sales Channel contracts :
     # (inventory_rotation, rotation_percentage, retail_margin, distributor_margin, air_freight, sea_freight, air_misc, sea_misc)
+    comments = GenericRelation(Comment)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
@@ -1183,6 +1542,98 @@ class CompanyContract(models.Model):
             + str(self.partner_member.company.name)
         )
 
+    def save_pdf_file(self):
+        """
+        docstring
+        """
+        data = {"data": "I am variable"}
+        name = "company_contract_" + str(self.id)
+        contract_file = pdf_file_from_html(
+            data, "company/pdf_file.html", "company_contract_" + str(self.id)
+        )
+        f = File(
+            content_object=self,
+            company=self.company_member.company,
+            note=self.note,
+            title="company_contract_" + str(self.id),
+        )
+        f.save()
+        f.file.save(name + ".pdf", contract_file)
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_contract")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_contract")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_contract")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_contract")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_contract")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_contract")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_contract")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_contract")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_company_contract")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_company_contract")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_contract")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_contract")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_contract")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_contract")
+
+    @staticmethod
+    def has_comment_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "comment_company_contract")
+
+    def has_object_comment_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "comment_company_contract")
+
 
 class CompanyCredential(models.Model):
     """
@@ -1192,7 +1643,11 @@ class CompanyCredential(models.Model):
     shopify like stores.
     """
 
-    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
+    companytype = models.ForeignKey(
+        CompanyType,
+        on_delete=models.CASCADE,
+        related_name="company_credentials",
+    )
     region = models.CharField(max_length=300, blank=True)
     seller_id = models.CharField(max_length=300, blank=True)
     auth_token = models.CharField(max_length=300, blank=True)
@@ -1207,33 +1662,6 @@ class CompanyCredential(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Company Credentials")
-
-    def __str__(self):
-        """Return Value."""
-        return str(self.region)
-
-
-class ComponentMe(models.Model):
-    """
-    Component Manufacturer Expectation.
-
-    Component manufacturer expectation for the components.
-    """
-
-    from bat.product.models import Product
-
-    version = models.DecimalField(max_digits=5, decimal_places=1)
-    revision_history = models.TextField(blank=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Component MEs")
 
     def archive(self):
         """
@@ -1251,38 +1679,72 @@ class ComponentMe(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.product.title
+        return str(self.region)
 
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_credential")
 
-class ComponentMeFile(models.Model):
-    """
-    Component Manufacturer Expectation Files.
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_credential")
 
-    Component manufacturer expectation file for the components.
-    """
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_credential")
 
-    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
-    type = models.CharField(max_length=100)
-    # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
-    version = models.DecimalField(max_digits=5, decimal_places=1)
-    revision_history = models.TextField(blank=True)
-    file = models.CharField(max_length=500, verbose_name=_("ME File"))
-    status = models.ForeignKey(
-        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
-    )
-    # We will add status Contract as parent then add other status for draft and approved etc then make it active.
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_credential")
 
-    class Meta:
-        """Meta Class."""
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_credential")
 
-        verbose_name_plural = _("Component ME Files")
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_credential")
 
-    def __str__(self):
-        """Return Value."""
-        return self.type
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_credential")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_credential")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_company_credential")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_company_credential")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_credential")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_credential")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_credential")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_credential")
 
 
 class ComponentGoldenSample(models.Model):
@@ -1293,8 +1755,14 @@ class ComponentGoldenSample(models.Model):
     company and vendor before finalize.
     """
 
-    componentme = models.ForeignKey(ComponentMe, on_delete=models.CASCADE)
+    from bat.product.models import ComponentMe
+
+    componentme = models.ForeignKey(
+        ComponentMe, on_delete=models.CASCADE, related_name="golden_samples"
+    )
     batch_id = models.CharField(max_length=100)
+    files = GenericRelation(File)
+    note = models.TextField(blank=True)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
     )
@@ -1307,47 +1775,115 @@ class ComponentGoldenSample(models.Model):
 
         verbose_name_plural = _("Component Golden Samples")
 
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+        for f in self.files.all():
+            f.archive()
+        for component_price in self.component_prices.all():
+            component_price.archive()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+        for f in self.files.all():
+            f.restore()
+        for component_price in self.component_prices.all():
+            component_price.restore()
+
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return self.batch_id + " - " + str(self.id)
 
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_golden_sample")
 
-class ComponentGoldenSampleFiles(models.Model):
-    """
-    Component Golden Sample Files.
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_golden_sample")
 
-    Component Golden sample files.
-    """
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_golden_sample")
 
-    componentgoldensample = models.ForeignKey(
-        ComponentGoldenSample, on_delete=models.CASCADE
-    )
-    file = models.CharField(max_length=500)
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_golden_sample")
 
-    class Meta:
-        """Meta Class."""
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_component_golden_sample")
 
-        verbose_name_plural = _("Component Golden Sample Files")
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_component_golden_sample")
 
-    def __str__(self):
-        """Return Value."""
-        return self.componentgoldensample.batch_id
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_component_golden_sample")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_component_golden_sample")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_component_golden_sample")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_component_golden_sample")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_component_golden_sample")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_component_golden_sample")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_component_golden_sample")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_component_golden_sample")
 
 
 class ComponentPrice(models.Model):
     """
-    Component Golden Sample.
-
-    Component Golden sample will be for the final component ME and sign by both
-    company and vendor before finalize.
+    Component Component Price.
     """
 
     componentgoldensample = models.ForeignKey(
-        ComponentGoldenSample, on_delete=models.CASCADE
+        ComponentGoldenSample,
+        on_delete=models.CASCADE,
+        related_name="component_prices",
     )
+    files = GenericRelation(File)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(default=timezone.now)
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     is_active = models.BooleanField(default=False)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -1355,16 +1891,99 @@ class ComponentPrice(models.Model):
     class Meta:
         """Meta Class."""
 
-        verbose_name_plural = _("Component Golden Samples")
+        verbose_name_plural = _("Component Prices")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+        for f in self.files.all():
+            f.archive()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+        for f in self.files.all():
+            f.restore()
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return self.componentgoldensample.batch_id
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_price")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_price")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_price")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_component_price")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_component_price")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_component_price")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_component_price")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_component_price")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_component_price")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_component_price")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_component_price")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_component_price")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_component_price")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_component_price")
 
 
 class CompanyProduct(models.Model):
     """
-    COmpany Product Model.
+    Company Product Model.
 
     We will use this model to save all the products related to company like
     vendor and sales channel products.
@@ -1372,7 +1991,9 @@ class CompanyProduct(models.Model):
 
     from bat.product.models import Product
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="company_products"
+    )
     companytype = models.ForeignKey(CompanyType, on_delete=models.CASCADE)
     title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name=_("SKU"), max_length=200, blank=True)
@@ -1385,6 +2006,9 @@ class CompanyProduct(models.Model):
         max_length=200, blank=True, verbose_name=_("Manufacturer Part Number")
     )
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    status = models.ForeignKey(
+        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
+    )
     is_active = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)
     # we add image urls, parent_id, variation_type and parentage etc
@@ -1394,11 +2018,94 @@ class CompanyProduct(models.Model):
     class Meta:
         """Meta Class."""
 
-        verbose_name_plural = _("Component Products")
+        verbose_name_plural = _("Company Products")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+        for company_inventory in self.company_inventories.all():
+            company_inventory.archive()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
+        for company_inventory in self.company_inventories.all():
+            company_inventory.restore()
 
     def __str__(self):
         """Return Value."""
         return self.title
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_company_product")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_product")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_company_product")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_product")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_company_product")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_company_product")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        if not self.is_active:
+            return False
+        return has_permission(member, "change_company_product")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_product")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_company_product")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_product")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_company_product")
 
 
 class CompanyOrder(models.Model):
@@ -1444,6 +2151,7 @@ class CompanyOrder(models.Model):
     )
     quantity = models.PositiveIntegerField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
+    files = GenericRelation(File)
     extra_data = HStoreField(null=True, blank=True)
     # we will add is_reverse_charged, is_return, refer_order_id(if return) etc
     # to extra_data
@@ -1457,7 +2165,75 @@ class CompanyOrder(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
+        return str(self.batch_id)
+
+    def get_company(self):
+        return self.companytype.get_company()
+
+    def save_pdf_file(self):
+        """
+        docstring
+        """
+        data = {"data": "I am variable"}
+        name = "company_order_" + str(self.batch_id)
+        po_file = pdf_file_from_html(
+            data,
+            "company/order_po.html",
+            "company_order_" + str(self.batch_id),
+        )
+        f = File(
+            content_object=self,
+            company=self.companytype.company,
+            note=self.note,
+            title="company_order_" + str(self.batch_id),
+        )
+        f.save()
+        f.file.save(name + ".pdf", po_file)
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order")
 
 
 class CompanyOrderProduct(models.Model):
@@ -1467,9 +2243,14 @@ class CompanyOrderProduct(models.Model):
     Order place for vendors and by sales channel will be display here.
     """
 
-    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
+    companyorder = models.ForeignKey(
+        CompanyOrder, on_delete=models.CASCADE, related_name="orderproducts"
+    )
     companyproduct = models.ForeignKey(
         CompanyProduct, on_delete=models.CASCADE
+    )
+    componentprice = models.ForeignKey(
+        ComponentPrice, on_delete=models.CASCADE, blank=True, null=True
     )
     quantity = models.PositiveIntegerField()
     shipped_quantity = models.PositiveIntegerField(default=0)
@@ -1482,6 +2263,7 @@ class CompanyOrderProduct(models.Model):
         CompanyPaymentTerms, on_delete=models.CASCADE
     )
     extra_data = HStoreField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
 
@@ -1492,37 +2274,7 @@ class CompanyOrderProduct(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.batch_id
-
-
-class CompanyOrderFile(models.Model):
-    """
-    Company Order Files.
-
-    Company Order file for the orders.
-    """
-
-    companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
-    type = models.CharField(max_length=100)
-    # for type we will show typeahead with suggestion and new input accept. values will be AQL,SOP,MD,BOM,IPQC
-    file = models.CharField(max_length=500, verbose_name=_("Order File"))
-    status = models.ForeignKey(
-        Status, on_delete=models.PROTECT, default=STATUS_DRAFT
-    )
-    # We will add status Contract as parent then add other status for draft and approved etc then make it active.
-    note = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        """Meta Class."""
-
-        verbose_name_plural = _("Company Order Files")
-
-    def __str__(self):
-        """Return Value."""
-        return self.type
+        return str(self.companyorder.batch_id)
 
 
 class CompanyOrderDelivery(models.Model):
@@ -1555,6 +2307,54 @@ class CompanyOrderDelivery(models.Model):
         """Return Value."""
         return self.batch_id
 
+    def get_company(self):
+        return self.companyorder.get_company()
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_delivery")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_delivery")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_delivery")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_delivery")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_delivery")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_delivery")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_delivery")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_delivery")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_delivery")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_delivery")
+
 
 class CompanyOrderDeliveryProduct(models.Model):
     """
@@ -1564,7 +2364,9 @@ class CompanyOrderDeliveryProduct(models.Model):
     """
 
     companyorderdelivery = models.ForeignKey(
-        CompanyOrderDelivery, on_delete=models.CASCADE
+        CompanyOrderDelivery,
+        on_delete=models.CASCADE,
+        related_name="orderdeliveryproducts",
     )
     companyorderproduct = models.ForeignKey(
         CompanyOrderProduct, on_delete=models.CASCADE
@@ -1597,7 +2399,7 @@ class CompanyOrderDeliveryTestReport(models.Model):
         CompanyOrderDelivery, on_delete=models.CASCADE
     )
     inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
-    file = models.CharField(max_length=500, verbose_name=_("Test Report File"))
+    files = GenericRelation(File)
     note = models.TextField(blank=True, null=True)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
@@ -1614,6 +2416,51 @@ class CompanyOrderDeliveryTestReport(models.Model):
     def __str__(self):
         """Return Value."""
         return self.companyorderdelivery.batch_id
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_inspection")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_inspection")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_inspection")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_inspection")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_inspection")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_inspection")
 
 
 class CompanyOrderPayment(models.Model):
@@ -1637,12 +2484,16 @@ class CompanyOrderPayment(models.Model):
     paid_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD", default=0
     )
-    adjustment_type = models.CharField(max_length=100, blank=True)
+    adjustment_type = models.CharField(max_length=100, blank=True, null=True)
     adjustment_percentage = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0
+        max_digits=5, decimal_places=2, null=True, blank=True
     )
     adjustment_amount = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD", default=0
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        blank=True,
+        null=True,
     )
     payment_date = models.DateTimeField(blank=True, null=True)
     status = models.ForeignKey(
@@ -1661,6 +2512,54 @@ class CompanyOrderPayment(models.Model):
         """Return Value."""
         return self.companyorderdelivery.batch_id
 
+    def get_company(self):
+        return self.companyorderdelivery.get_company()
+
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_payment")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_payment")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_payment")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_payment")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_payment")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_payment")
+
 
 class CompanyOrderPaymentPaid(models.Model):
     """
@@ -1670,18 +2569,18 @@ class CompanyOrderPaymentPaid(models.Model):
     """
 
     companyorderpayment = models.ForeignKey(
-        CompanyOrderPayment, on_delete=models.CASCADE
+        CompanyOrderPayment,
+        on_delete=models.CASCADE,
+        related_name="orderpaymentpaid",
     )
     payment_id = models.CharField(max_length=200, blank=True)
-    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
     invoice_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD"
     )
     paid_amount = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD", default=0
     )
-    pi_file = models.CharField(max_length=200, blank=True)
-    receipt_file = models.CharField(max_length=200, blank=True)
+    files = GenericRelation(File)
     payment_date = models.DateTimeField(blank=True, null=True)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
@@ -1699,6 +2598,51 @@ class CompanyOrderPaymentPaid(models.Model):
         """Return Value."""
         return self.companyorderpayment.companyorderdelivery.batch_id
 
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_payment")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_payment")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_payment")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_payment")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_payment")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_payment")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_payment")
+
 
 class CompanyOrderCase(models.Model):
     """
@@ -1708,7 +2652,7 @@ class CompanyOrderCase(models.Model):
     """
 
     companyorder = models.ForeignKey(CompanyOrder, on_delete=models.CASCADE)
-    file = models.CharField(max_length=500, verbose_name=_("Test Report File"))
+    files = GenericRelation(File)
     note = models.TextField(blank=True, null=True)
     importance = models.CharField(
         max_length=50,
@@ -1733,6 +2677,69 @@ class CompanyOrderCase(models.Model):
         """Return Value."""
         return self.companyorder.batch_id
 
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_case")
+
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_case")
+
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_case")
+
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_case")
+
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_case")
+
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_case")
+
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_case")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_case")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_case")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_case")
+
+    @staticmethod
+    def has_archive_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_order_case")
+
+    def has_object_archive_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "archived_order_case")
+
+    @staticmethod
+    def has_restore_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_order_case")
+
+    def has_object_restore_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "restore_order_case")
+
 
 class CompanyOrderInspection(models.Model):
     """
@@ -1745,6 +2752,7 @@ class CompanyOrderInspection(models.Model):
     inspector = models.ForeignKey(Member, on_delete=models.CASCADE)
     inspection_date = models.DateTimeField(default=timezone.now)
     note = models.TextField(blank=True, null=True)
+    files = GenericRelation(File)
     status = models.ForeignKey(
         Status, on_delete=models.PROTECT, default=STATUS_DRAFT
     )
@@ -1761,32 +2769,50 @@ class CompanyOrderInspection(models.Model):
         """Return Value."""
         return self.companyorder.batch_id
 
+    @staticmethod
+    def has_retrieve_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
 
-class CompanyOrderInspectionFile(models.Model):
-    """
-    Company Order Inspection File.
+    def has_object_retrieve_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
 
-    Inspection Files.
-    """
+    @staticmethod
+    def has_list_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
 
-    companyorderinspection = models.ForeignKey(
-        CompanyOrderInspection, on_delete=models.CASCADE
-    )
-    title = models.CharField(max_length=200, blank=True)
-    inspection_date = models.DateTimeField(default=timezone.now)
-    file = models.CharField(max_length=500, verbose_name=_("Inspection File"))
-    is_active = models.BooleanField(default=False)
-    create_date = models.DateTimeField(default=timezone.now)
-    update_date = models.DateTimeField(default=timezone.now)
+    def has_object_list_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "view_order_inspection")
 
-    class Meta:
-        """Meta Class."""
+    @staticmethod
+    def has_create_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_inspection")
 
-        verbose_name_plural = _("Company Order Inspection Files")
+    def has_object_create_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "add_order_inspection")
 
-    def __str__(self):
-        """Return Value."""
-        return self.companyorderinspection.companyorder.batch_id
+    @staticmethod
+    def has_destroy_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_inspection")
+
+    def has_object_destroy_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "delete_order_inspection")
+
+    @staticmethod
+    def has_update_permission(request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_inspection")
+
+    def has_object_update_permission(self, request):
+        member = get_member_from_request(request)
+        return has_permission(member, "change_order_inspection")
 
 
 class CompanyInventory(models.Model):
@@ -1797,7 +2823,9 @@ class CompanyInventory(models.Model):
     """
 
     companyproduct = models.ForeignKey(
-        CompanyProduct, on_delete=models.CASCADE
+        CompanyProduct,
+        on_delete=models.CASCADE,
+        related_name="company_inventories",
     )
     date = models.DateField(default=timezone.now)
     quantity = models.IntegerField(default=0)
@@ -1813,6 +2841,20 @@ class CompanyInventory(models.Model):
         """Meta Class."""
 
         verbose_name_plural = _("Company Inventory")
+
+    def archive(self):
+        """
+        archive model instance
+        """
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        """
+        restore model instance
+        """
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         """Return Value."""
@@ -1856,6 +2898,12 @@ class CompanyInventoryPrediction(models.Model):
     companyproduct = models.ForeignKey(
         CompanyProduct, on_delete=models.CASCADE
     )
+    type = models.CharField(
+        max_length=20,
+        choices=INVENTORY_PREDICATION_TYPE,
+        default=WEEKLY,
+        verbose_name=_("Prediction Type"),
+    )
     week = models.PositiveIntegerField()
     date_start = models.DateField()
     date_end = models.DateField()
@@ -1866,7 +2914,7 @@ class CompanyInventoryPrediction(models.Model):
     total_quantity_required = models.PositiveIntegerField(default=0)
     incoming_quantity = models.PositiveIntegerField(default=0)
     outgoing_quantity = models.PositiveIntegerField(default=0)
-    weeks_of_supply = models.PositiveIntegerField(default=0)
+    supply_time = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=False)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -1875,7 +2923,7 @@ class CompanyInventoryPrediction(models.Model):
     class Meta:
         """Meta Class."""
 
-        verbose_name_plural = _("Company Inventory")
+        verbose_name_plural = _("Company Inventory Predication")
 
     def __str__(self):
         """Return Value."""

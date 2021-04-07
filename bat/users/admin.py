@@ -9,6 +9,10 @@ from bat.users.forms import UserChangeForm, UserCreationForm
 User = get_user_model()
 Invitation = get_invitation_model()
 
+admin.site.site_header = "BAT Admin"
+admin.site.site_title = "BAT Admin Portal"
+admin.site.index_title = "Welcome to BAT admin Portal"
+
 
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):

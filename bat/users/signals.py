@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.signals import user_logged_in
+
 from invitations.utils import get_invitation_model
 from notifications.signals import notify
 from rolepermissions.permissions import revoke_permission
@@ -38,24 +40,48 @@ def process_invitations(sender, instance, **kwargs):
             if invitation.extra_data["type"] == "Vendor Invitation":
                 vendor_name = company_detail["vendor_name"]
                 vendor_type = company_detail["vendor_type"]
-                vendor = Company(name=vendor_name, email=invitation.email)
-                vendor.save()
-                companytype = CompanyType(
+
+                member = Member.objects.filter(
+                    user=instance,
+                    is_admin=True
+                ).first()
+
+                if member:
+                    vendor = member.company
+                else:
+                    vendor = Company.objects.create(name=vendor_name, email=invitation.email)
+
+                    member, _c = Member.objects.get_or_create(
+                        job_title=job_title,
+                        user=instance,
+                        company=vendor,
+                        invited_by=invitation.inviter,
+                        is_admin=True,
+                        is_active=True,
+                        invitation_accepted=True,
+                    )
+
+                    assign_role(member, role)
+                    role_obj = RolesManager.retrieve_role(role)
+                    # remove unneccesary permissions
+                    for perm in role_obj.permission_names_list():
+                        if perm not in perms:
+                            revoke_permission(member, perm)
+                
+                companytype, _cc = CompanyType.objects.get_or_create(
                     partner=vendor,
                     company_id=company_id,
                     category_id=vendor_type.get("id", None),
                 )
-                companytype.save()
 
-                member, _c = Member.objects.get_or_create(
-                    job_title=job_title,
-                    user=instance,
-                    company=vendor,
-                    invited_by=invitation.inviter,
-                    is_admin=True,
-                    is_active=True,
-                    invitation_accepted=True,
-                )
+                category = companytype.category
+                if category.extra_data:
+                    partner_category = category.extra_data.get("partner_category")
+
+                    if partner_category:
+                        CompanyType.objects.create(
+                            partner_id=company_id, company=vendor, category_id=partner_category)
+
             else:
                 member, _c = Member.objects.get_or_create(
                     job_title=job_title,
@@ -67,12 +93,12 @@ def process_invitations(sender, instance, **kwargs):
                     invitation_accepted=True,
                 )
 
-            assign_role(member, role)
-            role_obj = RolesManager.retrieve_role(role)
-            # remove unneccesary permissions
-            for perm in role_obj.permission_names_list():
-                if perm not in perms:
-                    revoke_permission(member, perm)
+                assign_role(member, role)
+                role_obj = RolesManager.retrieve_role(role)
+                # remove unneccesary permissions
+                for perm in role_obj.permission_names_list():
+                    if perm not in perms:
+                        revoke_permission(member, perm)
 
             notify.send(
                 instance,
@@ -82,3 +108,19 @@ def process_invitations(sender, instance, **kwargs):
             )
 
             invitation.delete()
+
+
+@receiver(user_logged_in)
+def user_logged_in_callback(sender, request, user, **kwargs):  
+    from bat.users.models import UserLoginActivity
+
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    
+    user_agent_info = request.META.get('HTTP_USER_AGENT', '<unknown>')[:255],
+
+    UserLoginActivity.objects.create(user=user, ip=ip, agent_info=user_agent_info)
+

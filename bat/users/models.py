@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import HStoreField
 from django.contrib.sites.models import Site
+from django.db import models
 from django.db.models import CharField, DateTimeField, EmailField, ImageField, JSONField
 from django.urls import reverse
 from django.utils import timezone
@@ -24,6 +25,12 @@ def profilepic_name(instance, filename):
     """Change name of profile pic with username."""
     name, extension = os.path.splitext(filename)
     return "user/images/{0}.{1}".format(instance.username, extension)
+
+
+def por_file_name(instance, filename):
+    """Change name of POR file."""
+    name, extension = os.path.splitext(filename)
+    return "user/por/{0}.{1}".format(instance.username, extension)
 
 
 class User(AbstractUser):
@@ -49,13 +56,16 @@ class User(AbstractUser):
         max_length=50,
         verbose_name=_("Language"),
         choices=settings.LANGUAGES,
-        default=settings.LANGUAGE_CODE,
+        default="en",
     )
     timezone = CharField(
         max_length=50,
         verbose_name=_("Time Zone"),
         choices=[(x, x) for x in pytz.common_timezones],
         default=settings.TIME_ZONE,
+    )
+    por_file = models.FileField(
+        upload_to=por_file_name, blank=True, verbose_name=_("File")
     )
     extra_data = HStoreField(null=True, blank=True)
 
@@ -85,6 +95,11 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"username": self.username})
+
+    def get_recent_logged_in_activities(self, no_of_activities=5):
+        return UserLoginActivity.objects.filter(user=self).order_by(
+            "-logged_in_at"
+        )[:no_of_activities]
 
 
 class InvitationDetail(AbstractBaseInvitation):
@@ -138,9 +153,29 @@ class InvitationDetail(AbstractBaseInvitation):
 
     def send_invitation(self, request, **kwargs):
         """Send invitation."""
+
+        extra_data = self.extra_data
+
         current_site = kwargs.pop("site", Site.objects.get_current())
-        invite_url = reverse("invitations:accept-invite", args=[self.key])
-        invite_url = request.build_absolute_uri(invite_url)
+        existing_user = User.objects.filter(email=self.email).first()
+
+        company_name = self.company_detail.get("company_name")
+
+        invite_url_root = settings.INVITE_LINK + "?"
+
+        if existing_user:
+            invite_url_root = (
+                (settings.EXISTING_INVITE_LINK + "?")
+                if extra_data and extra_data.get("type") == "Member Invitation"
+                else settings.VENDOR_EXISTING_INVITE_LINK
+                + str(self.company_detail["company_id"])
+                + "?selectedView=invitations"
+            )
+
+        invite_url = (
+            invite_url_root + "&inviteKey=" + self.key + "&e=" + self.email
+        )
+
         ctx = kwargs
         ctx.update(
             {
@@ -149,6 +184,9 @@ class InvitationDetail(AbstractBaseInvitation):
                 "email": self.email,
                 "key": self.key,
                 "inviter": self.inviter,
+                "company_name": company_name,
+                "inviter_name": self.inviter.get_full_name()
+                or self.inviter.username,
             }
         )
 
@@ -168,3 +206,24 @@ class InvitationDetail(AbstractBaseInvitation):
     def __str__(self):
         """Return Value."""
         return "Invite: {0}".format(self.email) + str(self.id)
+
+
+class UserLoginActivity(models.Model):
+    ip = models.GenericIPAddressField(
+        verbose_name=_("IP address"), null=True, blank=True
+    )
+    logged_in_at = models.DateTimeField(
+        verbose_name=_("logged in date"), auto_now=True
+    )
+    user = models.ForeignKey(
+        User, verbose_name=_("User"), on_delete=models.CASCADE
+    )
+    agent_info = models.CharField(
+        verbose_name=_("Agent info"), max_length=2096, null=True, blank=True
+    )
+    location = models.CharField(
+        verbose_name=_("location"), max_length=2096, null=True, blank=True
+    )
+
+    def __str__(self):
+        return str(self.user.id) + " = " + str(self.ip)

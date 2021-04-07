@@ -1,10 +1,25 @@
 from django.contrib import admin
 
 from bat.company.models import (
+    Asset,
+    AssetTransfer,
     Bank,
     Company,
+    CompanyContract,
+    CompanyCredential,
+    CompanyOrder,
+    CompanyOrderCase,
+    CompanyOrderDelivery,
+    CompanyOrderDeliveryTestReport,
+    CompanyOrderInspection,
+    CompanyOrderPayment,
+    CompanyOrderPaymentPaid,
     CompanyPaymentTerms,
+    CompanyProduct,
     CompanyType,
+    ComponentGoldenSample,
+    ComponentPrice,
+    File,
     HsCode,
     Location,
     Member,
@@ -21,3 +36,18 @@ admin.site.register(Location)
 admin.site.register(PackingBox)
 admin.site.register(HsCode)
 admin.site.register(Tax)
+admin.site.register(File)
+admin.site.register(CompanyContract)
+admin.site.register(CompanyCredential)
+admin.site.register(CompanyOrder)
+admin.site.register(CompanyOrderDelivery)
+admin.site.register(CompanyProduct)
+admin.site.register(ComponentGoldenSample)
+admin.site.register(ComponentPrice)
+admin.site.register(CompanyOrderCase)
+admin.site.register(CompanyOrderInspection)
+admin.site.register(CompanyOrderDeliveryTestReport)
+admin.site.register(CompanyOrderPaymentPaid)
+admin.site.register(CompanyOrderPayment)
+admin.site.register(Asset)
+admin.site.register(AssetTransfer)
