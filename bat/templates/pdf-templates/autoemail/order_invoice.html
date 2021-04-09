@@ -1,3 +1,4 @@
+{% load staticfiles %}
 <!doctype html>
 <html>
 <head>
@@ -22,7 +23,7 @@
       text-align: center;
     }
     .invoice-box h5{
-      font-size: 14px;
+      font-size: 18px;
       margin-bottom: 10px;
     }
     .invoice-box p{
@@ -130,7 +131,7 @@
                     <table>
                         <tr>
                             <td>
-                              <h4>{{seller_name}}</h4>
+                              <h5>{{seller_name}}</h5>
                             </td>
 
                             <td>
@@ -163,7 +164,7 @@
             </tr>
             {% endfor %}
 
-            <tr class="item bold last">
+            <tr class="item bold">
               <td>
                 <p>Total</p>
               </td>
@@ -174,7 +175,7 @@
                 <p class="mb-2">{{total_amount}}</p>
               </td>
             </tr>
-            <tr class="item bold last">
+            <tr class="item last">
               <td>
                 <p>Tax (included)</p>
               </td>
