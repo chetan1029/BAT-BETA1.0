@@ -23,6 +23,7 @@ from bat.autoemail.constants import (
 )
 from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 from bat.autoemail.utils import send_email
+from bat.company.utils import get_member
 from bat.globalutils.utils import pdf_file_from_html
 from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonOrderItem
 
