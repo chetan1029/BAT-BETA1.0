@@ -325,6 +325,7 @@ class EmailQueue(models.Model):
             + " "
             + str(self.amazonorder.amount),
         }
+        print(data)
         name = "order_invoice_" + str(self.amazonorder.order_id)
         f = pdf_file_from_html(
             data, "autoemail/order_invoice.html", name, as_File_obj=False
