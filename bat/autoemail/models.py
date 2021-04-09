@@ -22,6 +22,8 @@ from bat.company.models import Company
 from bat.market.models import AmazonMarketplace, AmazonOrder
 from bat.setting.models import Status
 from bat.autoemail.utils import send_email
+from bat.globalutils.utils import pdf_file_from_html
+
 
 try:
     from unidecode import unidecode
@@ -120,6 +122,7 @@ class GlobalEmailCampaign(models.Model):
         choices=EXCLUDE_ORDERS_CHOICES,
         blank=True,
     )
+    include_invoice = models.BooleanField(default=False)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -236,6 +239,7 @@ class EmailCampaign(models.Model):
         choices=EXCLUDE_ORDERS_CHOICES,
         blank=True,
     )
+    include_invoice = models.BooleanField(default=False)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
@@ -288,4 +292,23 @@ class EmailQueue(models.Model):
             "Product_title_s": products_title_s,
             "Seller_name": self.get_company().name
         }
-        send_email(self.template, self.sent_to, context=context)
+        if self.emailcampaign.include_invoice:
+            f = self.generate_pdf_file()
+            send_email(self.template, self.sent_to, context=context,
+                       attachment_files=[f])
+        else:
+            send_email(self.template, self.sent_to, context=context)
+
+    def generate_pdf_file(self):
+        """
+        generate pdf file
+        """
+        data = {"data": "I am order", "order_id": str(self.amazonorder.order_id)}
+        name = "order_invoice_" + str(self.amazonorder.order_id)
+        f = pdf_file_from_html(
+            data,
+            "autoemail/order_invoice.html",
+            name,
+            as_File_obj=False
+        )
+        return f
