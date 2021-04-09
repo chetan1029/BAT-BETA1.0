@@ -3,16 +3,21 @@ from datetime import datetime
 
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
+from django.utils.translation import ugettext_lazy as _
+from django.utils.decorators import method_decorator
+from drf_yasg2.openapi import Response as SwaggerResponse
 
 
 from rest_framework import viewsets, mixins, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 
 
 from dry_rest_permissions.generics import DRYPermissions
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg2.utils import swagger_auto_schema
 
 
 from bat.autoemail import serializers
@@ -25,8 +30,18 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_SEND,
     ORDER_EMAIL_STATUS_SCHEDULED,
 )
+from bat.autoemail.utils import send_email
+from bat.company.utils import get_member
 
 
+@method_decorator(
+    name="test_email",
+    decorator=swagger_auto_schema(
+        operation_description="test email for campaign!",
+        request_body=serializers.TestEmailSerializer(),
+        responses={status.HTTP_200_OK: SwaggerResponse({"detail": "string"})}
+    ),
+)
 class EmailCampaignViewsets(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -50,6 +65,57 @@ class EmailCampaignViewsets(
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
         return queryset.filter(company__id=company_id).order_by("-create_date")
+
+    @action(detail=True, methods=["post"])
+    def test_email(self, request, company_pk=None, pk=None):
+        """
+        test email for campaign!
+        """
+
+        _member = get_member(
+            company_id=company_pk,
+            user_id=self.request.user.id,
+        )
+
+        context = self.get_serializer_context()
+
+        serializer = serializers.TestEmailSerializer(
+            data=request.data, context=context
+        )
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        email = serializer.data["email"]
+        campaign = self.get_object()
+
+        order = AmazonOrder.objects.filter(
+            amazonaccounts__marketplace_id=campaign.amazonmarketplace.id, amazonaccounts__company_id=company_pk).first()
+
+        if order:
+            products = order.orderitem_order.all()
+            products_title_s = ""
+            for product in products:
+                products_title_s += product.amazonproduct.title + ", "
+            context = {
+                "order_id": order.order_id,
+                "Product_title_s": products_title_s,
+                "Seller_name": campaign.get_company().name
+            }
+            send_email(campaign.emailtemplate, email, context=context)
+        else:
+            context = {
+                "order_id": "#123",
+                "Product_title_s": "XYZ Product",
+                "Seller_name": campaign.get_company().name
+            }
+            send_email(campaign.emailtemplate, email, context=context)
+
+        return Response(
+            {"detail": _("email sent successfully")},
+            status=status.HTTP_200_OK,
+        )
 
 
 class EmailQueueViewsets(

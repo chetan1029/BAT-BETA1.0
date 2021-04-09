@@ -142,3 +142,7 @@ class EmailQueueSerializer(serializers.ModelSerializer):
             "schedule_date",
             "extra_data",
         )
+
+
+class TestEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
