@@ -18,7 +18,7 @@ from bat.autoemail.constants import (
     EXCLUDE_ORDERS_CHOICES,
     SCHEDULE_CHOICES,
     PER_EMAIL_CHARGED_POINTS,
-    PER_EMAIL_CHARGED_POINTS_FOR_INVOICE
+    PER_EMAIL_CHARGED_POINTS_FOR_INVOICE,
 )
 from bat.company.models import Company
 from bat.market.models import AmazonMarketplace, AmazonOrder
@@ -301,12 +301,16 @@ class EmailQueue(models.Model):
         context = {
             "order_id": self.amazonorder.order_id,
             "Product_title_s": products_title_s,
-            "Seller_name": self.get_company().name
+            "Seller_name": self.get_company().name,
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()
-            send_email(self.template, self.sent_to, context=context,
-                       attachment_files=[f])
+            send_email(
+                self.template,
+                self.sent_to,
+                context=context,
+                attachment_files=[f],
+            )
         else:
             send_email(self.template, self.sent_to, context=context)
 
@@ -314,12 +318,17 @@ class EmailQueue(models.Model):
         """
         generate pdf file
         """
-        data = {"data": "I am order", "order_id": str(self.amazonorder.order_id)}
+        data = {
+            "data": "I am order",
+            "order_id": str(self.amazonorder.order_id),
+            "purchase_date": str(self.amazonorder.purchase_date),
+            "order_placed": str(self.amazonorder.purchase_date),
+            "total_amount": str(self.amazonorder.amount_currency)
+            + " "
+            + str(self.amazonorder.amount),
+        }
         name = "order_invoice_" + str(self.amazonorder.order_id)
         f = pdf_file_from_html(
-            data,
-            "autoemail/order_invoice.html",
-            name,
-            as_File_obj=False
+            data, "autoemail/order_invoice.html", name, as_File_obj=False
         )
         return f
