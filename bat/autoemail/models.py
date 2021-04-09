@@ -17,6 +17,8 @@ from bat.autoemail.constants import (
     EMAIL_LANG_ENGLISH,
     EXCLUDE_ORDERS_CHOICES,
     SCHEDULE_CHOICES,
+    PER_EMAIL_CHARGED_POINTS,
+    PER_EMAIL_CHARGED_POINTS_FOR_INVOICE
 )
 from bat.company.models import Company
 from bat.market.models import AmazonMarketplace, AmazonOrder
@@ -251,6 +253,15 @@ class EmailCampaign(models.Model):
 
     def get_company(self):
         return self.emailtemplate.company
+
+    def get_charged_points(self):
+
+        points = PER_EMAIL_CHARGED_POINTS
+
+        if self.include_invoice:
+            points += PER_EMAIL_CHARGED_POINTS_FOR_INVOICE
+
+        return points
 
 
 class EmailQueue(models.Model):

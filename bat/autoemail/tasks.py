@@ -103,7 +103,7 @@ def send_email(email_queue_id):
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SEND
         )
         email_queue.save()
-        feature.consumption = feature.consumption - 1
+        feature.consumption = feature.consumption - email_queue.emailcampaign.get_charged_points()
         feature.save()
 
 
