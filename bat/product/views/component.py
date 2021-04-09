@@ -48,7 +48,7 @@ from rest_framework.response import Response
     decorator=swagger_auto_schema(
         operation_description="Performs the given action on provided set of component/product ids. Available actions are: active, archive, draft and delete.",
         request_body=serializers.BulkActionSerializer(),
-        responses={status.HTTP_200_OK: SwaggerResponse({"details": "string"})}
+        responses={status.HTTP_200_OK: SwaggerResponse({"detail": "string"})}
     ),
 )
 class ProductViewSet(
