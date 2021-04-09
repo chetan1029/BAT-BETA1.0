@@ -61,7 +61,7 @@ class AmazonProductSerializer(serializers.ModelSerializer):
 
 
 class AmazonOrderSerializer(serializers.ModelSerializer):
-    status = StatusField()
+    status = StatusField(choices=constants.AMAZON_ORDER_STATUS_CHOICE)
     amount = MoneySerializerField()
     tax = MoneySerializerField()
     shipping_price = MoneySerializerField()

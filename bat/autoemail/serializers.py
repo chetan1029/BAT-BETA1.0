@@ -10,9 +10,11 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_QUEUED,
     ORDER_EMAIL_STATUS_SEND,
     ORDER_EMAIL_STATUS_SCHEDULED,
+    EMAIL_CAMPAIGN_STATUS_CHOICE
 )
 from bat.market.serializers import AmazonMarketplaceSerializer
 from bat.globalutils.utils import get_status_object
+from bat.market.constants import (AMAZON_ORDER_STATUS_CHOICE)
 
 
 class EmailTemplateSerializer(serializers.ModelSerializer):
@@ -43,8 +45,8 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
 
 
 class EmailCampaignSerializer(serializers.ModelSerializer):
-    status = StatusField()
-    order_status = StatusField()
+    status = StatusField(choices=EMAIL_CAMPAIGN_STATUS_CHOICE)
+    order_status = StatusField(choices=AMAZON_ORDER_STATUS_CHOICE)
     emailtemplate = EmailTemplateSerializer(read_only=True)
     amazonmarketplace = AmazonMarketplaceSerializer(read_only=True)
     channel = serializers.MultipleChoiceField(choices=CHANNEL_CHOICES)

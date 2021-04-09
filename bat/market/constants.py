@@ -10,6 +10,17 @@ ORDER_STATUS_UNFULFILLABLE = "Unfulfillable"
 ORDER_STATUS_UNSHIPPED = "Unshipped"
 
 
+AMAZON_ORDER_STATUS_CHOICE = [ORDER_STATUS_PENDING,
+                              ORDER_STATUS_SHIPPED,
+                              ORDER_STATUS_CANCELED,
+                              ORDER_STATUS_INVOICE_UNCONFIRMED,
+                              ORDER_STATUS_PARTIALLY_SHIPPED,
+                              ORDER_STATUS_PENDING_AVAILABILITY,
+                              ORDER_STATUS_UNFULFILLABLE,
+                              ORDER_STATUS_UNSHIPPED,
+                              ]
+
+
 NORTH_AMERICA = "us_east_1"
 EUROPE = "eu_west_1"
 FAR_EAST = "us_west_2"
