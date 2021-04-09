@@ -73,13 +73,13 @@ def get_cbm(length, width, depth, unit):
         return cbm
 
 
-def pdf_file_from_html(data, template_path, file_name):
+def pdf_file_from_html(data, template_path, file_name, as_File_obj=True):
     """
     generate pdf file from html template with given context data
     """
 
     tmp_dir = tempfile.TemporaryDirectory()
-    tmp_file_path = tmp_dir.name + file_name + ".pdf"
+    tmp_file_path = tmp_dir.name + "/"+file_name + ".pdf"
     path = "pdf-templates/"
     html_template = render_to_string(
         path + template_path,
@@ -91,8 +91,10 @@ def pdf_file_from_html(data, template_path, file_name):
         tmp_file_path
     )
     f = open(tmp_file_path, "rb")
-    final_file = File(f)
-    return final_file
+    if as_File_obj:
+        final_file = File(f)
+        return final_file
+    return f
 
 
 def get_status_object(data, status_field="status"):

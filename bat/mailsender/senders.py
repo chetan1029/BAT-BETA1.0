@@ -32,8 +32,8 @@ def send_mail(subject, message, from_email, recipient_list,
 
     if attachment_files:
         for attachment_file in attachment_files:
-            mail.attach(attachment_file.name, attachment_file.read())
-            # mail.attach_file(attachment_file)
+            mail.attach(attachment_file.name.split(
+                "/")[-1], attachment_file.read(), "application/pdf")
 
     if html_message:
         mail.attach_alternative(html_message, 'text/html')

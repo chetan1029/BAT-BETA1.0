@@ -35,6 +35,7 @@ from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
 
 from bat.autoemail.utils import send_email
+from bat.globalutils.utils import pdf_file_from_html
 
 
 @method_decorator(
@@ -74,6 +75,16 @@ class EmailCampaignViewsets(
         """
         test email for campaign!
         """
+        def _generate_pdf_file(data):
+            context = data.get("file_context")
+            name = data.get("name")
+            f = pdf_file_from_html(
+                context,
+                "autoemail/order_invoice.html",
+                name,
+                as_File_obj=False
+            )
+            return f
 
         _member = get_member(
             company_id=company_pk,
@@ -94,7 +105,7 @@ class EmailCampaignViewsets(
         campaign = self.get_object()
 
         order = AmazonOrder.objects.filter(
-            amazonaccounts__marketplace_id=campaign.amazonmarketplace.id, amazonaccounts__company_id=company_pk).first()
+            amazonaccounts__marketplace_id=campaign.amazonmarketplace.id, amazonaccounts__company_id=company_pk, order_id="222").first()
 
         if order:
             products = order.orderitem_order.all()
@@ -106,14 +117,26 @@ class EmailCampaignViewsets(
                 "Product_title_s": products_title_s,
                 "Seller_name": campaign.get_company().name
             }
-            send_email(campaign.emailtemplate, email, context=context)
+            if campaign.include_invoice:
+                file_data = {"name": "order_invoice_" + str(order.order_id), "file_context": {
+                    "data": "I am order", "order_id": str(order.order_id)}}
+                f = _generate_pdf_file(file_data)
+                send_email(campaign.emailtemplate, email, context=context, attachment_files=[f])
+            else:
+                send_email(campaign.emailtemplate, email, context=context)
         else:
             context = {
                 "order_id": "#123",
                 "Product_title_s": "XYZ Product",
                 "Seller_name": campaign.get_company().name
             }
-            send_email(campaign.emailtemplate, email, context=context)
+            if campaign.include_invoice:
+                file_data = {"name": "order_invoice_" + context["order_id"], "file_context": {
+                    "data": "I am order", "order_id": context["order_id"]}}
+                f = _generate_pdf_file(file_data)
+                send_email(campaign.emailtemplate, email, context=context, attachment_files=[f])
+            else:
+                send_email(campaign.emailtemplate, email, context=context)
 
         return Response(
             {"detail": _("email sent successfully")},
@@ -131,15 +154,6 @@ class EmailQueueViewsets(
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
-        f = open(os.path.join(os.path.dirname(__file__), "email_test.pdf"), "r")
-        print("file :", f)
-        template = EmailTemplate.objects.get(id=30)
-        context = {
-            "order_id": "1234",
-            "Product_title_s": "sbdf, sbzdhf, jsgzdhf",
-            "Seller_name": "Mahi"
-        }
-        send_email(template, "mira.coderthemes@gmail.com", context=context, attachment_files=[f])
         return queryset.filter(emailcampaign__company__id=company_id).order_by("-create_date")
 
 
