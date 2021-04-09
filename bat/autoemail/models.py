@@ -16,16 +16,15 @@ from bat.autoemail.constants import (
     EMAIL_LANG_CHOICES,
     EMAIL_LANG_ENGLISH,
     EXCLUDE_ORDERS_CHOICES,
-    SCHEDULE_CHOICES,
     PER_EMAIL_CHARGED_POINTS,
     PER_EMAIL_CHARGED_POINTS_FOR_INVOICE,
+    SCHEDULE_CHOICES,
 )
+from bat.autoemail.utils import send_email
 from bat.company.models import Company
+from bat.globalutils.utils import pdf_file_from_html
 from bat.market.models import AmazonMarketplace, AmazonOrder
 from bat.setting.models import Status
-from bat.autoemail.utils import send_email
-from bat.globalutils.utils import pdf_file_from_html
-
 
 try:
     from unidecode import unidecode
@@ -322,7 +321,6 @@ class EmailQueue(models.Model):
             "data": "I am order",
             "order_id": str(self.amazonorder.order_id),
             "purchase_date": str(self.amazonorder.purchase_date),
-            "order_placed": str(self.amazonorder.purchase_date),
             "total_amount": str(self.amazonorder.amount_currency)
             + " "
             + str(self.amazonorder.amount),
