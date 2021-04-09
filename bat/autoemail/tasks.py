@@ -21,6 +21,8 @@ from config.celery import app
 
 logger = get_task_logger(__name__)
 
+EMAIL_CAMPAIGN_STATUS_ACTIVE = "active"
+
 
 @app.task
 def add_order_email_in_queue(amazon_order_id, email_campaign_id):
@@ -109,14 +111,18 @@ def send_email(email_queue_id):
 def send_email_from_queue():
     current_time = datetime.utcnow()
     queued_emails = EmailQueue.objects.filter(
-        status__name=ORDER_EMAIL_STATUS_QUEUED, schedule_date__lte=current_time
+        status__name=ORDER_EMAIL_STATUS_QUEUED,
+        schedule_date__lte=current_time,
+        emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
     )
 
     for email in queued_emails:
         send_email.delay(email.id)
 
     EmailQueue.objects.filter(
-        status__name=ORDER_EMAIL_STATUS_QUEUED, schedule_date__lte=current_time
+        status__name=ORDER_EMAIL_STATUS_QUEUED,
+        schedule_date__lte=current_time,
+        emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
     ).update(
         status=get_status(
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SCHEDULED
