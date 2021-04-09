@@ -95,10 +95,7 @@ class EmailCampaignViewsets(
         campaign = self.get_object()
 
         order = AmazonOrder.objects.filter(
-            amazonaccounts__marketplace_id=campaign.amazonmarketplace.id,
-            amazonaccounts__company_id=company_pk,
-            order_id="222",
-        ).first()
+            amazonaccounts__marketplace_id=campaign.amazonmarketplace.id, amazonaccounts__company_id=company_pk).first()
 
         if order:
             products = order.orderitem_order.all()
