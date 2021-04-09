@@ -141,16 +141,17 @@
               <td>Price</td>
               <td>Total</td>
             </tr>
-
+            {% for order_item in order_items %}
             <tr class="item">
               <td>
-                <p>ASCDFF</p>
+                <p>{{order_item.asin}}</p>
               </td>
-              <td><p>Product</p></td>
-              <td><p>1</p></td>
-              <td><p>$12</p></td>
-              <td><p>$12</p></td>
+              <td><p>{{order_item.amazonproduct.title}}</p></td>
+              <td><p>{{order_item.quantity}}</p></td>
+              <td><p>{{order_item.item_price}}</p></td>
+              <td><p>{{order_item.item_price}}</p></td>
             </tr>
+            {% endfor %}
 
             <tr class="item bold last">
               <td>
@@ -159,9 +160,8 @@
               <td></td>
               <td></td>
               <td ></td>
-              <td >
-                <p class="mb-2">$12</p>
-                <p class="mb-2">including Tax: $3</p>
+              <td>
+                <p class="mb-2">{{total_amount}}</p>
               </td>
             </tr>
 
