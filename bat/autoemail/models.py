@@ -247,6 +247,9 @@ class EmailCampaign(models.Model):
         """Return Value."""
         return self.name
 
+    def get_company(self):
+        return self.emailtemplate.company
+
 
 class EmailQueue(models.Model):
     """Email Queue for the auto email."""
