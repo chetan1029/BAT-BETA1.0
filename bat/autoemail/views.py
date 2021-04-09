@@ -117,7 +117,9 @@ class EmailCampaignViewsets(
                         "order_id": str(order.order_id),
                         "purchase_date": str(order.purchase_date),
                         "total_amount": str(order.amount),
+                        "tax": str(order.tax),
                         "order_items": products,
+                        "seller_name": campaign.get_company().name,
                     },
                 }
                 f = _generate_pdf_file(file_data)

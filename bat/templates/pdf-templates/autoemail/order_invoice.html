@@ -16,6 +16,11 @@
         font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif, 'cwkai';
         color: #555;
     }
+    .invoice-box h1{
+      margin-bottom: 20px;
+      maring-top: 20px;
+      text-align: center;
+    }
     .invoice-box h5{
       font-size: 14px;
       margin-bottom: 10px;
@@ -118,14 +123,19 @@
 
 <body>
     <div class="invoice-box">
+        <h1>Invoice #: {{order_id}}</h1>
         <table cellpadding="0" cellspacing="0">
             <tr class="information">
                 <td colspan="6">
                     <table>
                         <tr>
                             <td>
-                              <h5>Order Placed: {{purchase_date}}</h5>
+                              <h4>{{seller_name}}</h4>
+                            </td>
+
+                            <td>
                               <p>Order number: {{order_id}}</p>
+                              <p>Order Placed: {{purchase_date | date:"d M Y"}}</p>
                               <p>Total: {{total_amount}}</p>
                             </td>
 
@@ -144,7 +154,7 @@
             {% for order_item in order_items %}
             <tr class="item">
               <td>
-                <p>{{order_item.asin}}</p>
+                <p>{{order_item.amazonproduct.asin}}</p>
               </td>
               <td><p>{{order_item.amazonproduct.title}}</p></td>
               <td><p>{{order_item.quantity}}</p></td>
@@ -162,6 +172,17 @@
               <td ></td>
               <td>
                 <p class="mb-2">{{total_amount}}</p>
+              </td>
+            </tr>
+            <tr class="item bold last">
+              <td>
+                <p>Tax (included)</p>
+              </td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>
+                <p class="mb-2">{{tax}}</p>
               </td>
             </tr>
 
