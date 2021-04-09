@@ -1,4 +1,5 @@
 import pytz
+import os
 from datetime import datetime
 
 from django.db.models import Sum
@@ -16,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 
 from bat.autoemail import serializers
-from bat.autoemail.models import EmailCampaign, EmailQueue
+from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 
 from bat.market.models import AmazonOrder, AmazonOrderItem, AmazonMarketplace
 
@@ -25,6 +26,8 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_SEND,
     ORDER_EMAIL_STATUS_SCHEDULED,
 )
+
+from bat.autoemail.utils import send_email
 
 
 class EmailCampaignViewsets(
@@ -62,6 +65,15 @@ class EmailQueueViewsets(
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
+        f = open(os.path.join(os.path.dirname(__file__), "email_test.pdf"), "r")
+        print("file :", f)
+        template = EmailTemplate.objects.get(id=30)
+        context = {
+            "order_id": "1234",
+            "Product_title_s": "sbdf, sbzdhf, jsgzdhf",
+            "Seller_name": "Mahi"
+        }
+        send_email(template, "mira.coderthemes@gmail.com", context=context, attachment_files=[f])
         return queryset.filter(emailcampaign__company__id=company_id).order_by("-create_date")
 
 

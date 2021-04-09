@@ -120,6 +120,7 @@ class GlobalEmailCampaign(models.Model):
         choices=EXCLUDE_ORDERS_CHOICES,
         blank=True,
     )
+    include_invoice = models.BooleanField(default=False)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -236,6 +237,7 @@ class EmailCampaign(models.Model):
         choices=EXCLUDE_ORDERS_CHOICES,
         blank=True,
     )
+    include_invoice = models.BooleanField(default=False)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
