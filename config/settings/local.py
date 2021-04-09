@@ -38,8 +38,8 @@ EMAIL_BACKEND = env(
 # EMAIL_BACKEND = "django_ses.SESBackend"
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-AWS_SES_REGION_NAME = "us-west-2"
-AWS_SES_REGION_ENDPOINT = "email.us-west-2.amazonaws.com"
+AWS_SES_REGION_NAME = env("AWS_SES_REGION_NAME")
+AWS_SES_REGION_ENDPOINT = env("AWS_SES_REGION_ENDPOINT")
 
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-host
