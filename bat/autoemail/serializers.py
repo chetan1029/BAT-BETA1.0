@@ -46,7 +46,7 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
 
 class EmailCampaignSerializer(serializers.ModelSerializer):
     status = StatusField(choices=EMAIL_CAMPAIGN_STATUS_CHOICE)
-    order_status = StatusField(choices=AMAZON_ORDER_STATUS_CHOICE)
+    order_status = StatusField(choices=AMAZON_ORDER_STATUS_CHOICE, required=True)
     emailtemplate = EmailTemplateSerializer(read_only=True)
     amazonmarketplace = AmazonMarketplaceSerializer(read_only=True)
     channel = serializers.MultipleChoiceField(choices=CHANNEL_CHOICES)
@@ -101,9 +101,16 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
         return None
 
     def update(self, instance, validated_data):
-        validated_data["status"] = get_status_object(validated_data)
-        validated_data["order_status"] = get_status_object(
-            validated_data, status_field="order_status")
+        if self.partial:
+            if validated_data.get("status", None):
+                validated_data["status"] = get_status_object(validated_data)
+            if validated_data.get("order_status", None):
+                validated_data["order_status"] = get_status_object(
+                    validated_data, status_field="order_status")
+        else:
+            validated_data["status"] = get_status_object(validated_data)
+            validated_data["order_status"] = get_status_object(
+                validated_data, status_field="order_status")
         return super().update(instance, validated_data)
 
     def get_email_sent_today(self, obj):
