@@ -318,7 +318,7 @@ class EmailQueue(models.Model):
         data = {
             "data": "I am order",
             "order_id": str(self.amazonorder.order_id),
-            "purchase_date": str(self.amazonorder.purchase_date),
+            "purchase_date": str(self.amazonorder.purchase_date.strftime("%d %B %Y")),
             "total_amount": str(self.amazonorder.amount),
             "tax": str(self.amazonorder.tax),
             "order_items": self.amazonorder.orderitem_order.all(),

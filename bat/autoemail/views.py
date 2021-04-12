@@ -96,7 +96,7 @@ class EmailCampaignViewsets(
 
         order = AmazonOrder.objects.filter(
             amazonaccounts__marketplace_id=campaign.amazonmarketplace.id,
-            amazonaccounts__company_id=company_pk,
+            amazonaccounts__company_id=company_pk
         ).first()
 
         if order:
@@ -113,9 +113,8 @@ class EmailCampaignViewsets(
                 file_data = {
                     "name": "order_invoice_" + str(order.order_id),
                     "file_context": {
-                        "data": "I am order",
                         "order_id": str(order.order_id),
-                        "purchase_date": str(order.purchase_date),
+                        "purchase_date": str(order.purchase_date.strftime("%d %B %Y")),
                         "total_amount": str(order.amount),
                         "tax": str(order.tax),
                         "order_items": products,
@@ -141,8 +140,11 @@ class EmailCampaignViewsets(
                 file_data = {
                     "name": "order_invoice_" + context["order_id"],
                     "file_context": {
-                        "data": "I am order",
                         "order_id": context["order_id"],
+                        "purchase_date": str(datetime.now().strftime("%d %B %Y")),
+                        "total_amount": str(25),
+                        "tax": str(5),
+                        "seller_name": campaign.get_company().name,
                     },
                 }
                 f = _generate_pdf_file(file_data)
