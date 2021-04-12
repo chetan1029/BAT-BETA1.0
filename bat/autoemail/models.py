@@ -321,11 +321,11 @@ class EmailQueue(models.Model):
             "data": "I am order",
             "order_id": str(self.amazonorder.order_id),
             "purchase_date": str(self.amazonorder.purchase_date),
-            "total_amount": str(self.amazonorder.amount_currency)
-            + " "
-            + str(self.amazonorder.amount),
+            "total_amount": str(self.amazonorder.amount),
+            "tax": str(self.amazonorder.tax),
+            "order_items": self.amazonorder.orderitem_order.all(),
+            "seller_name": self.get_company().name,
         }
-        print(data)
         name = "order_invoice_" + str(self.amazonorder.order_id)
         f = pdf_file_from_html(
             data, "autoemail/order_invoice.html", name, as_File_obj=False

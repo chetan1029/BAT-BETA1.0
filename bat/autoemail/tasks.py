@@ -115,7 +115,6 @@ def send_email_from_queue():
         schedule_date__lte=current_time,
         emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
     )
-    print(queued_emails)
 
     for email in queued_emails:
         send_email.delay(email.id)
