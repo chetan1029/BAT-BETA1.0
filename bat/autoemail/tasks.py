@@ -23,7 +23,7 @@ from config.celery import app
 
 logger = get_task_logger(__name__)
 
-EMAIL_CAMPAIGN_STATUS_ACTIVE = "active"
+EMAIL_CAMPAIGN_STATUS_ACTIVE = "Active"
 
 
 @app.task

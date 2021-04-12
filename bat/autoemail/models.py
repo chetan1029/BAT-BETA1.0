@@ -16,16 +16,15 @@ from bat.autoemail.constants import (
     EMAIL_LANG_CHOICES,
     EMAIL_LANG_ENGLISH,
     EXCLUDE_ORDERS_CHOICES,
-    SCHEDULE_CHOICES,
     PER_EMAIL_CHARGED_POINTS,
-    PER_EMAIL_CHARGED_POINTS_FOR_INVOICE
+    PER_EMAIL_CHARGED_POINTS_FOR_INVOICE,
+    SCHEDULE_CHOICES,
 )
+from bat.autoemail.utils import send_email
 from bat.company.models import Company
+from bat.globalutils.utils import pdf_file_from_html
 from bat.market.models import AmazonMarketplace, AmazonOrder
 from bat.setting.models import Status
-from bat.autoemail.utils import send_email
-from bat.globalutils.utils import pdf_file_from_html
-
 
 try:
     from unidecode import unidecode
@@ -299,12 +298,16 @@ class EmailQueue(models.Model):
         context = {
             "order_id": self.amazonorder.order_id,
             "Product_title_s": products_title_s,
-            "Seller_name": self.get_company().name
+            "Seller_name": self.get_company().name,
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()
-            send_email(self.template, self.sent_to, context=context,
-                       attachment_files=[f])
+            send_email(
+                self.template,
+                self.sent_to,
+                context=context,
+                attachment_files=[f],
+            )
         else:
             send_email(self.template, self.sent_to, context=context)
 
@@ -312,12 +315,17 @@ class EmailQueue(models.Model):
         """
         generate pdf file
         """
-        data = {"data": "I am order", "order_id": str(self.amazonorder.order_id)}
+        data = {
+            "data": "I am order",
+            "order_id": str(self.amazonorder.order_id),
+            "purchase_date": str(self.amazonorder.purchase_date),
+            "total_amount": str(self.amazonorder.amount),
+            "tax": str(self.amazonorder.tax),
+            "order_items": self.amazonorder.orderitem_order.all(),
+            "seller_name": self.get_company().name,
+        }
         name = "order_invoice_" + str(self.amazonorder.order_id)
         f = pdf_file_from_html(
-            data,
-            "autoemail/order_invoice.html",
-            name,
-            as_File_obj=False
+            data, "autoemail/order_invoice.html", name, as_File_obj=False
         )
         return f

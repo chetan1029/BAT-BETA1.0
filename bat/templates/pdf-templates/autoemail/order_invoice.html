@@ -1,17 +1,193 @@
-<!DOCTYPE html>
-<html lang="en">
-
+{% load l10n %}
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oredr_invoice</title>
+    <meta charset="utf-8">
+    <title>Invoice #: {{order_id}}</title>
+
+    <style>
+    .invoice-box {
+        max-width: 1500px;
+        margin: auto;
+        padding: 0px;
+        border: 1px solid #eee;
+        box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+        font-size: 12px;
+        line-height: 18px;
+        font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif, 'cwkai';
+        color: #555;
+    }
+    .invoice-box h1{
+      margin-bottom: 20px;
+      maring-top: 20px;
+      text-align: center;
+    }
+    .invoice-box h5{
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .invoice-box p{
+      font-size: 12px;
+      line-height: 16px;
+      margin:0px;
+      padding: 0px;
+    }
+    .invoice-box table {
+        width: 100%;
+        line-height: inherit;
+        text-align: left;
+    }
+
+    .invoice-box table td {
+        padding: 5px;
+        vertical-align: top;
+    }
+
+    .invoice-box table tr td:nth-child(2) {
+        text-align: right;
+    }
+
+    .invoice-box table tr.top table td {
+        padding-bottom: 0px;
+    }
+
+    .invoice-box table tr.top table td.title {
+        font-size: 45px;
+        line-height: 45px;
+        color: #333;
+    }
+
+    .invoice-box table tr.information table td {
+        padding-bottom: 40px;
+    }
+
+    .invoice-box table tr.heading td {
+        background: #eee;
+        border-bottom: 1px solid #ddd;
+        font-weight: bold;
+    }
+
+    .invoice-box table tr.details td {
+        padding-bottom: 20px;
+    }
+
+    .invoice-box table tr.item td{
+        border-bottom: 1px solid #ccc;
+    }
+
+    .invoice-box table tr.item.last td {
+        border-bottom: none;
+    }
+
+    .invoice-box table tr.total td:nth-child(2) {
+        border-top: 2px solid #eee;
+        font-weight: bold;
+    }
+    .bold{
+      font-weight: bold;
+    }
+    p.text-small{
+      font-size: 10px !important;
+    }
+    .subtotal td{
+      padding:0 10px;
+    }
+    @media only screen and (max-width: 600px) {
+        .invoice-box table tr.top table td {
+            width: 100%;
+            display: block;
+            text-align: center;
+        }
+
+        .invoice-box table tr.information table td {
+            width: 100%;
+            display: block;
+            text-align: center;
+        }
+    }
+
+    /** RTL **/
+    .rtl {
+        direction: rtl;
+        font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+    }
+
+    .rtl table {
+        text-align: right;
+    }
+
+    .rtl table tr td:nth-child(2) {
+        text-align: left;
+    }
+    </style>
 </head>
 
 <body>
-    <h1>
-        File
-    </h1>
-    <h2>{{data}} : {{order_id}}</h2>
-</body>
+    <div class="invoice-box">
+        <h1>Invoice #: {{order_id}}</h1>
+        <table cellpadding="0" cellspacing="0">
+            <tr class="information">
+                <td colspan="6">
+                    <table>
+                        <tr>
+                            <td>
+                              <h5>{{seller_name}}</h5>
+                            </td>
 
+                            <td>
+                              <p>Order number: {{order_id}}</p>
+                              <p>Order Placed: {{purchase_date}}</p>
+                              <p>Total: {{total_amount}}</p>
+                            </td>
+
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            <tr class="heading">
+              <td>ASIN</td>
+              <td>Product</td>
+              <td>Quantity</td>
+              <td>Price</td>
+              <td>Total</td>
+            </tr>
+            {% for order_item in order_items %}
+            <tr class="item">
+              <td>
+                <p>{{order_item.amazonproduct.asin}}</p>
+              </td>
+              <td><p>{{order_item.amazonproduct.title}}</p></td>
+              <td><p>{{order_item.quantity}}</p></td>
+              <td><p>{{order_item.item_price}}</p></td>
+              <td><p>{{order_item.item_price}}</p></td>
+            </tr>
+            {% endfor %}
+
+            <tr class="item bold">
+              <td>
+                <p>Total</p>
+              </td>
+              <td></td>
+              <td></td>
+              <td ></td>
+              <td>
+                <p class="mb-2">{{total_amount}}</p>
+              </td>
+            </tr>
+            <tr class="item last">
+              <td>
+                <p>Tax (included)</p>
+              </td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>
+                <p class="mb-2">{{tax}}</p>
+              </td>
+            </tr>
+
+        </table>
+    </div>
+</body>
 </html>
