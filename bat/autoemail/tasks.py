@@ -12,6 +12,8 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_QUEUED,
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
+    EMAIL_CAMPAIGN_PARENT_STATUS,
+    EMAIL_CAMPAIGN_STATUS_ACTIVE,
 )
 from bat.autoemail.models import EmailCampaign, EmailQueue
 from bat.market.models import AmazonAccounts, AmazonOrder
@@ -188,7 +190,6 @@ def email_queue_create_for_orders(
 def email_queue_create_for_initial_orders(
     amazonaccount_id, amazon_created_orders_pk
 ):
-
     amazonaccount = AmazonAccounts.objects.get(pk=amazonaccount_id)
 
     amazon_created_orders = AmazonOrder.objects.filter(
@@ -199,6 +200,7 @@ def email_queue_create_for_initial_orders(
     }
 
     email_campaigns = EmailCampaign.objects.filter(
+        status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
         amazonmarketplace=amazonaccount.marketplace,
         company=amazonaccount.company,
     ).values_list("order_status__name", "id")

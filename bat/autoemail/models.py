@@ -97,7 +97,6 @@ class GlobalEmailCampaign(models.Model):
     order_status = models.ForeignKey(
         Status,
         on_delete=models.PROTECT,
-        default=STATUS_DRAFT,
         related_name="globalemailcampaign_order_status",
     )
     channel = MultiSelectField(
@@ -214,7 +213,6 @@ class EmailCampaign(models.Model):
     order_status = models.ForeignKey(
         Status,
         on_delete=models.PROTECT,
-        default=STATUS_DRAFT,
         related_name="emailcampaign_order_status",
     )
     channel = MultiSelectField(
