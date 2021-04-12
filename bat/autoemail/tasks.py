@@ -200,7 +200,6 @@ def email_queue_create_for_initial_orders(
     }
 
     email_campaigns = EmailCampaign.objects.filter(
-        status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
         amazonmarketplace=amazonaccount.marketplace,
         company=amazonaccount.company,
     ).values_list("order_status__name", "id")
