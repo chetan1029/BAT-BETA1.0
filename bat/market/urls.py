@@ -8,13 +8,16 @@ from bat.market.views import (
     AmazonMarketplaceViewsets,
     AmazonOrderViewsets,
     AmazonProductViewsets,
+    TestAmazonClientCatalog,
 )
 
 amazon_marketplaces_router = nested_routers.NestedSimpleRouter(
     company_router, "companies", lookup="company"
 )
 amazon_marketplaces_router.register(
-    "amazon-marketplaces", AmazonMarketplaceViewsets, basename="company-amazon-marketplaces"
+    "amazon-marketplaces",
+    AmazonMarketplaceViewsets,
+    basename="company-amazon-marketplaces",
 )
 
 
@@ -45,6 +48,7 @@ urlpatterns = [
         "auth-callback/amazon-marketplaces/",
         AccountsReceiveAmazonCallback.as_view(),
     ),
+    path("test-amazon-client/catalog", TestAmazonClientCatalog.as_view()),
     path("", include(amazon_product_router.urls)),
     path("", include(amazon_order_router.urls)),
     path("", include(amazon_marketplaces_router.urls)),

@@ -217,3 +217,68 @@ class Reports(APIClient):
                 }
             ]
         )
+
+
+class Messaging(APIClient):
+    """
+    """
+
+    @sp_endpoint("/messaging/v1/orders/{}")
+    def get_messaging_actions_for_order(
+        self, order_id: str, **kwargs
+    ) -> ApiResponse:
+        """
+        get_messaging_actions_for_order(self, order_id: str, **kwargs) -> ApiResponse
+        Returns a specified item and its attributes.
+        """
+        kwargs.update(
+            {
+                "marketplaceIds": kwargs.get("marketplaceIds", None)
+                or self.marketplace_id
+            }
+        )
+        return self._request(
+            fill_query_params(kwargs.pop("path"), order_id), params=kwargs
+        )
+
+    @sp_endpoint(
+        "/messaging/v1/orders/{}/messages/legalDisclosure", method="POST"
+    )
+    def create_legal_disclosure_message(self, order_id, **kwargs):
+        return self._request(
+            fill_query_params(kwargs.pop("path"), order_id), data=kwargs
+        )
+
+
+class Solicitations(APIClient):
+    """
+    """
+
+    @sp_endpoint("/solicitations/v1/orders/{}")
+    def get_solicitation_actions_for_order(
+        self, order_id: str, **kwargs
+    ) -> ApiResponse:
+        """
+        get_solicitation_actions_for_order(self, order_id: str, **kwargs) -> ApiResponse
+        Returns a specified item and its attributes.
+        """
+        kwargs.update(
+            {
+                "marketplaceIds": kwargs.get("marketplaceIds", None)
+                or self.marketplace_id
+            }
+        )
+        return self._request(
+            fill_query_params(kwargs.pop("path"), order_id), params=kwargs
+        )
+
+    @sp_endpoint(
+        "/solicitations/v1/orders/{}/solicitations/productReviewAndSellerFeedback",
+        method="POST",
+    )
+    def create_productreview_and_sellerfeedback_solicitation(
+        self, order_id, **kwargs
+    ):
+        return self._request(
+            fill_query_params(kwargs.pop("path"), order_id), data=kwargs
+        )

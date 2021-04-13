@@ -1,6 +1,6 @@
+import base64
 import csv
 import time
-import base64
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -20,7 +20,14 @@ from sp_api.base.reportTypes import ReportType
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
-from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Reports, Orders
+from bat.market.amazon_sp_api.amazon_sp_api import (
+    Catalog,
+    Messaging,
+    Orders,
+    Reports,
+    Solicitations,
+)
+from bat.market.constants import MARKETPLACE_CODES
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
@@ -28,11 +35,17 @@ from bat.market.models import (
     AmazonOrder,
     AmazonProduct,
 )
-from bat.market.utils import AmazonAPI, generate_uri, set_default_email_campaign_templates
-from bat.market.report_parser import ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser
 from bat.market.orders_data_builder import AmazonOrderProcessData
+from bat.market.report_parser import (
+    ReportAmazonOrdersCSVParser,
+    ReportAmazonProductCSVParser,
+)
 from bat.market.tasks import amazon_account_products_orders_sync
-from bat.company.utils import get_member
+from bat.market.utils import (
+    AmazonAPI,
+    generate_uri,
+    set_default_email_campaign_templates,
+)
 
 # from sp_api.api.reports.reports import Reports
 
@@ -191,22 +204,95 @@ class AccountsReceiveAmazonCallback(View):
                 try:
                     if amazon_accounts_is_created:
                         set_default_email_campaign_templates(
-                            company=company, marketplace=marketplace)
+                            company=company, marketplace=marketplace
+                        )
                 except Exception as e:
                     return HttpResponseRedirect(
-                        settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?error=" + e
+                        settings.MARKET_LIST_URI
+                        + "auto-emails/"
+                        + str(company.id)
+                        + "/campaigns?error="
+                        + e
                     )
                 # call task to collect data from amazon account
-                amazon_account_products_orders_sync.delay(new_account.id, last_no_of_days=8)
+                amazon_account_products_orders_sync.delay(
+                    new_account.id, last_no_of_days=8
+                )
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?success=Your " +
-                    marketplace.name + " marketplace account successfully linked."
+                    settings.MARKET_LIST_URI
+                    + "auto-emails/"
+                    + str(company.id)
+                    + "/campaigns?success=Your "
+                    + marketplace.name
+                    + " marketplace account successfully linked."
                 )
             else:
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?error=Your " + marketplace.name +
-                    " marketplace account couldn't be linked due to: oauth_api_call_failed"
+                    settings.MARKET_LIST_URI
+                    + "auto-emails/"
+                    + str(company.id)
+                    + "/campaigns?error=Your "
+                    + marketplace.name
+                    + " marketplace account couldn't be linked due to: oauth_api_call_failed"
                 )
         return HttpResponseRedirect(
-            settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?error=status has been expired"
+            settings.MARKET_LIST_URI
+            + "auto-emails/"
+            + str(company.id)
+            + "/campaigns?error=status has been expired"
         )
+
+
+class TestAmazonClientCatalog(View):
+    def get(self, request, **kwargs):
+        ac = AmazonAccountCredentails.objects.first()
+        # data = Catalog(
+        #     marketplace=Marketplaces[MARKETPLACE_CODES.get("A1F83G8C2ARO7P")],
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).list_items()
+
+        # data = Messaging(
+        #     marketplace=Marketplaces[MARKETPLACE_CODES.get("A1F83G8C2ARO7P")],
+        #     refresh_token=ac.refresh_token,
+        #     credentials={
+        #         "refresh_token": ac.refresh_token,
+        #         "lwa_app_id": settings.LWA_CLIENT_ID,
+        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+        #         "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
+        #         "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
+        #         "role_arn": settings.ROLE_ARN,
+        #     },
+        # ).get_messaging_actions_for_order("026-3106866-6300325")
+
+        solicitations = Solicitations(
+            marketplace=Marketplaces[MARKETPLACE_CODES.get("A1F83G8C2ARO7P")],
+            refresh_token=ac.refresh_token,
+            credentials={
+                "refresh_token": ac.refresh_token,
+                "lwa_app_id": settings.LWA_CLIENT_ID,
+                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+                "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
+                "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
+                "role_arn": settings.ROLE_ARN,
+            },
+        )
+
+        data = solicitations.get_solicitation_actions_for_order(
+            "026-2808828-3956326"
+        )
+        print("data : ", data)
+
+        data1 = solicitations.create_productreview_and_sellerfeedback_solicitation(
+            "026-2808828-3956326"
+        )
+
+        print("data : ", data1)
+        return HttpResponse(str(data1))
