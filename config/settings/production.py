@@ -6,9 +6,7 @@ from .base import env
 # https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = env.list(
-    "DJANGO_ALLOWED_HOSTS", default=["beta.thebatonline.com"]
-)
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["app.komrs.io"])
 
 # DATABASES
 # ------------------------------------------------------------------------------
@@ -87,8 +85,7 @@ TEMPLATES[-1]["OPTIONS"]["loaders"] = [  # type: ignore[index] # noqa F405
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email
 DEFAULT_FROM_EMAIL = env(
-    "DJANGO_DEFAULT_FROM_EMAIL",
-    default="bat-beta1.0 <noreply@beta.thebatonline.com>",
+    "DJANGO_DEFAULT_FROM_EMAIL", default="Komrs.io <noreply@komrs.io>"
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#server-email
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)

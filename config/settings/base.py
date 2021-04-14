@@ -291,7 +291,7 @@ EMAIL_TIMEOUT = 5
 # Django Admin URL.
 ADMIN_URL = "admin/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = [("""bat""", "chetan@volutz.com")]
+ADMINS = [("""bat""", "chetan@komrs.io")]
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
 
@@ -400,8 +400,7 @@ STATUS_PRODUCT = env.bool("STATUS_PRODUCT", "Product")
 
 # Email Setting
 DEFAULT_FROM_EMAIL = env(
-    "DJANGO_DEFAULT_FROM_EMAIL",
-    default="bat-beta1.0 <noreply@beta.thebatonline.com>",
+    "DJANGO_DEFAULT_FROM_EMAIL", default="Komrs.io <noreply@komrs.io>"
 )
 
 # cors
