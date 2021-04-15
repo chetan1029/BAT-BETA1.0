@@ -280,5 +280,5 @@ class Solicitations(APIClient):
         self, order_id, **kwargs
     ):
         return self._request(
-            fill_query_params(kwargs.pop("path"), order_id), data=kwargs
+            fill_query_params(kwargs.pop("path"), order_id), params={**kwargs}
         )

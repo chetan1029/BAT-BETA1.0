@@ -44,6 +44,8 @@ from bat.market.tasks import amazon_account_products_orders_sync
 from bat.market.utils import (
     AmazonAPI,
     generate_uri,
+    get_order_messaging_actions,
+    send_amazon_review_request,
     set_default_email_campaign_templates,
 )
 
@@ -245,54 +247,15 @@ class AccountsReceiveAmazonCallback(View):
 
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
-        ac = AmazonAccountCredentails.objects.first()
-        # data = Catalog(
-        #     marketplace=Marketplaces[MARKETPLACE_CODES.get("A1F83G8C2ARO7P")],
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).list_items()
 
-        # data = Messaging(
-        #     marketplace=Marketplaces[MARKETPLACE_CODES.get("A1F83G8C2ARO7P")],
-        #     refresh_token=ac.refresh_token,
-        #     credentials={
-        #         "refresh_token": ac.refresh_token,
-        #         "lwa_app_id": settings.LWA_CLIENT_ID,
-        #         "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-        #         "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
-        #         "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
-        #         "role_arn": settings.ROLE_ARN,
-        #     },
-        # ).get_messaging_actions_for_order("026-3106866-6300325")
+        amazonaccount = AmazonAccounts.objects.first()
 
-        solicitations = Solicitations(
-            marketplace=Marketplaces[MARKETPLACE_CODES.get("A1F83G8C2ARO7P")],
-            refresh_token=ac.refresh_token,
-            credentials={
-                "refresh_token": ac.refresh_token,
-                "lwa_app_id": settings.LWA_CLIENT_ID,
-                "lwa_client_secret": settings.LWA_CLIENT_SECRET,
-                "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
-                "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
-                "role_arn": settings.ROLE_ARN,
-            },
-        )
+        # Get is_amazon_review_request_allowed via Solicitations
+        # data = send_amazon_review_request(amazonaccount, "204-5979728-4185964")
 
-        data = solicitations.get_solicitation_actions_for_order(
-            "026-2808828-3956326"
-        )
-        print("data : ", data)
+        # Get Messages action and opt out status for order
+        # data = get_order_messaging_actions(
+        #     amazonaccount, "204-5979728-4185964"
+        # )
 
-        data1 = solicitations.create_productreview_and_sellerfeedback_solicitation(
-            "026-2808828-3956326"
-        )
-
-        print("data : ", data1)
-        return HttpResponse(str(data1))
+        return HttpResponse(str(""))
