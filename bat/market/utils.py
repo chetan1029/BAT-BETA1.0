@@ -191,8 +191,8 @@ def get_amazon_report(
     )
 
 
-def get_order_messaging_actions(amazonaccount, order_id):
-    """Get order messging action in a list and save them with order."""
+def get_messaging(amazonaccount):
+    """Get messaging object."""
     credentails = amazonaccount.credentails
     marketplace = amazonaccount.marketplace
     messaging = Messaging(
@@ -209,7 +209,11 @@ def get_order_messaging_actions(amazonaccount, order_id):
             "role_arn": settings.ROLE_ARN,
         },
     )
+    return messaging
 
+
+def get_order_messaging_actions(messaging, order_id):
+    """Get order messging action in a list and save them with order."""
     message_data = messaging.get_messaging_actions_for_order(order_id)
 
     actions = []
@@ -226,8 +230,8 @@ def get_order_messaging_actions(amazonaccount, order_id):
     return {"actions": actions, "is_optout": is_optout}
 
 
-def send_amazon_review_request(amazonaccount, order_id):
-    """Get order messging action in a list and save them with order."""
+def get_solicitation(amazonaccount):
+    """Get solicitations object."""
     credentails = amazonaccount.credentails
     marketplace = amazonaccount.marketplace
     solicitations = Solicitations(
@@ -244,7 +248,12 @@ def send_amazon_review_request(amazonaccount, order_id):
             "role_arn": settings.ROLE_ARN,
         },
     )
+    return solicitations
 
+
+def send_amazon_review_request(solicitations, marketplace, order_id):
+    """Get order messging action in a list and save them with order."""
+    status = False
     solicitations_data = solicitations.get_solicitation_actions_for_order(
         order_id
     )
@@ -263,3 +272,5 @@ def send_amazon_review_request(amazonaccount, order_id):
         solicitations.create_productreview_and_sellerfeedback_solicitation(
             order_id, marketplaceIds=[marketplace.marketplaceId]
         )
+        status = True
+    return status

@@ -44,7 +44,9 @@ from bat.market.tasks import amazon_account_products_orders_sync
 from bat.market.utils import (
     AmazonAPI,
     generate_uri,
+    get_messaging,
     get_order_messaging_actions,
+    get_solicitation,
     send_amazon_review_request,
     set_default_email_campaign_templates,
 )
@@ -249,13 +251,15 @@ class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
 
         amazonaccount = AmazonAccounts.objects.first()
-
+        data = ""
         # Get is_amazon_review_request_allowed via Solicitations
-        # data = send_amazon_review_request(amazonaccount, "204-5979728-4185964")
-
-        # Get Messages action and opt out status for order
-        # data = get_order_messaging_actions(
-        #     amazonaccount, "204-5979728-4185964"
+        # solicitations = get_solicitation(amazonaccount)
+        # data = send_amazon_review_request(
+        #     solicitations, amazonaccount.marketplace, "204-5979728-4185964"
         # )
 
-        return HttpResponse(str(""))
+        # Get Messages action and opt out status for order
+        messaging = get_messaging(amazonaccount)
+        data = get_order_messaging_actions(messaging, "206-8430629-9049145")
+
+        return HttpResponse(str(data))
