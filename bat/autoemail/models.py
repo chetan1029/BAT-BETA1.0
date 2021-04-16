@@ -240,6 +240,7 @@ class EmailCampaign(models.Model):
     )
     include_invoice = models.BooleanField(default=False)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    activation_date = models.DateTimeField(default=timezone.now)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)
@@ -318,7 +319,9 @@ class EmailQueue(models.Model):
         data = {
             "data": "I am order",
             "order_id": str(self.amazonorder.order_id),
-            "purchase_date": str(self.amazonorder.purchase_date.strftime("%d %B %Y")),
+            "purchase_date": str(
+                self.amazonorder.purchase_date.strftime("%d %B %Y")
+            ),
             "total_amount": str(self.amazonorder.amount),
             "tax": str(self.amazonorder.tax),
             "order_items": self.amazonorder.orderitem_order.all(),
