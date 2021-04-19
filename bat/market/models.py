@@ -13,13 +13,8 @@ from taggit.managers import TaggableManager
 
 from bat.company.models import Company
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import (
-    Image,
-    IsDeletableMixin,
-    UniqueWithinCompanyMixin,
-)
+from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
 from bat.setting.models import Status
-
 
 User = get_user_model()
 
@@ -53,6 +48,7 @@ class AmazonMarketplace(models.Model):
     sales_channel_name = models.CharField(
         verbose_name=_("Sales Channel Name"), max_length=255
     )
+    vat_tax_included = models.BooleanField(default=True)
 
     def __str__(self):
         """Return Value."""
