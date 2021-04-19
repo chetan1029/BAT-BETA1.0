@@ -203,6 +203,7 @@
           <p class="mb-2">{{tax}}</p>
         </td>
       </tr>
+      {% if vat_tax_included %}
       <tr class="item bold last">
         <td>
           <p>Grand Total</p>
@@ -214,7 +215,7 @@
           <p class="mb-2">{{grand_total}}</p>
         </td>
       </tr>
-
+      {% endif %}
     </table>
   </div>
 </body>
