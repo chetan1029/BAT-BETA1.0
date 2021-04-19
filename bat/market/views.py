@@ -50,6 +50,7 @@ from bat.market.utils import (
     send_amazon_review_request,
     set_default_email_campaign_templates,
 )
+from bat.subscription.utils import get_feature_by_quota_code
 
 # from sp_api.api.reports.reports import Reports
 
@@ -174,71 +175,92 @@ class AccountsReceiveAmazonCallback(View):
                 AmazonMarketplace, pk=state_array[3]
             )
 
-            account_credentails, _c = AmazonAccountCredentails.objects.update_or_create(
-                user=user,
-                company=company,
-                selling_partner_id=selling_partner_id,
-                region=marketplace.region,
-                defaults={
-                    "mws_auth_token": mws_auth_token,
-                    "spapi_oauth_code": spapi_oauth_code,
-                },
+            # Change quota for user account for Marketplace according to his subsbribed plan.
+            feature = get_feature_by_quota_code(
+                company, codename="MARKETPLACES"
             )
 
-            new_account, amazon_accounts_is_created = AmazonAccounts.objects.get_or_create(
-                marketplace=marketplace,
-                user=user,
-                company=company,
-                defaults={"credentails": account_credentails},
-            )
+            if feature.consumption > 0:
 
-            # get access_token using spapi_oauth_code
-            is_successfull, data = AmazonAPI.get_oauth2_token(
-                account_credentails
-            )
-
-            if is_successfull:
-                account_credentails.access_token = data.get("access_token")
-                account_credentails.refresh_token = data.get("refresh_token")
-                account_credentails.expires_at = timezone.now() + timedelta(
-                    seconds=data.get("expires_in")
+                account_credentails, _c = AmazonAccountCredentails.objects.update_or_create(
+                    user=user,
+                    company=company,
+                    selling_partner_id=selling_partner_id,
+                    region=marketplace.region,
+                    defaults={
+                        "mws_auth_token": mws_auth_token,
+                        "spapi_oauth_code": spapi_oauth_code,
+                    },
                 )
-                account_credentails.save()
 
-                try:
-                    if amazon_accounts_is_created:
-                        set_default_email_campaign_templates(
-                            company=company, marketplace=marketplace
+                new_account, amazon_accounts_is_created = AmazonAccounts.objects.get_or_create(
+                    marketplace=marketplace,
+                    user=user,
+                    company=company,
+                    defaults={"credentails": account_credentails},
+                )
+
+                # get access_token using spapi_oauth_code
+                is_successfull, data = AmazonAPI.get_oauth2_token(
+                    account_credentails
+                )
+
+                if is_successfull:
+                    account_credentails.access_token = data.get("access_token")
+                    account_credentails.refresh_token = data.get(
+                        "refresh_token"
+                    )
+                    account_credentails.expires_at = timezone.now() + timedelta(
+                        seconds=data.get("expires_in")
+                    )
+                    account_credentails.save()
+
+                    try:
+                        if amazon_accounts_is_created:
+                            set_default_email_campaign_templates(
+                                company=company, marketplace=marketplace
+                            )
+                    except Exception as e:
+                        return HttpResponseRedirect(
+                            settings.MARKET_LIST_URI
+                            + "auto-emails/"
+                            + str(company.id)
+                            + "/campaigns?error="
+                            + e
                         )
-                except Exception as e:
+                    # call task to collect data from amazon account
+                    amazon_account_products_orders_sync.delay(
+                        new_account.id, last_no_of_days=8
+                    )
+
+                    # Change the consumption for the markplaces in the company plan.
+                    feature.consumption = feature.consumption - 1
+                    feature.save()
+
                     return HttpResponseRedirect(
                         settings.MARKET_LIST_URI
                         + "auto-emails/"
                         + str(company.id)
-                        + "/campaigns?error="
-                        + e
+                        + "/campaigns?success=Your "
+                        + marketplace.name
+                        + " marketplace account successfully linked."
                     )
-                # call task to collect data from amazon account
-                amazon_account_products_orders_sync.delay(
-                    new_account.id, last_no_of_days=8
-                )
-                return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI
-                    + "auto-emails/"
-                    + str(company.id)
-                    + "/campaigns?success=Your "
-                    + marketplace.name
-                    + " marketplace account successfully linked."
-                )
             else:
                 return HttpResponseRedirect(
                     settings.MARKET_LIST_URI
                     + "auto-emails/"
                     + str(company.id)
-                    + "/campaigns?error=Your "
-                    + marketplace.name
-                    + " marketplace account couldn't be linked due to: oauth_api_call_failed"
+                    + "/campaigns?error=Your Marketplace Quota limit is already consumed."
                 )
+        else:
+            return HttpResponseRedirect(
+                settings.MARKET_LIST_URI
+                + "auto-emails/"
+                + str(company.id)
+                + "/campaigns?error=Your "
+                + marketplace.name
+                + " marketplace account couldn't be linked due to: oauth_api_call_failed"
+            )
         return HttpResponseRedirect(
             settings.MARKET_LIST_URI
             + "auto-emails/"

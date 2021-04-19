@@ -40,7 +40,9 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
 
 class EmailCampaignSerializer(serializers.ModelSerializer):
     status = StatusField(choices=EMAIL_CAMPAIGN_STATUS_CHOICE)
-    order_status = StatusField(choices=AMAZON_ORDER_STATUS_CHOICE, required=False)
+    order_status = StatusField(
+        choices=AMAZON_ORDER_STATUS_CHOICE, required=False
+    )
     emailtemplate = EmailTemplateSerializer(read_only=True)
     amazonmarketplace = AmazonMarketplaceSerializer(read_only=True)
     channel = serializers.MultipleChoiceField(choices=CHANNEL_CHOICES)
@@ -80,6 +82,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             "email_in_queue",
             "email_sent_today",
             "email_queue_today",
+            "activation_date",
         )
         read_only_fields = ("id", "amazonmarketplace", "company")
 

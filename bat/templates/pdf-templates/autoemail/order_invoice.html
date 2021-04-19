@@ -181,7 +181,7 @@
       </tr>
       {% endfor %}
 
-      <tr class="item bold">
+      <tr class="item">
         <td>
           <p>Total</p>
         </td>
@@ -192,15 +192,26 @@
           <p class="mb-2">{{total_amount}}</p>
         </td>
       </tr>
-      <tr class="item last">
+      <tr class="item">
         <td>
-          <p>Tax (included)</p>
+          <p>Tax {% if vat_tax_included %}(included){% endif %}</p>
         </td>
         <td></td>
         <td></td>
         <td></td>
         <td>
           <p class="mb-2">{{tax}}</p>
+        </td>
+      </tr>
+      <tr class="item bold last">
+        <td>
+          <p>Grand Total</p>
+        </td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>
+          <p class="mb-2">{{grand_total}}</p>
         </td>
       </tr>
 
