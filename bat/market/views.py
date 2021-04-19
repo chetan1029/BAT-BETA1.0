@@ -20,7 +20,14 @@ from sp_api.base.reportTypes import ReportType
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
-from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Orders, Reports
+from bat.market.amazon_sp_api.amazon_sp_api import (
+    Catalog,
+    Messaging,
+    Orders,
+    Reports,
+    Solicitations,
+)
+from bat.market.constants import MARKETPLACE_CODES
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
@@ -37,6 +44,10 @@ from bat.market.tasks import amazon_account_products_orders_sync
 from bat.market.utils import (
     AmazonAPI,
     generate_uri,
+    get_messaging,
+    get_order_messaging_actions,
+    get_solicitation,
+    send_amazon_review_request,
     set_default_email_campaign_templates,
 )
 from bat.subscription.utils import get_feature_by_quota_code
@@ -256,3 +267,21 @@ class AccountsReceiveAmazonCallback(View):
             + str(company.id)
             + "/campaigns?error=status has been expired"
         )
+
+
+class TestAmazonClientCatalog(View):
+    def get(self, request, **kwargs):
+
+        amazonaccount = AmazonAccounts.objects.first()
+        data = ""
+        # Get is_amazon_review_request_allowed via Solicitations
+        # solicitations = get_solicitation(amazonaccount)
+        # data = send_amazon_review_request(
+        #     solicitations, amazonaccount.marketplace, "204-5979728-4185964"
+        # )
+
+        # Get Messages action and opt out status for order
+        messaging = get_messaging(amazonaccount)
+        data = get_order_messaging_actions(messaging, "206-8430629-9049145")
+
+        return HttpResponse(str(data))
