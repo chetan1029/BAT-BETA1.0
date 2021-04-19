@@ -111,7 +111,7 @@ class EmailCampaignViewsets(
                 "Seller_name": campaign.get_company().name,
             }
             if campaign.include_invoice:
-                grand_total = Decimal(order.amount) + Decimal(order.tax)
+                grand_total = order.amount + order.tax
                 file_data = {
                     "name": "order_invoice_" + str(order.order_id),
                     "file_context": {
