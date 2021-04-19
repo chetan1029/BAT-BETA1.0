@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 import pytz
 from django.db.models import Sum
@@ -110,6 +111,7 @@ class EmailCampaignViewsets(
                 "Seller_name": campaign.get_company().name,
             }
             if campaign.include_invoice:
+                grand_total = Decimal(order.amount) + Decimal(order.tax)
                 file_data = {
                     "name": "order_invoice_" + str(order.order_id),
                     "file_context": {
@@ -122,6 +124,8 @@ class EmailCampaignViewsets(
                         "tax": str(order.tax),
                         "order_items": products,
                         "seller_name": campaign.get_company().name,
+                        "vat_tax_included": order.amazonaccounts.marketplace.vat_tax_included,
+                        "grand_total": str(grand_total),
                     },
                 }
                 f = _generate_pdf_file(file_data)
