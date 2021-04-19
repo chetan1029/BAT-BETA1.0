@@ -1,6 +1,6 @@
+import base64
 import csv
 import time
-import base64
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -20,7 +20,14 @@ from sp_api.base.reportTypes import ReportType
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
-from bat.market.amazon_sp_api.amazon_sp_api import Catalog, Reports, Orders
+from bat.market.amazon_sp_api.amazon_sp_api import (
+    Catalog,
+    Messaging,
+    Orders,
+    Reports,
+    Solicitations,
+)
+from bat.market.constants import MARKETPLACE_CODES
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
@@ -28,11 +35,21 @@ from bat.market.models import (
     AmazonOrder,
     AmazonProduct,
 )
-from bat.market.utils import AmazonAPI, generate_uri, set_default_email_campaign_templates
-from bat.market.report_parser import ReportAmazonProductCSVParser, ReportAmazonOrdersCSVParser
 from bat.market.orders_data_builder import AmazonOrderProcessData
+from bat.market.report_parser import (
+    ReportAmazonOrdersCSVParser,
+    ReportAmazonProductCSVParser,
+)
 from bat.market.tasks import amazon_account_products_orders_sync
-from bat.company.utils import get_member
+from bat.market.utils import (
+    AmazonAPI,
+    generate_uri,
+    get_messaging,
+    get_order_messaging_actions,
+    get_solicitation,
+    send_amazon_review_request,
+    set_default_email_campaign_templates,
+)
 
 # from sp_api.api.reports.reports import Reports
 
@@ -191,22 +208,58 @@ class AccountsReceiveAmazonCallback(View):
                 try:
                     if amazon_accounts_is_created:
                         set_default_email_campaign_templates(
-                            company=company, marketplace=marketplace)
+                            company=company, marketplace=marketplace
+                        )
                 except Exception as e:
                     return HttpResponseRedirect(
-                        settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?error=" + e
+                        settings.MARKET_LIST_URI
+                        + "auto-emails/"
+                        + str(company.id)
+                        + "/campaigns?error="
+                        + e
                     )
                 # call task to collect data from amazon account
-                amazon_account_products_orders_sync.delay(new_account.id, last_no_of_days=8)
+                amazon_account_products_orders_sync.delay(
+                    new_account.id, last_no_of_days=8
+                )
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?success=Your " +
-                    marketplace.name + " marketplace account successfully linked."
+                    settings.MARKET_LIST_URI
+                    + "auto-emails/"
+                    + str(company.id)
+                    + "/campaigns?success=Your "
+                    + marketplace.name
+                    + " marketplace account successfully linked."
                 )
             else:
                 return HttpResponseRedirect(
-                    settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?error=Your " + marketplace.name +
-                    " marketplace account couldn't be linked due to: oauth_api_call_failed"
+                    settings.MARKET_LIST_URI
+                    + "auto-emails/"
+                    + str(company.id)
+                    + "/campaigns?error=Your "
+                    + marketplace.name
+                    + " marketplace account couldn't be linked due to: oauth_api_call_failed"
                 )
         return HttpResponseRedirect(
-            settings.MARKET_LIST_URI + "auto-emails/"+str(company.id)+"/campaigns?error=status has been expired"
+            settings.MARKET_LIST_URI
+            + "auto-emails/"
+            + str(company.id)
+            + "/campaigns?error=status has been expired"
         )
+
+
+class TestAmazonClientCatalog(View):
+    def get(self, request, **kwargs):
+
+        amazonaccount = AmazonAccounts.objects.first()
+        data = ""
+        # Get is_amazon_review_request_allowed via Solicitations
+        # solicitations = get_solicitation(amazonaccount)
+        # data = send_amazon_review_request(
+        #     solicitations, amazonaccount.marketplace, "204-5979728-4185964"
+        # )
+
+        # Get Messages action and opt out status for order
+        messaging = get_messaging(amazonaccount)
+        data = get_order_messaging_actions(messaging, "206-8430629-9049145")
+
+        return HttpResponse(str(data))
