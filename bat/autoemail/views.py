@@ -115,7 +115,7 @@ class EmailCampaignViewsets(
                 file_data = {
                     "name": "order_invoice_" + str(order.order_id),
                     "file_context": {
-                        "seles_channel": str(order.sales_channel),
+                        "sales_channel": str(order.sales_channel),
                         "order_id": str(order.order_id),
                         "purchase_date": str(
                             order.purchase_date.strftime("%d %B %Y")
@@ -126,6 +126,8 @@ class EmailCampaignViewsets(
                         "seller_name": campaign.get_company().name,
                         "vat_tax_included": order.amazonaccounts.marketplace.vat_tax_included,
                         "grand_total": str(grand_total),
+                        "vat_number": "SE123466770",
+                        "seller_email": str(campaign.get_company().email),
                     },
                 }
                 f = _generate_pdf_file(file_data)
@@ -155,6 +157,10 @@ class EmailCampaignViewsets(
                         "total_amount": str(25),
                         "tax": str(5),
                         "seller_name": campaign.get_company().name,
+                        "vat_tax_included": True,
+                        "grand_total": str(25),
+                        "vat_number": "SE123466770",
+                        "seller_email": "care@korms.io",
                     },
                 }
                 f = _generate_pdf_file(file_data)

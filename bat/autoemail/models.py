@@ -296,10 +296,21 @@ class EmailQueue(models.Model):
         products_title_s = ""
         for product in products:
             products_title_s += product.amazonproduct.title + ", "
+        grand_total = self.amazonorder.amount + self.amazonorder.tax
         context = {
+            "sales_channel": str(self.amazonorder.sales_channel),
             "order_id": self.amazonorder.order_id,
-            "Product_title_s": products_title_s,
-            "Seller_name": self.get_company().name,
+            "purchase_date": str(
+                self.amazonorder.purchase_date.strftime("%d %B %Y")
+            ),
+            "total_amount": str(self.amazonorder.amount),
+            "tax": str(self.amazonorder.tax),
+            "order_items": products,
+            "seller_name": self.get_company().name,
+            "vat_tax_included": self.amazonorder.amazonaccounts.marketplace.vat_tax_included,
+            "grand_total": str(grand_total),
+            "vat_number": "SE123466770",
+            "seller_email": str(self.get_company().email),
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()
