@@ -10,6 +10,8 @@ from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from rest_auth.views import LoginView as BaseLoginView
+
 from bat.company.utils import get_list_of_roles_permissions
 from bat.users import serializers
 
@@ -17,6 +19,19 @@ from bat.users.models import UserLoginActivity
 
 User = get_user_model()
 Invitation = get_invitation_model()
+
+
+class LoginView(BaseLoginView):
+    def post(self, request, *args, **kwargs):
+        self.request = request
+        self.serializer = self.get_serializer(data=self.request.data,
+                                              context={'request': request})
+        self.serializer.is_valid(raise_exception=True)
+
+        self.login()
+        self.user.first_login = False
+        self.user.save()
+        return self.get_response()
 
 
 class UserViewSet(

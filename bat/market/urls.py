@@ -9,6 +9,7 @@ from bat.market.views import (
     AmazonOrderViewsets,
     AmazonProductViewsets,
     TestAmazonClientCatalog,
+    AmazonAccountsDisconnect,
 )
 
 amazon_marketplaces_router = nested_routers.NestedSimpleRouter(
@@ -45,10 +46,15 @@ urlpatterns = [
         AmazonAccountsAuthorization.as_view(),
     ),
     path(
+        "companies/<company_pk>/amazon-marketplaces/<market_pk>/disconnect/",
+        AmazonAccountsDisconnect.as_view(),
+    ),
+    path(
         "auth-callback/amazon-marketplaces/",
         AccountsReceiveAmazonCallback.as_view(),
     ),
     path("test-amazon-client/catalog", TestAmazonClientCatalog.as_view()),
+
     path("", include(amazon_product_router.urls)),
     path("", include(amazon_order_router.urls)),
     path("", include(amazon_marketplaces_router.urls)),

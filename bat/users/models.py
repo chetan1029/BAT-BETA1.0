@@ -67,6 +67,7 @@ class User(AbstractUser):
     por_file = models.FileField(
         upload_to=por_file_name, blank=True, verbose_name=_("File")
     )
+    first_login = models.BooleanField(default=True)
     extra_data = HStoreField(null=True, blank=True)
 
     def __str__(self):

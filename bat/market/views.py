@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -200,6 +201,10 @@ class AccountsReceiveAmazonCallback(View):
                     defaults={"credentails": account_credentails},
                 )
 
+                if not amazon_accounts_is_created:
+                    new_account.is_active = True
+                    new_account.save()
+
                 # get access_token using spapi_oauth_code
                 is_successfull, data = AmazonAPI.get_oauth2_token(
                     account_credentails
@@ -267,6 +272,23 @@ class AccountsReceiveAmazonCallback(View):
             + str(company.id)
             + "/campaigns?error=status has been expired"
         )
+
+
+class AmazonAccountsDisconnect(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, company_pk=None, market_pk=None, **kwargs):
+        _member = get_member(
+            company_id=company_pk, user_id=request.user.id
+        )
+        account = get_object_or_404(AmazonAccounts, marketplace_id=market_pk,
+                                    user_id=request.user.id, company_id=company_pk, is_active=True)
+        try:
+            account.is_active = False
+            account.save()
+        except Exception:
+            return Response({"detail": _("Can't disconnect account.")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return Response({"detail": _("Account disconnected.")}, status=status.HTTP_200_OK)
 
 
 class TestAmazonClientCatalog(View):

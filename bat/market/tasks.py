@@ -55,7 +55,7 @@ def amazon_account_products_orders_sync(amazonaccount_id, last_no_of_days=1, is_
 def amazon_products_orders_sync(last_no_of_days=1):
     """fetch products data and orders data from amazon account and sync system products and orders data with that."""
     logger.info("amazon_products_sync task")
-    for account in AmazonAccounts.objects.all():
+    for account in AmazonAccounts.objects.filter(is_active=True):
         amazon_account_products_orders_sync.apply_async([account.id, last_no_of_days])
 
 
@@ -107,7 +107,7 @@ def amazon_orders_sync_account(amazonaccount_id, last_no_of_days=1):
 def amazon_orders_sync():
     """fetch orders data from amazon account and sync system orders data with that."""
     logger.info("amazon_orders_sync task")
-    for account in AmazonAccounts.objects.all():
+    for account in AmazonAccounts.objects.filter(is_active=True):
         amazon_orders_sync_account.apply_async([account.id])
 
 
@@ -115,6 +115,6 @@ def amazon_orders_sync():
 def amazon_products_sync():
     """fetch product data from amazon account and sync system products data with that."""
     logger.info("amazon_products_sync task")
-    for account in AmazonAccounts.objects.all():
+    for account in AmazonAccounts.objects.filter(is_active=True):
         amazon_account_products_orders_sync.apply_async(
             [account.id], kwargs={"is_orders_sync": False})

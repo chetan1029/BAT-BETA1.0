@@ -84,6 +84,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
+            "first_login",
             "last_login",
             "date_joined",
             "username",
@@ -96,7 +97,7 @@ class UserSerializer(serializers.ModelSerializer):
             "timezone",
             "por_file",
         )
-        read_only_fields = ("last_login", "date_joined", "username", "email")
+        read_only_fields = ("first_login", "last_login", "date_joined", "username", "email")
 
 
 class PasswordSerializer(PasswordResetSerializer):

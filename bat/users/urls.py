@@ -12,7 +12,6 @@ from rest_framework_jwt import views as jwt_views
 from rest_framework_nested.routers import DefaultRouter
 from allauth.account.views import confirm_email
 from rest_auth.views import (
-    LoginView,
     LogoutView,
     PasswordChangeView,
     PasswordResetConfirmView,
@@ -23,7 +22,7 @@ from rest_auth.registration.views import VerifyEmailView
 from rest_framework_jwt import views as jwt_views
 
 from bat.users.views import InvitationViewSet, RolesandPermissionsViewSet, UserViewSet, \
-    UserLoginActivityViewSet
+    UserLoginActivityViewSet, LoginView
 
 app_name = "users"
 

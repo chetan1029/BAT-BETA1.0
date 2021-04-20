@@ -24,7 +24,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
         company_id = self.context.get("company_id")
         user = self.context.get("user")
         accounts = AmazonAccounts.objects.filter(
-            marketplace_id=obj.id, user_id=user.id, company_id=company_id)
+            marketplace_id=obj.id, user_id=user.id, company_id=company_id, is_active=True)
         if accounts.exists():
             return constants.MARKETPLACE_STATUS_ACTIVE
         return constants.MARKETPLACE_STATUS_INACTIVE
