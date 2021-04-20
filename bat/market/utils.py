@@ -168,14 +168,14 @@ def get_amazon_report(
         ).get_report(reportId)
 
         response_2_payload = response_2.payload
+
         if response_2_payload.get("processingStatus", None) != "DONE":
-            time.sleep(10)
+            time.sleep(30)
         if response_2_payload.get("processingStatus", None) in [
             "CANCELLED",
             "FATAL",
         ]:
             return False
-        print(response_2_payload)
         iteration = iteration + 1
         if iteration > 10:
             break

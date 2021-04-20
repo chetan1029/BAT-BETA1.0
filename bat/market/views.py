@@ -358,7 +358,7 @@ class TestAmazonClientCatalog(View):
 
         report_file = open(tmp_csv_file_path, "w+")
 
-        start_time = (datetime.utcnow() - timedelta(days=60)).isoformat()
+        start_time = (datetime.utcnow() - timedelta(days=25)).isoformat()
         end_time = (datetime.utcnow()).isoformat()
 
         # get report data (report api call)
@@ -369,7 +369,7 @@ class TestAmazonClientCatalog(View):
             start_time,
             end_time,
         )
-        
+
         # read report data from files
         report_csv = open(tmp_csv_file_path, "r")
 
