@@ -53,6 +53,7 @@ from bat.market.utils import (
     get_solicitation,
     send_amazon_review_request,
     set_default_email_campaign_templates,
+    set_default_amazon_company,
 )
 from bat.subscription.utils import get_feature_by_quota_code
 
@@ -227,6 +228,9 @@ class AccountsReceiveAmazonCallback(View):
                         if amazon_accounts_is_created:
                             set_default_email_campaign_templates(
                                 company=company, marketplace=marketplace
+                            )
+                            set_default_amazon_company(
+                                company=company, amazonaccounts=new_account
                             )
                     except Exception as e:
                         return HttpResponseRedirect(
