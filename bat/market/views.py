@@ -1,5 +1,6 @@
 import base64
 import csv
+import tempfile
 import time
 from datetime import datetime, timedelta
 
@@ -11,7 +12,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets, mixins
+from rest_framework import mixins, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,10 +33,10 @@ from bat.market.constants import MARKETPLACE_CODES
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
+    AmazonCompany,
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
-    AmazonCompany,
 )
 from bat.market.orders_data_builder import AmazonOrderProcessData
 from bat.market.report_parser import (
@@ -46,6 +47,7 @@ from bat.market.tasks import amazon_account_products_orders_sync
 from bat.market.utils import (
     AmazonAPI,
     generate_uri,
+    get_amazon_report,
     get_messaging,
     get_order_messaging_actions,
     get_solicitation,
@@ -314,7 +316,7 @@ class AmazonCompanyViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    viewsets.GenericViewSet
+    viewsets.GenericViewSet,
 ):
     queryset = AmazonCompany.objects.all()
     serializer_class = serializers.AmazonCompanySerializer
@@ -326,7 +328,10 @@ class AmazonCompanyViewSet(
         company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
         _member = get_member(company_id=company_pk, user_id=request.user.id)
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(amazonaccounts__user_id=request.user.id, amazonaccounts__company_id=company_pk)
+        return queryset.filter(
+            amazonaccounts__user_id=request.user.id,
+            amazonaccounts__company_id=company_pk,
+        )
 
 
 class TestAmazonClientCatalog(View):
@@ -341,7 +346,33 @@ class TestAmazonClientCatalog(View):
         # )
 
         # Get Messages action and opt out status for order
-        messaging = get_messaging(amazonaccount)
-        data = get_order_messaging_actions(messaging, "206-8430629-9049145")
+        # messaging = get_messaging(amazonaccount)
+        # data = get_order_messaging_actions(messaging, "206-8430629-9049145")
+
+        # Temporary files
+        timestamp = datetime.timestamp(datetime.now())
+        tmp_dir = tempfile.TemporaryDirectory()
+        tmp_csv_file_path = (
+            tmp_dir.name + "/feedback_report" + str(timestamp) + ".csv"
+        )
+
+        report_file = open(tmp_csv_file_path, "w+")
+
+        start_time = (datetime.utcnow() - timedelta(days=60)).isoformat()
+        end_time = (datetime.utcnow()).isoformat()
+
+        # get report data (report api call)
+        get_amazon_report(
+            amazonaccount,
+            ReportType.GET_SELLER_FEEDBACK_DATA,
+            report_file,
+            start_time,
+            end_time,
+        )
+
+        # read report data from files
+        report_csv = open(tmp_csv_file_path, "r")
+
+        print(report_csv.read())
 
         return HttpResponse(str(data))
