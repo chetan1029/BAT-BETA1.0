@@ -7,6 +7,7 @@ from bat.market.models import (
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
+    AmazonCompany,
 )
 from bat.product.serializers import ImageSerializer
 from bat.serializersFields.serializers_fields import (
@@ -20,11 +21,11 @@ from bat.serializersFields.serializers_fields import (
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
     country = CountrySerializerField(required=False)
     status = serializers.SerializerMethodField()
-    account_id = serializers.SerializerMethodField()
+    amazoncompany_id = serializers.SerializerMethodField()
 
     class Meta:
         model = AmazonMarketplace
-        fields = ("id", "name", "country", "marketplaceId", "region", "status", "account_id")
+        fields = ("id", "name", "country", "marketplaceId", "region", "status", "amazoncompany_id")
 
     def get_status(self, obj):
         company_id = self.context.get("company_id")
@@ -39,7 +40,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
             return constants.MARKETPLACE_STATUS_ACTIVE
         return constants.MARKETPLACE_STATUS_INACTIVE
 
-    def get_account_id(self, obj):
+    def get_amazoncompany_id(self, obj):
         company_id = self.context.get("company_id")
         user = self.context.get("user")
         account = AmazonAccounts.objects.filter(
@@ -49,7 +50,9 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
             is_active=True,
         ).first()
         if account:
-            return account.id
+            amazoncompany = AmazonCompany.objects.filter(amazonaccounts_id=account.id).first()
+            if amazoncompany:
+                return amazoncompany.id
         return None
 
 
