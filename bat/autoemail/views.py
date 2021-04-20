@@ -112,7 +112,7 @@ class EmailCampaignViewsets(
             context = {
                 "order_id": order.order_id,
                 "Product_title_s": products_title_s,
-                "Seller_name": campaign.get_company().seller_name,
+                "Seller_name": campaign.get_company().store_name,
             }
 
             if campaign.include_invoice:
