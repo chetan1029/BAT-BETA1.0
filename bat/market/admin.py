@@ -3,6 +3,7 @@ from django.contrib import admin
 from bat.market.models import (
     AmazonAccountCredentails,
     AmazonAccounts,
+    AmazonCompany,
     AmazonMarketplace,
     AmazonOrder,
     AmazonOrderItem,
@@ -19,3 +20,4 @@ admin.site.register(AmazonProduct)
 admin.site.register(AmazonOrder)
 admin.site.register(AmazonOrderItem)
 admin.site.register(AmazonOrderShipping)
+admin.site.register(AmazonCompany)

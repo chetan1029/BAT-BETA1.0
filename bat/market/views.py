@@ -4,14 +4,14 @@ import time
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -35,6 +35,7 @@ from bat.market.models import (
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
+    AmazonCompany,
 )
 from bat.market.orders_data_builder import AmazonOrderProcessData
 from bat.market.report_parser import (
@@ -278,17 +279,54 @@ class AmazonAccountsDisconnect(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, company_pk=None, market_pk=None, **kwargs):
-        _member = get_member(
-            company_id=company_pk, user_id=request.user.id
+        company = get_object_or_404(Company, pk=company_pk)
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+        account = get_object_or_404(
+            AmazonAccounts,
+            marketplace_id=market_pk,
+            user_id=request.user.id,
+            company_id=company_pk,
+            is_active=True,
         )
-        account = get_object_or_404(AmazonAccounts, marketplace_id=market_pk,
-                                    user_id=request.user.id, company_id=company_pk, is_active=True)
         try:
             account.is_active = False
             account.save()
+
+            # Add the quota back for this feature
+            feature = get_feature_by_quota_code(
+                company, codename="MARKETPLACES"
+            )
+            if feature.consumption >= 0:
+                feature.consumption = feature.consumption + 1
+                feature.save()
+
         except Exception:
-            return Response({"detail": _("Can't disconnect account.")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-        return Response({"detail": _("Account disconnected.")}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": _("Can't disconnect account.")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        return Response(
+            {"detail": _("Account disconnected.")}, status=status.HTTP_200_OK
+        )
+
+
+class AmazonCompanyViewSet(
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    queryset = AmazonCompany.objects.all()
+    serializer_class = serializers.AmazonCompanySerializer
+    permission_classes = (IsAuthenticated,)
+
+    def filter_queryset(self, queryset):
+        request = self.request
+        kwargs = request.resolver_match.kwargs
+        company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(amazonaccounts__user_id=request.user.id, amazonaccounts__company_id=company_pk)
 
 
 class TestAmazonClientCatalog(View):

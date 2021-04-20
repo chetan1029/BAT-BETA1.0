@@ -11,7 +11,8 @@ from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
 from taggit.managers import TaggableManager
 
-from bat.company.models import Company
+from bat.company.models import Address, Company
+from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
 from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
 from bat.setting.models import Status
@@ -102,6 +103,54 @@ class AmazonAccounts(models.Model):
         AmazonAccountCredentails, on_delete=models.CASCADE, null=True
     )
     is_active = models.BooleanField(default=True)
+
+
+class AmazonCompany(Address):
+    """
+    Amazon Company Model.
+
+    Model to store information for companies as per marketplaces.
+    """
+
+    phone_validator = validator.phone_validator()
+    amazonaccounts = models.OneToOneField(
+        AmazonAccounts,
+        on_delete=models.CASCADE,
+        verbose_name="Select Amazon Account",
+    )
+    store_name = models.CharField(max_length=200, verbose_name=_("Store Name"))
+    name = models.CharField(max_length=200, verbose_name=_("Name"))
+    email = models.EmailField(max_length=100, verbose_name=_("Email"))
+    phone_number = models.CharField(
+        validators=[phone_validator],
+        max_length=17,
+        blank=True,
+        verbose_name=_("Phone Number"),
+    )
+    organization_number = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name=_("Organization number"),
+        help_text=_("Company register number for the marketplace company."),
+    )
+    vat_number = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name=_("VAT number"),
+        help_text=_("Company VAT number for the marketplace company."),
+    )
+    extra_data = HStoreField(null=True, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("Amazon Companies")
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.id) + " - " + self.name
 
 
 class AmazonProductManager(models.Manager):
