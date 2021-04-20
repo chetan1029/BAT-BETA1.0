@@ -113,7 +113,7 @@ class AmazonCompany(Address):
     """
 
     phone_validator = validator.phone_validator()
-    amazonaccounts = models.ForeignKey(
+    amazonaccounts = models.OneToOneField(
         AmazonAccounts,
         on_delete=models.CASCADE,
         verbose_name="Select Amazon Account",

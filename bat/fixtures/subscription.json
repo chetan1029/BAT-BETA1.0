@@ -1,0 +1,45 @@
+[
+  {
+    "model": "subscription.plan",
+    "pk": 1,
+    "fields": {
+      "name": "Free Forever",
+      "description": "",
+      "recurrence_period": 1,
+      "recurrence_unit": "6",
+      "cost_currency": "USD",
+      "cost": null,
+      "permission_list": {
+        "CompanyAdmin": [
+          "update_company_profile",
+          "view_company_type",
+          "view_staff_member"
+        ]
+      },
+      "available": true,
+      "visible": true,
+      "default": true,
+      "extra_data": "{}",
+      "meta_data": "{}",
+      "status": 4,
+      "is_active": true
+    }
+  },
+  {
+    "model": "subscription.quota",
+    "pk": 1,
+    "fields": {
+      "codename": "FREE-EMAIL",
+      "name": "Auto Emails",
+      "unit": "1000",
+      "description": "",
+      "is_boolean": false,
+      "url": ""
+    }
+  },
+  {
+    "model": "subscription.planquota",
+    "pk": 1,
+    "fields": { "plan": 1, "quota": 1, "value": 1000 }
+  }
+]

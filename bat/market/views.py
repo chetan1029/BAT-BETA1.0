@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -35,6 +35,7 @@ from bat.market.models import (
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
+    AmazonCompany,
 )
 from bat.market.orders_data_builder import AmazonOrderProcessData
 from bat.market.report_parser import (
@@ -307,6 +308,25 @@ class AmazonAccountsDisconnect(APIView):
         return Response(
             {"detail": _("Account disconnected.")}, status=status.HTTP_200_OK
         )
+
+
+class AmazonCompanyViewSet(
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    queryset = AmazonCompany.objects.all()
+    serializer_class = serializers.AmazonCompanySerializer
+    permission_classes = (IsAuthenticated,)
+
+    def filter_queryset(self, queryset):
+        request = self.request
+        kwargs = request.resolver_match.kwargs
+        company_pk = kwargs.get("company_pk", kwargs.get("pk", None))
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(amazonaccounts__user_id=request.user.id, amazonaccounts__company_id=company_pk)
 
 
 class TestAmazonClientCatalog(View):
