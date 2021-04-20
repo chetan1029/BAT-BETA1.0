@@ -148,6 +148,7 @@ class AmazonCompanySerializer(serializers.ModelSerializer):
         model = AmazonCompany
         fields = (
             "id",
+            "amazonaccounts",
             "address1",
             "address2",
             "zip",

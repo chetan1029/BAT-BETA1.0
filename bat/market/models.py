@@ -11,16 +11,11 @@ from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
 from taggit.managers import TaggableManager
 
-from bat.company.models import Company
+from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import (
-    Image,
-    IsDeletableMixin,
-    UniqueWithinCompanyMixin,
-)
+from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
 from bat.setting.models import Status
-from bat.company.models import Address
 
 User = get_user_model()
 
@@ -118,6 +113,11 @@ class AmazonCompany(Address):
     """
 
     phone_validator = validator.phone_validator()
+    amazonaccounts = models.ForeignKey(
+        AmazonAccounts,
+        on_delete=models.CASCADE,
+        verbose_name="Select Amazon Account",
+    )
     store_name = models.CharField(max_length=200, verbose_name=_("Store Name"))
     name = models.CharField(max_length=200, verbose_name=_("Name"))
     email = models.EmailField(max_length=100, verbose_name=_("Email"))
