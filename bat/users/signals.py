@@ -67,7 +67,7 @@ def process_invitations(sender, instance, **kwargs):
                     for perm in role_obj.permission_names_list():
                         if perm not in perms:
                             revoke_permission(member, perm)
-                
+
                 companytype, _cc = CompanyType.objects.get_or_create(
                     partner=vendor,
                     company_id=company_id,
@@ -111,7 +111,7 @@ def process_invitations(sender, instance, **kwargs):
 
 
 @receiver(user_logged_in)
-def user_logged_in_callback(sender, request, user, **kwargs):  
+def user_logged_in_callback(sender, request, user, **kwargs):
     from bat.users.models import UserLoginActivity
 
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -119,8 +119,7 @@ def user_logged_in_callback(sender, request, user, **kwargs):
         ip = x_forwarded_for.split(',')[0]
     else:
         ip = request.META.get('REMOTE_ADDR')
-    
+
     user_agent_info = request.META.get('HTTP_USER_AGENT', '<unknown>')[:255],
 
     UserLoginActivity.objects.create(user=user, ip=ip, agent_info=user_agent_info)
-

@@ -101,6 +101,7 @@ class AmazonAccounts(models.Model):
     credentails = models.ForeignKey(
         AmazonAccountCredentails, on_delete=models.CASCADE, null=True
     )
+    is_active = models.BooleanField(default=True)
 
 
 class AmazonProductManager(models.Manager):
