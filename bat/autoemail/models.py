@@ -23,7 +23,7 @@ from bat.autoemail.constants import (
 from bat.autoemail.utils import send_email
 from bat.company.models import Company
 from bat.globalutils.utils import pdf_file_from_html
-from bat.market.models import AmazonMarketplace, AmazonOrder
+from bat.market.models import AmazonCompany, AmazonMarketplace, AmazonOrder
 from bat.setting.models import Status
 
 try:
@@ -250,7 +250,13 @@ class EmailCampaign(models.Model):
         return self.name
 
     def get_company(self):
-        return self.emailtemplate.company
+        company = self.emailtemplate.company
+        marketplace = self.amazonmarketplace
+        amazoncompany = AmazonCompany.objects.filter(
+            amazonaccounts__company=company,
+            amazonaccounts__marketplace=marketplace,
+        ).first()
+        return amazoncompany
 
     def get_charged_points(self):
 
