@@ -362,14 +362,14 @@ class TestAmazonClientCatalog(View):
         end_time = (datetime.utcnow()).isoformat()
 
         # get report data (report api call)
-        get_amazon_report(
+        is_done = get_amazon_report(
             amazonaccount,
             ReportType.GET_SELLER_FEEDBACK_DATA,
             report_file,
             start_time,
             end_time,
         )
-
+        
         # read report data from files
         report_csv = open(tmp_csv_file_path, "r")
 
