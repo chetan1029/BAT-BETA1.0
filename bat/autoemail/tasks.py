@@ -17,6 +17,12 @@ from bat.autoemail.constants import (
 )
 from bat.autoemail.models import EmailCampaign, EmailQueue
 from bat.market.models import AmazonAccounts, AmazonOrder
+from bat.market.utils import (
+    get_messaging,
+    get_order_messaging_actions,
+    get_solicitation,
+    send_amazon_review_request,
+)
 from bat.setting.utils import get_status
 from bat.subscription.utils import get_feature_by_quota_code
 from config.celery import app
@@ -99,17 +105,28 @@ def send_email(email_queue_id):
         email_queue.get_company(), codename="FREE-EMAIL"
     )
 
-    if feature.consumption > 0:
-        email_queue.send_mail()
-        email_queue.status = get_status(
-            ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SEND
-        )
-        email_queue.save()
-        feature.consumption = (
-            feature.consumption
-            - email_queue.emailcampaign.get_charged_points()
-        )
-        feature.save()
+    # check for opt out order
+    amazonaccount = email_queue.amazonorder.amazonaccounts
+
+    messaging = get_messaging(amazonaccount)
+    message_action = get_order_messaging_actions(
+        messaging, email_queue.amazonorder.order_id
+    )
+    if message_action.is_optout:
+        email_queue.amazonorder.opt_out = True
+        email_queue.amazonorder.save()
+    else:
+        if feature.consumption > 0:
+            email_queue.send_mail()
+            email_queue.status = get_status(
+                ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SEND
+            )
+            email_queue.save()
+            feature.consumption = (
+                feature.consumption
+                - email_queue.emailcampaign.get_charged_points()
+            )
+            feature.save()
 
 
 @app.task
@@ -119,6 +136,7 @@ def send_email_from_queue():
         status__name=ORDER_EMAIL_STATUS_QUEUED,
         schedule_date__lte=current_time,
         emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
+        amazonorder__opt_out=False,
     )
 
     for email in queued_emails:
