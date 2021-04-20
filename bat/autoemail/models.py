@@ -295,28 +295,17 @@ class EmailQueue(models.Model):
         return self.subject + " - " + self.sent_to
 
     def get_company(self):
-        return self.template.company
+        return self.emailcampaign.company
 
     def send_mail(self):
         products = self.amazonorder.orderitem_order.all()
         products_title_s = ""
         for product in products:
             products_title_s += product.amazonproduct.title + ", "
-        grand_total = self.amazonorder.amount + self.amazonorder.tax
         context = {
-            "sales_channel": str(self.amazonorder.sales_channel),
             "order_id": self.amazonorder.order_id,
-            "purchase_date": str(
-                self.amazonorder.purchase_date.strftime("%d %B %Y")
-            ),
-            "total_amount": str(self.amazonorder.amount),
-            "tax": str(self.amazonorder.tax),
-            "order_items": products,
-            "seller_name": self.get_company().name,
-            "vat_tax_included": self.amazonorder.amazonaccounts.marketplace.vat_tax_included,
-            "grand_total": str(grand_total),
-            "vat_number": "SE123466770",
-            "seller_email": str(self.get_company().email),
+            "Product_title_s": products_title_s,
+            "Seller_name": self.get_company().store_name,
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()
@@ -333,16 +322,23 @@ class EmailQueue(models.Model):
         """
         generate pdf file
         """
+        products = self.amazonorder.orderitem_order.all()
+        products_title_s = ""
+        for product in products:
+            products_title_s += product.amazonproduct.title + ", "
+        grand_total = self.amazonorder.amount + self.amazonorder.tax
         data = {
-            "data": "I am order",
-            "order_id": str(self.amazonorder.order_id),
+            "sales_channel": str(self.amazonorder.sales_channel),
+            "order_id": self.amazonorder.order_id,
             "purchase_date": str(
                 self.amazonorder.purchase_date.strftime("%d %B %Y")
             ),
             "total_amount": str(self.amazonorder.amount),
             "tax": str(self.amazonorder.tax),
-            "order_items": self.amazonorder.orderitem_order.all(),
-            "seller_name": self.get_company().name,
+            "order_items": products,
+            "company": self.get_company(),
+            "vat_tax_included": self.amazonorder.amazonaccounts.marketplace.vat_tax_included,
+            "grand_total": str(grand_total),
         }
         name = "order_invoice_" + str(self.amazonorder.order_id)
         f = pdf_file_from_html(
