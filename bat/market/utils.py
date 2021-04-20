@@ -147,8 +147,6 @@ def get_amazon_report(
         },
     ).create_report(**kw_args)
 
-    print(response_1)
-
     reportId = int(response_1.payload["reportId"])
 
     iteration = 1
@@ -169,12 +167,9 @@ def get_amazon_report(
             },
         ).get_report(reportId)
 
-        print(response_2)
-
         response_2_payload = response_2.payload
         if response_2_payload.get("processingStatus", None) != "DONE":
             time.sleep(10)
-        print(response_2_payload)
         iteration = iteration + 1
         if iteration > 10:
             break
