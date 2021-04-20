@@ -480,6 +480,8 @@ class AmazonOrder(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Select Amazon Account",
     )
+    opt_out = models.BooleanField(default=False)
+    amazon_review = models.BooleanField(default=False)
     extra_data = HStoreField(null=True, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
     update_date = models.DateTimeField(default=timezone.now)

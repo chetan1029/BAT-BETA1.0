@@ -52,8 +52,8 @@ from bat.market.utils import (
     get_order_messaging_actions,
     get_solicitation,
     send_amazon_review_request,
-    set_default_email_campaign_templates,
     set_default_amazon_company,
+    set_default_email_campaign_templates,
 )
 from bat.subscription.utils import get_feature_by_quota_code
 
@@ -255,7 +255,7 @@ class AccountsReceiveAmazonCallback(View):
                         + str(company.id)
                         + "/campaigns?success=Your "
                         + marketplace.name
-                        + " marketplace account successfully linked."
+                        + " marketplace account successfully linked. Give us 10-15 mins to sync your orders and queue the emails."
                     )
             else:
                 return HttpResponseRedirect(
