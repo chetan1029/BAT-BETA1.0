@@ -170,6 +170,12 @@ def get_amazon_report(
         response_2_payload = response_2.payload
         if response_2_payload.get("processingStatus", None) != "DONE":
             time.sleep(10)
+        if response_2_payload.get("processingStatus", None) in [
+            "CANCELLED",
+            "FATAL",
+        ]:
+            return False
+        print(response_2_payload)
         iteration = iteration + 1
         if iteration > 10:
             break
@@ -190,6 +196,8 @@ def get_amazon_report(
     ).get_report_document(
         response_2_payload["reportDocumentId"], decrypt=True, file=report_file
     )
+
+    return True
 
 
 def get_messaging(amazonaccount):

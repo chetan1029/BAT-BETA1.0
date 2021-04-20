@@ -36,19 +36,23 @@ def amazon_account_products_orders_sync(amazonaccount_id, last_no_of_days=1, is_
     end_time = (datetime.utcnow()).isoformat()
 
     # get report data (report api call)
-    get_amazon_report(amazonaccount, ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
-                      report_file, start_time, end_time)
+    is_report_done = get_amazon_report(amazonaccount, ReportType.GET_MERCHANT_LISTINGS_ALL_DATA,
+                                       report_file, start_time, end_time)
+    if is_report_done:
+        # read report data from files
+        report_csv = open(tmp_csv_file_path, "r")
 
-    # read report data from files
-    report_csv = open(tmp_csv_file_path, "r")
+        # process data for import
+        data, columns = ReportAmazonProductCSVParser.parse(report_csv)
+        # import formated data
+        AmazonProduct.objects.import_bulk(data, amazonaccount, columns)
 
-    # process data for import
-    data, columns = ReportAmazonProductCSVParser.parse(report_csv)
-    # import formated data
-    AmazonProduct.objects.import_bulk(data, amazonaccount, columns)
-
-    if is_orders_sync:
-        amazon_orders_sync_account.apply_async([amazonaccount.id, last_no_of_days])
+        if is_orders_sync:
+            amazon_orders_sync_account.apply_async([amazonaccount.id, last_no_of_days])
+    else:
+        send_date = datetime.utcnow() + timedelta(hours=1)
+        amazon_account_products_orders_sync.apply_async(
+            [amazonaccount_id, last_no_of_days, is_orders_sync], eta=send_date)
 
 
 @app.task
@@ -77,30 +81,36 @@ def amazon_orders_sync_account(amazonaccount_id, last_no_of_days=1):
     end_time = (datetime.utcnow()).isoformat()
 
     # get report data (report api call)
-    get_amazon_report(amazonaccount, ReportType.GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL,
-                      orders_report_file, start_time, end_time)
-    get_amazon_report(amazonaccount, ReportType.GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL,
-                      orders_items_report_file, start_time, end_time)
+    is_orders_report_done = get_amazon_report(amazonaccount, ReportType.GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL,
+                                              orders_report_file, start_time, end_time)
+    is_orders_items_report_done = get_amazon_report(amazonaccount, ReportType.GET_AMAZON_FULFILLED_SHIPMENTS_DATA_GENERAL,
+                                                    orders_items_report_file, start_time, end_time)
 
-    # read report data from files
-    orders_report_csv = open(tmp_orders_csv_file_path, "r")
-    orders_items_report_csv = open(tmp_items_csv_file_path, "r")
+    if is_orders_items_report_done and is_orders_report_done:
 
-    # process data for import
-    data, order_columns, item_columns = ReportAmazonOrdersCSVParser.parse(
-        orders_report_csv, orders_items_report_csv, amazonaccount)
+        # read report data from files
+        orders_report_csv = open(tmp_orders_csv_file_path, "r")
+        orders_items_report_csv = open(tmp_items_csv_file_path, "r")
 
-    # import formated data
-    amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map = AmazonOrder.objects.import_bulk(
-        data, amazonaccount, order_columns, item_columns)
+        # process data for import
+        data, order_columns, item_columns = ReportAmazonOrdersCSVParser.parse(
+            orders_report_csv, orders_items_report_csv, amazonaccount)
 
-    # auto campaign
-    if last_no_of_days == 1:
-        email_queue_create_for_orders.delay(
-            amazonaccount_id, amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map)
+        # import formated data
+        amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map = AmazonOrder.objects.import_bulk(
+            data, amazonaccount, order_columns, item_columns)
+
+        # auto campaign
+        if last_no_of_days == 1:
+            email_queue_create_for_orders.delay(
+                amazonaccount_id, amazon_created_orders_pk, amazon_updated_orders_pk, amazon_orders_old_status_map)
+        else:
+            email_queue_create_for_initial_orders.delay(
+                amazonaccount_id, amazon_created_orders_pk)
     else:
-        email_queue_create_for_initial_orders.delay(
-            amazonaccount_id, amazon_created_orders_pk)
+        send_date = datetime.utcnow() + timedelta(hours=1)
+        amazon_orders_sync_account.apply_async(
+            [amazonaccount_id, last_no_of_days], eta=send_date)
 
 
 @app.task
