@@ -58,7 +58,10 @@ class EmailCampaignViewsets(
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
+        marketplace = self.request.GET.get("marketplace", None)
         queryset = super().filter_queryset(queryset)
+        if marketplace:
+            queryset = queryset.filter(amazonmarketplace_id=marketplace)
         return queryset.filter(company__id=company_id).order_by("id")
 
     @action(detail=True, methods=["post"])

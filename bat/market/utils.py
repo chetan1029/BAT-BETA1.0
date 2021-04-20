@@ -12,8 +12,13 @@ from bat.autoemail.models import (
     GlobalEmailTemplate,
 )
 from bat.company.models import Company
-from bat.market.amazon_sp_api.amazon_sp_api import Messaging, Reports, Solicitations
+from bat.market.amazon_sp_api.amazon_sp_api import (
+    Messaging,
+    Reports,
+    Solicitations,
+)
 from bat.market.constants import MARKETPLACE_CODES
+from bat.market.models import AmazonCompany
 
 
 def generate_uri(url, query_parameters):
@@ -110,6 +115,28 @@ def set_default_email_campaign_templates(company, marketplace):
                 email_campaign_objects.append(EmailCampaign(**data))
 
             EmailCampaign.objects.bulk_create(email_campaign_objects)
+
+
+def set_default_amazon_company(company, amazonaccounts):
+    """
+    copy Company detail to Amazon Company detail.
+    """
+    if isinstance(company, Company):
+        template_data = {}
+        template_data["store_name"] = company.name
+        template_data["name"] = company.name
+        template_data["email"] = company.email
+        template_data["phone_number"] = company.phone_number
+        template_data["organization_number"] = company.organization_number
+        template_data["address1"] = company.address1
+        template_data["address2"] = company.address2
+        template_data["zip"] = company.zip
+        template_data["city"] = company.city
+        template_data["region"] = company.region
+        template_data["country"] = company.country
+        template_data["amazonaccounts"] = amazonaccounts
+
+        AmazonCompany.objects.update_or_create(**template_data)
 
 
 def get_amazon_report(
