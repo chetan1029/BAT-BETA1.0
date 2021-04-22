@@ -19,6 +19,7 @@ from rest_framework.views import APIView
 from sp_api.base import Marketplaces
 from sp_api.base.reportTypes import ReportType
 
+from bat.autoemail.models import EmailCampaign, EmailTemplate
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
@@ -294,7 +295,17 @@ class AmazonAccountsDisconnect(APIView):
             company_id=company_pk,
             is_active=True,
         )
+
         try:
+
+            amazonorder = AmazonOrder.objects.filter(amazonaccounts=account)
+            amazonorder.delete()
+
+            emailcampaign = EmailCampaign.objects.filter(
+                amazonmarketplace=account.marketplace, company=account.company
+            )
+            emailcampaign.delete()
+
             account.is_active = False
             account.save()
 
