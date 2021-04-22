@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 
 from bat.autoemail import serializers
 from bat.autoemail.constants import (
+    ORDER_EMAIL_STATUS_OPTOUT,
     ORDER_EMAIL_STATUS_QUEUED,
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
@@ -267,6 +268,14 @@ class DashboardAPIView(APIView):
             status__name=ORDER_EMAIL_STATUS_SEND
         ).count()
 
+        total_opt_out_email = all_email_queue.filter(
+            status__name=ORDER_EMAIL_STATUS_OPTOUT
+        ).count()
+
+        opt_out_rate = 0
+        if total_opt_out_email:
+            opt_out_rate = round((total_email_sent / total_opt_out_email), 2)
+
         total_email_in_queue = all_email_queue.filter(
             status__name__in=[
                 ORDER_EMAIL_STATUS_SCHEDULED,
@@ -290,6 +299,8 @@ class DashboardAPIView(APIView):
             "total_orders": total_orders,
             "total_email_sent": total_email_sent,
             "total_email_in_queue": total_email_in_queue,
+            "total_opt_out_email": total_opt_out_email,
+            "opt_out_rate": opt_out_rate,
         }
 
         return Response(stats, status=status.HTTP_200_OK)
