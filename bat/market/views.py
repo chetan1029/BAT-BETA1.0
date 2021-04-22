@@ -58,6 +58,7 @@ from bat.market.utils import (
 )
 from bat.subscription.utils import get_feature_by_quota_code
 
+from bat.subscription.constants import (QUOTA_CODE_MARKETPLACES)
 # from sp_api.api.reports.reports import Reports
 
 User = get_user_model()
@@ -183,7 +184,7 @@ class AccountsReceiveAmazonCallback(View):
 
             # Change quota for user account for Marketplace according to his subsbribed plan.
             feature = get_feature_by_quota_code(
-                company, codename="MARKETPLACES"
+                company, codename=QUOTA_CODE_MARKETPLACES
             )
 
             if feature.consumption > 0:
@@ -286,7 +287,7 @@ class AmazonAccountsDisconnect(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, company_pk=None, market_pk=None, **kwargs):
-        company = get_object_or_404(Company, pk=company_pk)
+        company = get_object_or_404(Company, id=company_pk)
         _member = get_member(company_id=company_pk, user_id=request.user.id)
         account = get_object_or_404(
             AmazonAccounts,
@@ -298,11 +299,11 @@ class AmazonAccountsDisconnect(APIView):
 
         try:
 
-            amazonorder = AmazonOrder.objects.filter(amazonaccounts=account)
+            amazonorder = AmazonOrder.objects.filter(amazonaccounts_id=account.id)
             amazonorder.delete()
 
             emailcampaign = EmailCampaign.objects.filter(
-                amazonmarketplace=account.marketplace, company=account.company
+                amazonmarketplace_id=account.marketplace.id, company_id=company_pk
             )
             emailcampaign.delete()
 
@@ -311,7 +312,7 @@ class AmazonAccountsDisconnect(APIView):
 
             # Add the quota back for this feature
             feature = get_feature_by_quota_code(
-                company, codename="MARKETPLACES"
+                company, codename=QUOTA_CODE_MARKETPLACES
             )
             if feature.consumption >= 0:
                 feature.consumption = feature.consumption + 1
