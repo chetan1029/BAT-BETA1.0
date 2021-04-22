@@ -56,6 +56,7 @@ from bat.market.utils import (
     set_default_amazon_company,
     set_default_email_campaign_templates,
 )
+from bat.subscription.constants import QUOTA_CODE_MARKETPLACES
 from bat.subscription.utils import get_feature_by_quota_code
 
 # from sp_api.api.reports.reports import Reports
@@ -183,7 +184,7 @@ class AccountsReceiveAmazonCallback(View):
 
             # Change quota for user account for Marketplace according to his subsbribed plan.
             feature = get_feature_by_quota_code(
-                company, codename="MARKETPLACES"
+                company, codename=QUOTA_CODE_MARKETPLACES
             )
 
             if feature.consumption > 0:
@@ -311,7 +312,7 @@ class AmazonAccountsDisconnect(APIView):
 
             # Add the quota back for this feature
             feature = get_feature_by_quota_code(
-                company, codename="MARKETPLACES"
+                company, codename=QUOTA_CODE_MARKETPLACES
             )
             if feature.consumption >= 0:
                 feature.consumption = feature.consumption + 1
