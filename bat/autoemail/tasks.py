@@ -24,12 +24,11 @@ from bat.market.utils import (
     send_amazon_review_request,
 )
 from bat.setting.utils import get_status
+from bat.subscription.constants import QUOTA_CODE_MARKETPLACES_FREE_EMAIL
 from bat.subscription.utils import get_feature_by_quota_code
 from config.celery import app
 
 logger = get_task_logger(__name__)
-
-EMAIL_CAMPAIGN_STATUS_ACTIVE = "Active"
 
 
 @app.task
@@ -102,7 +101,7 @@ def send_email(email_queue_id):
 
     email_queue = EmailQueue.objects.get(pk=email_queue_id)
     feature = get_feature_by_quota_code(
-        email_queue.get_company(), codename="FREE-EMAIL"
+        email_queue.get_company(), codename=QUOTA_CODE_MARKETPLACES_FREE_EMAIL
     )
 
     # check for opt out order

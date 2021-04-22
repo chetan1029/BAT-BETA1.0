@@ -19,6 +19,7 @@ from rest_framework.views import APIView
 from sp_api.base import Marketplaces
 from sp_api.base.reportTypes import ReportType
 
+from bat.autoemail.models import EmailCampaign, EmailTemplate
 from bat.company.models import Company
 from bat.company.utils import get_member
 from bat.market import serializers
@@ -55,8 +56,10 @@ from bat.market.utils import (
     set_default_amazon_company,
     set_default_email_campaign_templates,
 )
+from bat.subscription.constants import QUOTA_CODE_MARKETPLACES
 from bat.subscription.utils import get_feature_by_quota_code
 
+from bat.subscription.constants import (QUOTA_CODE_MARKETPLACES)
 # from sp_api.api.reports.reports import Reports
 
 User = get_user_model()
@@ -182,7 +185,7 @@ class AccountsReceiveAmazonCallback(View):
 
             # Change quota for user account for Marketplace according to his subsbribed plan.
             feature = get_feature_by_quota_code(
-                company, codename="MARKETPLACES"
+                company, codename=QUOTA_CODE_MARKETPLACES
             )
 
             if feature.consumption > 0:
@@ -285,7 +288,7 @@ class AmazonAccountsDisconnect(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, company_pk=None, market_pk=None, **kwargs):
-        company = get_object_or_404(Company, pk=company_pk)
+        company = get_object_or_404(Company, id=company_pk)
         _member = get_member(company_id=company_pk, user_id=request.user.id)
         account = get_object_or_404(
             AmazonAccounts,
@@ -294,13 +297,23 @@ class AmazonAccountsDisconnect(APIView):
             company_id=company_pk,
             is_active=True,
         )
+
         try:
+
+            amazonorder = AmazonOrder.objects.filter(amazonaccounts_id=account.id)
+            amazonorder.delete()
+
+            emailcampaign = EmailCampaign.objects.filter(
+                amazonmarketplace_id=account.marketplace.id, company_id=company_pk
+            )
+            emailcampaign.delete()
+
             account.is_active = False
             account.save()
 
             # Add the quota back for this feature
             feature = get_feature_by_quota_code(
-                company, codename="MARKETPLACES"
+                company, codename=QUOTA_CODE_MARKETPLACES
             )
             if feature.consumption >= 0:
                 feature.consumption = feature.consumption + 1
