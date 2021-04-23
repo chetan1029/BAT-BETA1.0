@@ -11,6 +11,7 @@ from bat.autoemail.constants import (
     EMAIL_CAMPAIGN_PARENT_STATUS,
     EMAIL_CAMPAIGN_STATUS_ACTIVE,
     ORDER_EMAIL_PARENT_STATUS,
+    ORDER_EMAIL_STATUS_OPTOUT,
     ORDER_EMAIL_STATUS_QUEUED,
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
@@ -113,6 +114,9 @@ def send_email(email_queue_id):
     )
     if message_action["is_optout"]:
         email_queue.amazonorder.opt_out = True
+        email_queue.status = get_status(
+            ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_OPTOUT
+        )
         email_queue.amazonorder.save()
     else:
         if feature.consumption > 0:
