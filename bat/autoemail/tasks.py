@@ -151,6 +151,7 @@ def send_email_from_queue():
         status__name=ORDER_EMAIL_STATUS_QUEUED,
         schedule_date__lte=current_time,
         emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
+        amazonorder__opt_out=False,
     ).update(
         status=get_status(
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SCHEDULED
