@@ -295,7 +295,7 @@ class EmailQueue(models.Model):
         return self.subject + " - " + self.sent_to
 
     def get_company(self):
-        return self.emailcampaign.company
+        return self.emailcampaign.get_company()
 
     def send_mail(self):
         products = self.amazonorder.orderitem_order.all()
