@@ -336,7 +336,7 @@ class EmailQueue(models.Model):
             "total_amount": str(self.amazonorder.amount),
             "tax": str(self.amazonorder.tax),
             "order_items": products,
-            "company": self.get_company(),
+            "company": self.emailcampaign.get_company(),
             "vat_tax_included": self.amazonorder.amazonaccounts.marketplace.vat_tax_included,
             "grand_total": str(grand_total),
         }
