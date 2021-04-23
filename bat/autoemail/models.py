@@ -295,7 +295,7 @@ class EmailQueue(models.Model):
         return self.subject + " - " + self.sent_to
 
     def get_company(self):
-        return self.emailcampaign.get_company()
+        return self.emailcampaign.company
 
     def send_mail(self):
         products = self.amazonorder.orderitem_order.all()
@@ -305,7 +305,7 @@ class EmailQueue(models.Model):
         context = {
             "order_id": self.amazonorder.order_id,
             "Product_title_s": products_title_s,
-            "Seller_name": self.get_company().store_name,
+            "Seller_name": self.emailcampaign.get_company().store_name,
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()
