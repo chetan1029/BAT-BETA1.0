@@ -114,10 +114,12 @@ def send_email(email_queue_id):
     )
     if message_action["is_optout"]:
         email_queue.amazonorder.opt_out = True
+        email_queue.amazonorder.save()
         email_queue.status = get_status(
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_OPTOUT
         )
-        email_queue.amazonorder.save()
+        email_queue.save()
+
     else:
         if feature.consumption > 0:
             email_queue.send_mail()
