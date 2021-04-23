@@ -53,7 +53,11 @@ from bat.company.utils import (
     get_member,
 )
 from bat.globalutils.utils import get_cbm, get_status_object, set_field_errors
-from bat.product.constants import PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT, PRODUCT_STATUS_DISCONTINUED
+from bat.product.constants import (
+    PRODUCT_PARENT_STATUS,
+    PRODUCT_STATUS_DRAFT,
+    PRODUCT_STATUS_DISCONTINUED,
+)
 from bat.serializersFields.serializers_fields import (
     CountrySerializerField,
     MoneySerializerField,
@@ -113,20 +117,14 @@ class CompanySerializer(serializers.ModelSerializer):
             "region",
             "country",
             "name",
-            "abbreviation",
             "email",
             "logo",
             "phone_number",
             "organization_number",
-            "currency",
-            "unit_system",
-            "weight_unit",
-            "language",
             "time_zone",
             "is_active",
             "extra_data",
             "roles",
-            "license_file",
         )
         read_only_fields = ("id", "is_active", "extra_data", "roles")
 
@@ -1371,7 +1369,9 @@ class CompanyOrderCaseSerializers(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         if not attrs.get("status", None):
-            attrs["status"] = get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT)
+            attrs["status"] = get_status(
+                PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT
+            )
         return super().validate(attrs)
 
     def create(self, validated_data):

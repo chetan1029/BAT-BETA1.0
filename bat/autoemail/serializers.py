@@ -7,6 +7,7 @@ from bat.autoemail.constants import (
     CHANNEL_CHOICES,
     EMAIL_CAMPAIGN_STATUS_CHOICE,
     EXCLUDE_ORDERS_CHOICES,
+    ORDER_EMAIL_STATUS_OPTOUT,
     ORDER_EMAIL_STATUS_QUEUED,
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
@@ -54,10 +55,13 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
     )
 
     email_sent = serializers.SerializerMethodField()
+    email_opt_out = serializers.SerializerMethodField()
     email_in_queue = serializers.SerializerMethodField()
     last_email_send_in_queue = serializers.SerializerMethodField()
     email_sent_today = serializers.SerializerMethodField()
     email_queue_today = serializers.SerializerMethodField()
+    email_opt_out_today = serializers.SerializerMethodField()
+    opt_out_rate = serializers.SerializerMethodField()
 
     class Meta:
         model = EmailCampaign
@@ -77,11 +81,14 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             "company",
             "extra_data",
             "email_sent",
+            "email_opt_out",
             "last_email_send_in_queue",
             "include_invoice",
             "email_in_queue",
             "email_sent_today",
             "email_queue_today",
+            "email_opt_out_today",
+            "opt_out_rate",
             "activation_date",
         )
         read_only_fields = ("id", "amazonmarketplace", "company")
@@ -90,6 +97,19 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
         return EmailQueue.objects.filter(
             emailcampaign_id=obj.id, status__name=ORDER_EMAIL_STATUS_SEND
         ).count()
+
+    def get_email_opt_out(self, obj):
+        return EmailQueue.objects.filter(
+            emailcampaign_id=obj.id, status__name=ORDER_EMAIL_STATUS_OPTOUT
+        ).count()
+
+    def get_opt_out_rate(self, obj):
+        opt_out_rate = 0
+        email_opt_out = self.get_email_opt_out(obj)
+        if email_opt_out:
+            email_sent = self.get_email_sent(obj)
+            opt_out_rate = round((email_sent / email_opt_out), 2)
+        return opt_out_rate
 
     def get_email_in_queue(self, obj):
         return EmailQueue.objects.filter(
@@ -127,6 +147,16 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
         return EmailQueue.objects.filter(
             emailcampaign_id=obj.id,
             status__name=ORDER_EMAIL_STATUS_SEND,
+            send_date__year=today.year,
+            send_date__month=today.month,
+            send_date__day=today.day,
+        ).count()
+
+    def get_email_opt_out_today(self, obj):
+        today = datetime.date.today()
+        return EmailQueue.objects.filter(
+            emailcampaign_id=obj.id,
+            status__name=ORDER_EMAIL_STATUS_OPTOUT,
             send_date__year=today.year,
             send_date__month=today.month,
             send_date__day=today.day,

@@ -93,11 +93,14 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "profile_picture",
             "phone_number",
-            "language",
-            "timezone",
-            "por_file",
         )
-        read_only_fields = ("first_login", "last_login", "date_joined", "username", "email")
+        read_only_fields = (
+            "first_login",
+            "last_login",
+            "date_joined",
+            "username",
+            "email",
+        )
 
 
 class PasswordSerializer(PasswordResetSerializer):

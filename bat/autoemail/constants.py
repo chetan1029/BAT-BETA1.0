@@ -15,8 +15,11 @@ CHANNEL_CHOICES = ((FBA, "FBA"), (FBM, "FBM"))
 DAILY = "Daily"
 AS_SOON_AS = "As soon as possible"
 AS_SOON_SHIPPED = "As soon as order shipped"
-SCHEDULE_CHOICES = ((DAILY, "Daily"), (AS_SOON_AS, "As soon as possible"),
-                    (AS_SOON_SHIPPED, "As soon as order shipped"),)
+SCHEDULE_CHOICES = (
+    (DAILY, "Daily"),
+    (AS_SOON_AS, "As soon as possible"),
+    (AS_SOON_SHIPPED, "As soon as order shipped"),
+)
 
 PURCHASE_1ST = "1st Purchase"
 PURCHASE_2ND = "1nd Purchase"
@@ -50,11 +53,13 @@ ORDER_EMAIL_PARENT_STATUS = "order_email_status"
 ORDER_EMAIL_STATUS_QUEUED = "queued"
 ORDER_EMAIL_STATUS_SCHEDULED = "scheduled"
 ORDER_EMAIL_STATUS_SEND = "send"
+ORDER_EMAIL_STATUS_OPTOUT = "opt-out"
 
 ORDER_EMAIL_STATUS_CHOICES = (
     (ORDER_EMAIL_STATUS_QUEUED, "Queued"),
     (ORDER_EMAIL_STATUS_SCHEDULED, "Scheduled"),
     (ORDER_EMAIL_STATUS_SEND, "Send"),
+    (ORDER_EMAIL_STATUS_OPTOUT, "Opt-out"),
 )
 
 
@@ -69,8 +74,9 @@ EMAIL_CAMPAIGN_STATUS_DRAFT = "Draft"
 EMAIL_CAMPAIGN_STATUS_INACTIVE = "Inactive"
 
 
-EMAIL_CAMPAIGN_STATUS_CHOICE = [EMAIL_CAMPAIGN_STATUS_ACTIVE,
-                                EMAIL_CAMPAIGN_STATUS_ARCHIVE,
-                                EMAIL_CAMPAIGN_STATUS_DRAFT,
-                                EMAIL_CAMPAIGN_STATUS_INACTIVE,
-                                ]
+EMAIL_CAMPAIGN_STATUS_CHOICE = [
+    EMAIL_CAMPAIGN_STATUS_ACTIVE,
+    EMAIL_CAMPAIGN_STATUS_ARCHIVE,
+    EMAIL_CAMPAIGN_STATUS_DRAFT,
+    EMAIL_CAMPAIGN_STATUS_INACTIVE,
+]
