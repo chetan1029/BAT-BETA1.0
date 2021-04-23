@@ -105,13 +105,9 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
 
     def get_opt_out_rate(self, obj):
         opt_out_rate = 0
-        email_opt_out = EmailQueue.objects.filter(
-            emailcampaign_id=obj.id, status__name=ORDER_EMAIL_STATUS_OPTOUT
-        ).count()
+        email_opt_out = self.get_email_opt_out(obj)
         if email_opt_out:
-            email_sent = EmailQueue.objects.filter(
-                emailcampaign_id=obj.id, status__name=ORDER_EMAIL_STATUS_SEND
-            ).count()
+            email_sent = self.get_email_sent(obj)
             opt_out_rate = round((email_sent / email_opt_out), 2)
         return opt_out_rate
 
