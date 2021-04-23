@@ -73,5 +73,3 @@ def set_default_company_payment_terms(company):
                 data["is_active"] = global_payment_term.is_active
                 data["extra_data"] = global_payment_term.extra_data
                 CompanyPaymentTerms.objects.create(**data)
-
-
