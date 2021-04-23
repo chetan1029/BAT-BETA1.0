@@ -300,7 +300,7 @@ class DashboardAPIView(APIView):
             "total_email_sent": total_email_sent,
             "total_email_in_queue": total_email_in_queue,
             "total_opt_out_email": total_opt_out_email,
-            "opt_out_rate": str(opt_out_rate) + "%",
+            "opt_out_rate": opt_out_rate,
         }
 
         return Response(stats, status=status.HTTP_200_OK)
