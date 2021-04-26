@@ -86,6 +86,16 @@ class AmazonAccountCredentails(models.Model):
         default=EUROPE,
     )
 
+    def __str__(self):
+        """Return Value."""
+        return (
+            self.selling_partner_id
+            + " - "
+            + self.user.username
+            + " - "
+            + self.region
+        )
+
 
 class AmazonAccounts(models.Model):
     """

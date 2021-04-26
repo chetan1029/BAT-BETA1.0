@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from djmoney.models.fields import MoneyField
 
-from bat.company.models import Member, Company
+from bat.company.models import Company, Member
 from bat.setting.models import Status
 from bat.subscription import constants
 
@@ -144,7 +144,7 @@ class Subscription(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return str(self.id)
+        return str(self.plan.name) + " - " + str(self.company.name)
 
 
 class SubscriptionTransaction(models.Model):
@@ -187,30 +187,43 @@ class Quota(models.Model):
     """
     Single countable or boolean property of system (limitation).
     """
+
     codename = models.CharField(
-        _('codename'), max_length=50, unique=True, db_index=True)
-    name = models.CharField(_('name'), max_length=100)
-    unit = models.CharField(_('unit'), max_length=100, blank=True)
-    description = models.TextField(_('description'), blank=True)
-    is_boolean = models.BooleanField(_('is boolean'), default=False)
-    url = models.CharField(max_length=200, blank=True, help_text=_(
-        'Optional link to page with more information (for clickable pricing table headers)'))
+        _("codename"), max_length=50, unique=True, db_index=True
+    )
+    name = models.CharField(_("name"), max_length=100)
+    unit = models.CharField(_("unit"), max_length=100, blank=True)
+    description = models.TextField(_("description"), blank=True)
+    is_boolean = models.BooleanField(_("is boolean"), default=False)
+    url = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text=_(
+            "Optional link to page with more information (for clickable pricing table headers)"
+        ),
+    )
 
     class Meta:
         verbose_name = _("Quota")
         verbose_name_plural = _("Quotas")
 
     def __str__(self):
-        return "%s" % (self.codename, )
+        return "%s" % (self.codename,)
 
 
 class PlanQuotaManager(models.Manager):
     def get_queryset(self):
-        return super(PlanQuotaManager, self).get_queryset().select_related('plan', 'quota')
+        return (
+            super(PlanQuotaManager, self)
+            .get_queryset()
+            .select_related("plan", "quota")
+        )
 
 
 class PlanQuota(models.Model):
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="plan_quotas")
+    plan = models.ForeignKey(
+        Plan, on_delete=models.CASCADE, related_name="plan_quotas"
+    )
     quota = models.ForeignKey(Quota, on_delete=models.CASCADE)
     value = models.IntegerField(default=1, null=True, blank=True)
 
@@ -220,6 +233,13 @@ class PlanQuota(models.Model):
         verbose_name = _("Plan quota")
         verbose_name_plural = _("Plans quotas")
         unique_together = ("plan", "quota")
+
+    def __str__(self):
+        return "%s - %s - %s" % (
+            self.quota.codename,
+            self.plan.name,
+            self.value,
+        )
 
 
 class Feature(models.Model):
@@ -231,4 +251,14 @@ class Feature(models.Model):
 
     class Meta:
         """Meta for the model."""
+
         unique_together = ("plan_quota", "company")
+
+    def __str__(self):
+        return "%s - %s - Remaining %s out of %s for %s" % (
+            self.plan_quota.quota.codename,
+            self.plan_quota.plan.name,
+            self.consumption,
+            self.plan_quota.value,
+            self.company.name,
+        )
