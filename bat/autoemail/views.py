@@ -12,6 +12,7 @@ from drf_yasg2.utils import swagger_auto_schema
 from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +24,7 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
 )
+from bat.autoemail.filters import EmailQueueFilter
 from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
@@ -185,13 +187,13 @@ class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
     queryset = EmailQueue.objects.all()
     serializer_class = serializers.EmailQueueSerializer
     permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = EmailQueueFilter
+    search_fields = ["amazonorder__order_id"]
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
-        search = self.request.query_params.get("search", None)
         queryset = super().filter_queryset(queryset)
-        if search:
-            queryset = queryset.filter(amazonorder__order_id=search)
         return queryset.filter(emailcampaign__company__id=company_id).order_by(
             "-create_date"
         )
