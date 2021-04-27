@@ -188,7 +188,10 @@ class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
+        search = self.request.query_params.get("search", None)
         queryset = super().filter_queryset(queryset)
+        if search:
+            queryset = queryset.filter(amazonorder__order_id=search)
         return queryset.filter(emailcampaign__company__id=company_id).order_by(
             "-create_date"
         )
