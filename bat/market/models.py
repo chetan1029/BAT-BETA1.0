@@ -14,7 +14,11 @@ from taggit.managers import TaggableManager
 from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
+from bat.product.models import (
+    Image,
+    IsDeletableMixin,
+    UniqueWithinCompanyMixin,
+)
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -113,6 +117,16 @@ class AmazonAccounts(models.Model):
         AmazonAccountCredentails, on_delete=models.CASCADE, null=True
     )
     is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        """Return Value."""
+        return (
+            self.marketplace.name
+            + " - "
+            + self.marketplace.country.name
+            + " - "
+            + self.user.username
+        )
 
 
 class AmazonCompany(Address):

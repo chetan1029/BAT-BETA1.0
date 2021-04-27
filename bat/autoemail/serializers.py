@@ -15,7 +15,7 @@ from bat.autoemail.constants import (
 from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 from bat.globalutils.utils import get_status_object
 from bat.market.constants import AMAZON_ORDER_STATUS_CHOICE
-from bat.market.serializers import AmazonMarketplaceSerializer
+from bat.market.serializers import AmazonMarketplaceSerializer, AmazonOrderSerializer
 from bat.serializersFields.serializers_fields import StatusField
 
 
@@ -175,6 +175,8 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
 
 class EmailQueueSerializer(serializers.ModelSerializer):
     status = StatusField(choices=ORDER_EMAIL_STATUS_SCHEDULED)
+    amazonorder = AmazonOrderSerializer(read_only=True)
+    emailcampaign = EmailCampaignSerializer(read_only=True)
 
     class Meta:
         model = EmailQueue
