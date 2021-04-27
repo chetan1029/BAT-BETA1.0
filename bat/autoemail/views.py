@@ -187,9 +187,9 @@ class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
     queryset = EmailQueue.objects.all()
     serializer_class = serializers.EmailQueueSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = EmailQueueFilter
-    search_fields = ["amazonorder__order_id"]
+    search_fields = ["=amazonorder__order_id"]
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
