@@ -370,7 +370,7 @@ class AmazonCompanyViewSet(
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
 
-        amazonaccount = AmazonAccounts.objects.first()
+        amazonaccount = AmazonAccounts.objects.get(pk=34)
         data = ""
         # Get is_amazon_review_request_allowed via Solicitations
         # solicitations = get_solicitation(amazonaccount)
@@ -404,8 +404,8 @@ class TestAmazonClientCatalog(View):
         )
 
         # read report data from files
-        report_csv = open(tmp_csv_file_path, "r")
+        # report_csv = open(tmp_csv_file_path, "r")
 
-        print(report_csv.read())
+        # print(report_csv.read())
 
         return HttpResponse(str(data))

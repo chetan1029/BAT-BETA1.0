@@ -173,7 +173,6 @@ def get_amazon_report(
             "role_arn": settings.ROLE_ARN,
         },
     ).create_report(**kw_args)
-
     reportId = int(response_1.payload["reportId"])
 
     iteration = 1
