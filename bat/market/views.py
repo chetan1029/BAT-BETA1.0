@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -96,7 +97,12 @@ class AmazonOrderViewsets(viewsets.ReadOnlyModelViewSet):
         ).order_by("-create_date")
 
 
-class AmazonMarketplaceViewsets(viewsets.ReadOnlyModelViewSet):
+class AmazonMarketplaceViewsets(
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     queryset = AmazonMarketplace.objects.all()
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.AmazonMarketplaceSerializer
@@ -112,6 +118,27 @@ class AmazonMarketplaceViewsets(viewsets.ReadOnlyModelViewSet):
         context["company_id"] = company_id
         context["user"] = self.request.user
         return context
+
+    def patch(self, request, company_pk=None, market_pk=None, **kwargs):
+        email = request.data["email"]
+        market = get_object_or_404(AmazonMarketplace, pk=market_pk)
+        try:
+            accounts = AmazonAccounts.objects.get(
+                marketplace=market,
+                user_id=request.user.id,
+                company_id=company_pk,
+            )
+            accounts.credentails.email = email
+            accounts.credentails.save()
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": _("Markplace account record not found.")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        return Response(
+            {"detail": _("Account Marketplace updated.")},
+            status=status.HTTP_200_OK,
+        )
 
 
 class AmazonAccountsAuthorization(APIView):

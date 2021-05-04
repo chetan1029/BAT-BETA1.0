@@ -83,6 +83,9 @@ class AmazonAccountCredentails(models.Model):
     access_token = models.CharField(max_length=512, null=True)
     expires_at = models.DateTimeField(null=True)
     refresh_token = models.CharField(max_length=512, null=True)
+    email = models.EmailField(
+        max_length=100, verbose_name=_("Email"), blank=True
+    )
     region = models.CharField(
         verbose_name=_("Region"),
         max_length=255,

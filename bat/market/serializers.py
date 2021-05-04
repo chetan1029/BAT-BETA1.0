@@ -20,6 +20,7 @@ from bat.serializersFields.serializers_fields import (
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
     country = CountrySerializerField(required=False)
     status = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
     amazoncompany_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,6 +32,18 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
             "marketplaceId",
             "region",
             "status",
+            "sales_channel_name",
+            "email",
+            "amazoncompany_id",
+        )
+        read_only_fields = (
+            "id",
+            "name",
+            "country",
+            "marketplaceId",
+            "region",
+            "status",
+            "sales_channel_name",
             "amazoncompany_id",
         )
 
@@ -46,6 +59,18 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
         if accounts.exists():
             return constants.MARKETPLACE_STATUS_ACTIVE
         return constants.MARKETPLACE_STATUS_INACTIVE
+
+    def get_email(self, obj):
+        company_id = self.context.get("company_id")
+        user = self.context["request"].user
+        accounts = AmazonAccounts.objects.filter(
+            marketplace_id=obj.id, user_id=user.id, company_id=company_id
+        )
+        if accounts.exists():
+            accounts = accounts.first()
+            if accounts.credentails.email:
+                return accounts.credentails.email
+        return ""
 
     def get_amazoncompany_id(self, obj):
         company_id = self.context.get("company_id")

@@ -75,7 +75,7 @@ class GlobalEmailTemplate(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return str(self.name) + " - " + str(self.language)
 
 
 class GlobalEmailCampaign(models.Model):
@@ -162,7 +162,7 @@ class EmailTemplate(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return self.name
+        return str(self.name) + " - " + str(self.language)
 
     def slugify(self, name, i=None):
         slug = slugify(unidecode(name))
