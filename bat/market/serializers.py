@@ -20,6 +20,8 @@ from bat.serializersFields.serializers_fields import (
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
     country = CountrySerializerField(required=False)
     status = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    email_verified = serializers.SerializerMethodField()
     amazoncompany_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,6 +33,19 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
             "marketplaceId",
             "region",
             "status",
+            "sales_channel_name",
+            "email",
+            "email_verified",
+            "amazoncompany_id",
+        )
+        read_only_fields = (
+            "id",
+            "name",
+            "country",
+            "marketplaceId",
+            "region",
+            "status",
+            "sales_channel_name",
             "amazoncompany_id",
         )
 
@@ -46,6 +61,30 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
         if accounts.exists():
             return constants.MARKETPLACE_STATUS_ACTIVE
         return constants.MARKETPLACE_STATUS_INACTIVE
+
+    def get_email(self, obj):
+        company_id = self.context.get("company_id")
+        user = self.context["request"].user
+        accounts = AmazonAccounts.objects.filter(
+            marketplace_id=obj.id, user_id=user.id, company_id=company_id
+        )
+        if accounts.exists():
+            accounts = accounts.first()
+            if accounts.credentails.email:
+                return accounts.credentails.email
+        return ""
+
+    def get_email_verified(self, obj):
+        company_id = self.context.get("company_id")
+        user = self.context["request"].user
+        accounts = AmazonAccounts.objects.filter(
+            marketplace_id=obj.id, user_id=user.id, company_id=company_id
+        )
+        status = False
+        if accounts.exists():
+            accounts = accounts.first()
+            status = accounts.credentails.email_verified
+        return status
 
     def get_amazoncompany_id(self, obj):
         company_id = self.context.get("company_id")

@@ -14,11 +14,7 @@ from taggit.managers import TaggableManager
 from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import (
-    Image,
-    IsDeletableMixin,
-    UniqueWithinCompanyMixin,
-)
+from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -83,6 +79,10 @@ class AmazonAccountCredentails(models.Model):
     access_token = models.CharField(max_length=512, null=True)
     expires_at = models.DateTimeField(null=True)
     refresh_token = models.CharField(max_length=512, null=True)
+    email = models.EmailField(
+        max_length=100, verbose_name=_("Email"), blank=True
+    )
+    email_verified = models.BooleanField(default=False)
     region = models.CharField(
         verbose_name=_("Region"),
         max_length=255,

@@ -1,11 +1,13 @@
 import base64
 import csv
+import os
 import tempfile
 import time
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -19,9 +21,19 @@ from rest_framework.views import APIView
 from sp_api.base import Marketplaces
 from sp_api.base.reportTypes import ReportType
 
-from bat.autoemail.models import EmailCampaign, EmailTemplate
+from bat.autoemail.models import (
+    EmailCampaign,
+    EmailTemplate,
+    SesEmailTemplateMarketPlace,
+)
+from bat.autoemail.utils import update_ses_email_verification
 from bat.company.models import Company
 from bat.company.utils import get_member
+from bat.mailsender.boto_ses import (
+    is_ses_email_verified,
+    verify_ses_email,
+    verify_ses_email_custom_template,
+)
 from bat.market import serializers
 from bat.market.amazon_sp_api.amazon_sp_api import (
     Catalog,
@@ -96,7 +108,12 @@ class AmazonOrderViewsets(viewsets.ReadOnlyModelViewSet):
         ).order_by("-create_date")
 
 
-class AmazonMarketplaceViewsets(viewsets.ReadOnlyModelViewSet):
+class AmazonMarketplaceViewsets(
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     queryset = AmazonMarketplace.objects.all()
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.AmazonMarketplaceSerializer
@@ -111,7 +128,67 @@ class AmazonMarketplaceViewsets(viewsets.ReadOnlyModelViewSet):
         )
         context["company_id"] = company_id
         context["user"] = self.request.user
+
         return context
+
+    def retrieve(self, request, company_pk=None, pk=None):
+        market = get_object_or_404(AmazonMarketplace, pk=pk)
+        try:
+            accounts = AmazonAccounts.objects.get(
+                marketplace=market,
+                user_id=request.user.id,
+                company_id=company_pk,
+            )
+            update_ses_email_verification(accounts.credentails)
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": _("Markplace account record not found.")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def partial_update(self, request, company_pk=None, pk=None, **kwargs):
+        email = request.data["email"]
+        market = get_object_or_404(AmazonMarketplace, pk=pk)
+        try:
+            accounts = AmazonAccounts.objects.get(
+                marketplace=market,
+                user_id=request.user.id,
+                company_id=company_pk,
+            )
+            accounts.credentails.email = email
+
+            # check if added email is already verified in SES by this user
+            is_email_verified = AmazonAccounts.objects.filter(
+                user_id=request.user.id,
+                company_id=company_pk,
+                credentails__email=email,
+                credentails__email_verified=True,
+            )
+            if is_email_verified.exists():
+                accounts.credentails.email_verified = True
+
+            accounts.credentails.save()
+
+            if not accounts.credentails.email_verified:
+                # Send SES custom verification template
+                ses_template = SesEmailTemplateMarketPlace.objects.filter(
+                    amazonmarketplace=market
+                ).first()
+                ses_template_name = ses_template.sesemailtemplate.slug
+                verify_ses_email_custom_template(email, ses_template_name)
+
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": _("Markplace account record not found.")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        return Response(
+            {"detail": _("Account Marketplace updated.")},
+            status=status.HTTP_200_OK,
+        )
 
 
 class AmazonAccountsAuthorization(APIView):

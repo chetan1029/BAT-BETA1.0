@@ -80,6 +80,8 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "rest_auth",
     "rest_auth.registration",
+    # Amazon SES
+    "django_ses",
     # Country list with flag and country code
     "django_countries",
     # Currency and currency conversion
