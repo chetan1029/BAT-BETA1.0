@@ -37,12 +37,15 @@ def add_order_email_in_queue(amazon_order_id, email_campaign_id):
     order = AmazonOrder.objects.get(pk=amazon_order_id)
     email_campaign = EmailCampaign.objects.get(pk=email_campaign_id)
 
+    sent_from = settings.MAIL_FROM_ADDRESS
+    if order.amazonaccounts.credentails.email:
+        sent_from = order.amazonaccounts.credentails.email
+
     email_queue_data = {}
     email_queue_data["amazonorder"] = order
     email_queue_data["emailcampaign"] = email_campaign
     email_queue_data["sent_to"] = order.buyer_email
-    # email_queue_data["sent_to"] = "chetanbadgujar92@gmail.com"
-    email_queue_data["sent_from"] = settings.MAIL_FROM_ADDRESS
+    email_queue_data["sent_from"] = sent_from
     email_queue_data["subject"] = email_campaign.emailtemplate.subject
     email_queue_data["template"] = email_campaign.emailtemplate
     email_queue_data["status"] = get_status(
@@ -64,12 +67,15 @@ def add_initial_order_email_in_queue(amazon_order_id, email_campaign_id):
     order = AmazonOrder.objects.get(pk=amazon_order_id)
     email_campaign = EmailCampaign.objects.get(pk=email_campaign_id)
 
+    sent_from = settings.MAIL_FROM_ADDRESS
+    if order.amazonaccounts.credentails.email:
+        sent_from = order.amazonaccounts.credentails.email
+
     email_queue_data = {}
     email_queue_data["amazonorder"] = order
     email_queue_data["emailcampaign"] = email_campaign
     email_queue_data["sent_to"] = order.buyer_email
-    # email_queue_data["sent_to"] = "chetanbadgujar92@gmail.com"
-    email_queue_data["sent_from"] = settings.MAIL_FROM_ADDRESS
+    email_queue_data["sent_from"] = sent_from
     email_queue_data["subject"] = email_campaign.emailtemplate.subject
     email_queue_data["template"] = email_campaign.emailtemplate
     email_queue_data["status"] = get_status(

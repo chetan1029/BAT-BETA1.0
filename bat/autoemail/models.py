@@ -23,6 +23,7 @@ from bat.autoemail.constants import (
 from bat.autoemail.utils import send_email
 from bat.company.models import Company
 from bat.globalutils.utils import pdf_file_from_html
+from bat.mailsender.boto_ses import create_verification_email_template
 from bat.market.models import AmazonCompany, AmazonMarketplace, AmazonOrder
 from bat.setting.models import Status
 
@@ -52,6 +53,65 @@ def attachment_file_name(instance, filename):
     return "company/email/{0}/{1}/{2}_{3}{4}".format(
         "template", "attachment", str(name), uuid.uuid4(), extension
     )
+
+
+class SesEmailTemplate(models.Model):
+    """Email Template for the custom SES email verification."""
+
+    name = models.CharField(verbose_name=_("Name"), max_length=512)
+    subject = models.CharField(verbose_name=_("Subject"), max_length=512)
+    sent_from = models.CharField(max_length=512)
+    language = models.CharField(
+        max_length=50,
+        verbose_name=_("Language"),
+        choices=EMAIL_LANG_CHOICES,
+        default=EMAIL_LANG_ENGLISH,
+    )
+    template = models.TextField()
+    slug = models.SlugField(unique=True)
+    is_active = models.BooleanField(default=True)
+    success_redirect = models.CharField(max_length=512)
+    error_redirect = models.CharField(max_length=512)
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.name) + " - " + str(self.language)
+
+    def save(self, *args, **kwargs):
+        create_verification_email_template(
+            self.slug,
+            self.sent_from,
+            self.subject,
+            self.template,
+            self.success_redirect,
+            self.error_redirect,
+        )
+        return super().save(*args, **kwargs)
+
+
+class SesEmailTemplateMarketPlace(models.Model):
+    """Email Template connection with marketplace."""
+
+    sesemailtemplate = models.ForeignKey(
+        SesEmailTemplate, on_delete=models.CASCADE
+    )
+    amazonmarketplace = models.ForeignKey(
+        AmazonMarketplace, on_delete=models.CASCADE
+    )
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        """Return Value."""
+        return (
+            str(self.sesemailtemplate.name)
+            + " - "
+            + str(self.sesemailtemplate.language)
+            + " - "
+            + str(self.amazonmarketplace.country.name)
+        )
 
 
 class GlobalEmailTemplate(models.Model):
