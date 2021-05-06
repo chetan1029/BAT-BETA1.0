@@ -408,9 +408,6 @@ class AmazonAccountsDisconnect(APIView):
             )
             emailcampaign.delete()
 
-            credentails = account.credentails
-            credentails.delete()
-
             account.delete()
 
             # Add the quota back for this feature
