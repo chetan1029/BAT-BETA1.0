@@ -23,6 +23,7 @@ from sp_api.base.reportTypes import ReportType
 
 from bat.autoemail.models import (
     EmailCampaign,
+    EmailQueue,
     EmailTemplate,
     SesEmailTemplateMarketPlace,
 )
@@ -395,6 +396,12 @@ class AmazonAccountsDisconnect(APIView):
             )
             amazonorder.delete()
 
+            emailqueue = EmailQueue.objects.filter(
+                emailcampaign__amazonmarketplace_id=account.marketplace.id,
+                emailcampaign__company_id=company_pk,
+            )
+            emailqueue.delete()
+
             emailcampaign = EmailCampaign.objects.filter(
                 amazonmarketplace_id=account.marketplace.id,
                 company_id=company_pk,
@@ -403,6 +410,8 @@ class AmazonAccountsDisconnect(APIView):
 
             account.is_active = False
             account.save()
+
+            account.delete()
 
             # Add the quota back for this feature
             feature = get_feature_by_quota_code(
