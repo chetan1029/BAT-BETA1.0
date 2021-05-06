@@ -408,8 +408,8 @@ class AmazonAccountsDisconnect(APIView):
             )
             emailcampaign.delete()
 
-            account.is_active = False
-            account.save()
+            credentails = account.credentails
+            credentails.delete()
 
             account.delete()
 
