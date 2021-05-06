@@ -65,6 +65,7 @@ def set_default_email_campaign_templates(company, marketplace):
             template_data["default_cc"] = global_template.default_cc
             template_data["language"] = global_template.language
             template_data["template"] = global_template.template
+            template_data["slug"] = global_template.slug
             return template_data
 
         all_global_email_campaigns_of_marketplace = GlobalEmailCampaign.objects.filter(
@@ -106,7 +107,17 @@ def set_default_email_campaign_templates(company, marketplace):
                 template_data = _get_kwargs_for_template(
                     company, global_template
                 )
-                template = EmailTemplate.objects.create(**template_data)
+                template, created = EmailTemplate.objects.get_or_create(
+                    company=template_data["company"],
+                    slug=template_data["slug"],
+                    defaults={
+                        "name": template_data["name"],
+                        "subject": template_data["subject"],
+                        "default_cc": template_data["default_cc"],
+                        "language": template_data["language"],
+                        "template": template_data["template"],
+                    },
+                )
                 created_templates_id.append(
                     global_email_campaigns.emailtemplate_id
                 )
