@@ -141,7 +141,7 @@
             <tr>
               <td>
                 <p><b>{{company.name}}</b></p>
-                <p>{{company.get_formatted_address}}</p>
+                <p>{{company.get_formatted_address|safe}}</p>
                 <p>{{company.email}}</p>
                 <p>VAT #: {{company.vat_number}}</p>
               </td>
