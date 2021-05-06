@@ -140,9 +140,10 @@
           <table>
             <tr>
               <td>
-                <p><b>{{company.store_name}}</b></p>
-                <p>Email: {{company.email}}</p>
-                <p>VAT number: {{company.vat_number}}</p>
+                <p><b>{{company.name}}</b></p>
+                <p>{{company.get_formatted_address}}</p>
+                <p>{{company.email}}</p>
+                <p>VAT #: {{company.vat_number}}</p>
               </td>
 
               <td>
@@ -196,7 +197,7 @@
       </tr>
       <tr class="item {% if vat_tax_included %}last{% endif %}">
         <td>
-          <p>Tax {% if vat_tax_included %}(included){% endif %}</p>
+          <p>{% if vat_tax_included %}VAT (included){% else %}Tax{% endif %}</p>
         </td>
         <td></td>
         <td></td>
