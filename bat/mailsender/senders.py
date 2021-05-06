@@ -1,16 +1,24 @@
-from django.conf import settings
-from django.core.mail import EmailMultiAlternatives, get_connection
-from django.contrib.auth import get_user_model
 from django import template as djtemplate
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template import Context
-
 
 User = get_user_model()
 
 
-def send_mail(subject, message, from_email, recipient_list,
-              fail_silently=False, auth_user=None, auth_password=None,
-              connection=None, html_message=None, attachment_files=[]):
+def send_mail(
+    subject,
+    message,
+    from_email,
+    recipient_list,
+    fail_silently=False,
+    auth_user=None,
+    auth_password=None,
+    connection=None,
+    html_message=None,
+    attachment_files=[],
+):
     """
     Easy wrapper for sending a single message to a recipient list. All members
     of the recipient list will see the other recipients in the 'To' field.
@@ -23,20 +31,22 @@ def send_mail(subject, message, from_email, recipient_list,
     functionality should use the EmailMessage class directly.
     """
     connection = connection or get_connection(
-        username=auth_user,
-        password=auth_password,
-        fail_silently=fail_silently,
+        username=auth_user, password=auth_password, fail_silently=fail_silently
     )
-    mail = EmailMultiAlternatives(subject, message, from_email,
-                                  recipient_list, connection=connection)
+    mail = EmailMultiAlternatives(
+        subject, message, from_email, recipient_list, connection=connection
+    )
 
     if attachment_files:
         for attachment_file in attachment_files:
-            mail.attach(attachment_file.name.split(
-                "/")[-1], attachment_file.read(), "application/pdf")
-
+            mail.attach(
+                attachment_file.name.split("/")[-1],
+                attachment_file.read(),
+                "application/pdf",
+            )
+    html_message = message
     if html_message:
-        mail.attach_alternative(html_message, 'text/html')
+        mail.attach_alternative(html_message, "text/html")
 
     return mail.send()
 
@@ -56,9 +66,9 @@ class EmailNotificationSender(MessageParser):
         self._kwargs = kwargs
         self._template = template
         self._recipient_list = self._get_recipient_list(recipients)
-        self._cc = kwargs.pop('cc', None)
-        self._bcc = kwargs.pop('bcc', None)
-        self._user = kwargs.pop('user', None)
+        self._cc = kwargs.pop("cc", None)
+        self._bcc = kwargs.pop("bcc", None)
+        self._user = kwargs.pop("user", None)
         self._context = kwargs.get("context")
         self._subject = self._get_subject()
         self._message = self.get_message(self._template, self._context)
@@ -82,8 +92,11 @@ class EmailNotificationSender(MessageParser):
             return emails
 
     def _get_subject(self):
-        subject = self._kwargs.get("subject") if self._kwargs.get(
-            "subject") is not None else self._template.subject
+        subject = (
+            self._kwargs.get("subject")
+            if self._kwargs.get("subject") is not None
+            else self._template.subject
+        )
         tpl = djtemplate.Template(subject)
         return tpl.render(Context(self._context))
 
@@ -94,5 +107,5 @@ class EmailNotificationSender(MessageParser):
             self._from_email,
             self._recipient_list,
             fail_silently=False,
-            attachment_files=self._attachment_files
+            attachment_files=self._attachment_files,
         )
