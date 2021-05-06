@@ -109,13 +109,17 @@ class EmailCampaignViewsets(
         if order:
             products = order.orderitem_order.all()
             products_title_s = ""
+            asins = ""
             for product in products:
                 products_title_s += product.amazonproduct.title + ", "
+                asins += product.amazonproduct.asin + ","
             # For the email description and title
             context = {
                 "order_id": order.order_id,
                 "Product_title_s": products_title_s,
+                "marketplace_domain": campaign.amazonmarketplace.sales_channel_name.lower(),
                 "Seller_name": campaign.get_company().store_name,
+                "asin": asins,
             }
 
             if campaign.include_invoice:
@@ -150,6 +154,8 @@ class EmailCampaignViewsets(
                 "order_id": "#123",
                 "Product_title_s": "XYZ Product",
                 "Seller_name": campaign.get_company().name,
+                "marketplace_domain": "amazon.com",
+                "asin": "BRTFDDG0",
             }
             if campaign.include_invoice:
                 file_data = {
