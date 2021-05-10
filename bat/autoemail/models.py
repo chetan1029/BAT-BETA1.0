@@ -360,12 +360,16 @@ class EmailQueue(models.Model):
     def send_mail(self):
         products = self.amazonorder.orderitem_order.all()
         products_title_s = ""
+        asins = ""
         for product in products:
             products_title_s += product.amazonproduct.title + ", "
+            asins += product.amazonproduct.asin + ","
         context = {
             "order_id": self.amazonorder.order_id,
             "Product_title_s": products_title_s,
             "Seller_name": self.emailcampaign.get_company().store_name,
+            "marketplace_domain": self.emailcampaign.amazonmarketplace.sales_channel_name.lower(),
+            "asin": asins,
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()

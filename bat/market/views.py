@@ -340,7 +340,9 @@ class AccountsReceiveAmazonCallback(View):
                             settings.MARKET_LIST_URI
                             + "auto-emails/"
                             + str(company.id)
-                            + "/campaigns?success=Your "
+                            + "/campaigns/"
+                            + str(marketplace.id)
+                            + "/?success=Your "
                             + marketplace.name
                             + " marketplace account successfully linked. Give us 10-15 mins to sync your orders and queue the emails."
                         )
