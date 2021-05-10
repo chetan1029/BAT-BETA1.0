@@ -13,9 +13,10 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     # Django Invitation
     path("invitations/", include("invitations.urls", namespace="invitations")),
-    path("ht", include('health_check.urls', namespace='ht')),
+    path("ht", include("health_check.urls", namespace="ht")),
     # API base url
     path("", include("config.api_router")),
+    path("summernote/", include("django_summernote.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
