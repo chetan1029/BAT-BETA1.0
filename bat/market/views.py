@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -334,8 +335,10 @@ class AccountsReceiveAmazonCallback(View):
                             company=company,
                             credentails=account_credentails,
                         )
-                        amazon_account_products_orders_sync.delay(
-                            amazonaccount.pk, last_no_of_days=8
+                        transaction.on_commit(
+                            lambda: amazon_account_products_orders_sync.delay(
+                                amazonaccount.pk, last_no_of_days=8
+                            )
                         )
 
                         # Change the consumption for the markplaces in the company plan.
