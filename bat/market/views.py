@@ -328,8 +328,11 @@ class AccountsReceiveAmazonCallback(View):
                                 + e
                             )
                         # call task to collect data from amazon account
+                        amazonaccount = AmazonAccounts.objects.get(
+                            marketplace=marketplace, user=user, company=company
+                        )
                         amazon_account_products_orders_sync.delay(
-                            new_account.id, last_no_of_days=8
+                            amazonaccount.pk, last_no_of_days=8
                         )
 
                         # Change the consumption for the markplaces in the company plan.
