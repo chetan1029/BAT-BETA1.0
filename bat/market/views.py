@@ -464,7 +464,7 @@ class AmazonCompanyViewSet(
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
 
-        amazonaccount = AmazonAccounts.objects.get(pk=34)
+        amazonaccount = AmazonAccounts.objects.get(pk=50)
         data = ""
         # Get is_amazon_review_request_allowed via Solicitations
         # solicitations = get_solicitation(amazonaccount)

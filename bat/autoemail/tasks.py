@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pytz
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.db.models import F
 
 from bat.autoemail.constants import (
     AS_SOON_AS,
@@ -148,6 +149,7 @@ def send_email_from_queue():
         schedule_date__lte=current_time,
         emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
         amazonorder__opt_out=False,
+        amazonorder__purchase_date__gte=F("emailcampaign__activation_date"),
     )
 
     for email in queued_emails:
