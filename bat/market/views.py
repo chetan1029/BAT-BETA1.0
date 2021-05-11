@@ -329,7 +329,10 @@ class AccountsReceiveAmazonCallback(View):
                             )
                         # call task to collect data from amazon account
                         amazonaccount = AmazonAccounts.objects.get(
-                            marketplace=marketplace, user=user, company=company
+                            marketplace=marketplace,
+                            user=user,
+                            company=company,
+                            credentails=account_credentails,
                         )
                         amazon_account_products_orders_sync.delay(
                             amazonaccount.pk, last_no_of_days=8
