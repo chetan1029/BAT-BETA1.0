@@ -7,16 +7,39 @@ from rest_framework.permissions import IsAuthenticated
 
 from bat.keywordtracking import serializers
 from bat.keywordtracking.models import Keyword, ProductKeyword, ProductKeywordRank
+from bat.market.models import AmazonProduct
 
 # Create your views here.
 
 
-class KeywordViewSet(viewsets.ModelViewSet):
-    """Operations on Keywords."""
+class ProductKeywordViewSet(viewsets.ModelViewSet):
+    """Operations on Product Keywords."""
 
-    serializer_class = serializers.KeywordSerializer
-    queryset = Keyword.objects.all()
-    permission_classes = (IsAuthenticated, DRYPermissions)
+    serializer_class = serializers.ProductKeywordSerializer
+    queryset = ProductKeyword.objects.all()
+    permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["is_active", "payment_days"]
-    search_fields = ["title"]
+    # filterset_fields = ["name", "amazonmarketplace"]
+    search_fields = ["keyword__name", "amazonproduct__asin"]
+
+
+class ProductKeywordRankViewSet(viewsets.ModelViewSet):
+    """Operations on Product Keyword Rank."""
+
+    serializer_class = serializers.ProductKeywordRankSerializer
+    queryset = ProductKeywordRank.objects.all()
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    # filterset_fields = ["name", "amazonmarketplace"]
+    search_fields = [
+        "productkeyword__keyword__name",
+        "productkeyword__amazonproduct__asin",
+    ]
+
+
+class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
+    queryset = AmazonProduct.objects.all()
+    serializer_class = serializers.KeywordTrackingProductSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ["name", "productkeyword__amazonproduct_id"]

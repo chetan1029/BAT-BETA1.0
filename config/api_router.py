@@ -2,6 +2,7 @@ from django.urls import include, path
 from drf_yasg2 import openapi
 from rest_framework import permissions
 from rest_framework.authtoken.views import obtain_auth_token
+
 from bat.docs_utils import get_schema_view
 
 schema_view = get_schema_view(
@@ -21,11 +22,13 @@ schema_view = get_schema_view(
 app_name = "api"
 
 urlpatterns = [
-    path('docs/', schema_view.with_ui('swagger',
-                                      cache_timeout=0), name='schema-swagger-ui'),
+    path(
+        "docs/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
     # jwt
     # path("api-token-auth/", jwt_views.obtain_jwt_token),
-
     # path("api-token-verify/", jwt_views.verify_jwt_token),
     # path('auth/', include('rest_auth.urls')),
     # verifay mail (provide template name) # logic for verifay email address
@@ -38,4 +41,5 @@ urlpatterns = [
     path("", include("bat.subscription.urls", namespace="subscription")),
     path("", include("bat.market.urls", namespace="market")),
     path("", include("bat.autoemail.urls", namespace="autoemail")),
+    path("", include("bat.keywordtracking.urls", namespace="keywordtracking")),
 ]
