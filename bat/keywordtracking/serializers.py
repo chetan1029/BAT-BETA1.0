@@ -1,4 +1,7 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
+from django.utils.translation import ugettext_lazy as _
+
 from rest_framework import serializers
 
 from bat.globalutils.utils import get_status_object
@@ -64,3 +67,19 @@ class KeywordTrackingProductSerializer(AmazonProductSerializer):
         return ProductKeywordRank.objects.filter(
             productkeyword__amazonproduct__id=obj.id
         ).aggregate(Sum("visibility_score"))["visibility_score__sum"]
+
+
+class SaveKeywordSerializer(serializers.Serializer):
+    amazon_product_pk = serializers.IntegerField(required=True)
+    keywords = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        member = self.context.get("member")
+        try :
+            AmazonProduct.objects.get(pk=attrs.get(
+                "amazon_product_pk"), amazonaccounts__company_id=member.company.id, amazonaccounts__user_id=member.user.id)
+        except ObjectDoesNotExist :
+            raise serializers.ValidationError(
+                    {"amazon_product_pk": _("Invalid product selectd.")}
+                )
+        return super().validate(attrs)

@@ -6,6 +6,7 @@ from bat.keywordtracking.views import (
     KeywordTrackingProductViewsets,
     ProductKeywordRankViewSet,
     ProductKeywordViewSet,
+    SaveProductKeyword,
 )
 
 product_keyword_router = routers.NestedSimpleRouter(
@@ -37,6 +38,7 @@ keyword_tracking_product_router.register(
 app_name = "keywordtracking"
 
 urlpatterns = [
+    path("companies/<company_pk>/save/product-keywords", SaveProductKeyword.as_view()),
     path("", include(product_keyword_router.urls)),
     path("", include(product_keyword_rank_router.urls)),
     path("", include(keyword_tracking_product_router.urls)),
