@@ -1,3 +1,6 @@
+from datetime import date
+import operator
+import operator
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.utils.decorators import method_decorator
@@ -76,25 +79,25 @@ class SaveProductKeyword(APIView):
             amazon_product = AmazonProduct.objects.get(
                 pk=serializer.validated_data.get("amazon_product_pk"))
             keywords = serializer.validated_data.get("keywords")
-            keywords = keywords.split()
+            if operator.contains(keywords, ","):
+                keywords = keywords.split(",")
+            else:
+                keywords = keywords.split("\n")
+            print("keywords :", keywords)
             amazonmarketplace = amazon_product.amazonaccounts.marketplace
-
             for word in keywords:
-                try : 
+                keyword, _keyword_c = Keyword.objects.get_or_create(
+                    amazonmarketplace=amazonmarketplace, name=word)
+                product_keyword, _product_keyword_C = ProductKeyword.objects.get_or_create(
+                    amazonproduct=amazon_product,
+                    keyword=keyword,
+                    defaults={"status": get_status(constants.KEYWORD_PARENT_STATUS,
+                                                   constants.KEYWORD_STATUS_ACTIVE)}
+                )
+                try:
                     with transaction.atomic():
-                        keyword = Keyword.objects.create(
-                            amazonmarketplace=amazonmarketplace, name=word)
-                except IntegrityError:
-                    keyword = Keyword.objects.get(amazonmarketplace=amazonmarketplace, name=word)
-                
-                try : 
-                    with transaction.atomic():
-                        product_keyword = ProductKeyword.objects.create(
-                            amazonproduct=amazon_product,
-                            keyword=keyword,
-                            status=get_status(constants.KEYWORD_PARENT_STATUS,
-                                                constants.KEYWORD_STATUS_ACTIVE)
-                        )
+                        product_keyword_rank = ProductKeywordRank.objects.create(
+                            productkeyword=product_keyword)
                 except IntegrityError:
                     pass
         return Response(
