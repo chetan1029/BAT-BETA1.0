@@ -83,7 +83,6 @@ class SaveProductKeyword(APIView):
                 keywords = keywords.split(",")
             else:
                 keywords = keywords.split("\n")
-            print("keywords :", keywords)
             amazonmarketplace = amazon_product.amazonaccounts.marketplace
             for word in keywords:
                 keyword, _keyword_c = Keyword.objects.get_or_create(
