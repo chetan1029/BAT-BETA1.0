@@ -4,6 +4,7 @@ from rest_framework_nested import routers
 from bat.company.urls import router
 from bat.keywordtracking.views import (
     KeywordTrackingProductViewsets,
+    OverallDashboardAPIView,
     ProductKeywordRankViewSet,
     ProductKeywordViewSet,
     SaveProductKeyword,
@@ -38,8 +39,16 @@ keyword_tracking_product_router.register(
 app_name = "keywordtracking"
 
 urlpatterns = [
-    path("companies/<company_pk>/save/product-keywords", SaveProductKeyword.as_view()),
+    path(
+        "companies/<company_pk>/save/product-keywords",
+        SaveProductKeyword.as_view(),
+    ),
     path("", include(product_keyword_router.urls)),
     path("", include(product_keyword_rank_router.urls)),
     path("", include(keyword_tracking_product_router.urls)),
+    path(
+        "companies/<company_pk>/keyword-tracking/dashboard",
+        OverallDashboardAPIView.as_view(),
+        name="email-campaign-dashboard",
+    ),
 ]
