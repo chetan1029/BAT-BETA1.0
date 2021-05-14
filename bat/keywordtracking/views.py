@@ -30,7 +30,7 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
     queryset = ProductKeywordRank.objects.all()
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    # filterset_fields = ["name", "amazonmarketplace"]
+    filterset_fields = ["date", "productkeyword__amazonproduct"]
     search_fields = [
         "productkeyword__keyword__name",
         "productkeyword__amazonproduct__asin",
@@ -41,5 +41,5 @@ class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
     queryset = AmazonProduct.objects.all()
     serializer_class = serializers.KeywordTrackingProductSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["name", "productkeyword__amazonproduct_id"]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["productkeyword__amazonproduct_id"]
