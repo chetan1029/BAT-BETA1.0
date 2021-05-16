@@ -47,7 +47,7 @@ urlpatterns = [
     path("", include(product_keyword_rank_router.urls)),
     path("", include(keyword_tracking_product_router.urls)),
     path(
-        "companies/<company_pk>/keyword-tracking/dashboard",
+        "companies/<company_pk>/keyword-tracking/dashboard/",
         OverallDashboardAPIView.as_view(),
         name="email-campaign-dashboard",
     ),

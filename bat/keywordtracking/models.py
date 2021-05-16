@@ -1,5 +1,5 @@
 from django.contrib.postgres.fields import HStoreField
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from bat.keywordtracking.constants import KEYWORD_STATUS_ACTIVE
@@ -54,6 +54,13 @@ class ProductKeyword(models.Model):
         return str(self.amazonproduct.asin) + " - " + str(self.keyword.name)
 
 
+class ProductKeywordRankManager(models.Manager):
+    def bulk_delete(self, id_list):
+        with transaction.atomic():
+            keywords = ProductKeywordRank.objects.filter(id__in=id_list).delete()
+        return ""
+
+
 class ProductKeywordRank(models.Model):
     """Keyword rank for amazon product."""
 
@@ -72,6 +79,8 @@ class ProductKeywordRank(models.Model):
     date = models.DateField(default=timezone.now)
     scrap_status = models.PositiveIntegerField(default=0)
     extra_data = HStoreField(null=True, blank=True)
+
+    objects = ProductKeywordRankManager()
 
     class Meta:
         """Product Keyword Meta."""

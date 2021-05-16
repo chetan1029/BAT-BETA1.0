@@ -14,6 +14,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import action
 
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
@@ -34,6 +35,14 @@ class ProductKeywordViewSet(viewsets.ModelViewSet):
     # filterset_fields = ["name", "amazonmarketplace"]
     search_fields = ["keyword__name", "amazonproduct__asin"]
 
+@method_decorator(
+    name="bulk_action",
+    decorator=swagger_auto_schema(
+        operation_description="Performs the given action on provided set of Keyword ids. Available actions are: delete.",
+        request_body=serializers.KeywordsBulkActionSerializer(),
+        responses={status.HTTP_200_OK: SwaggerResponse({"detail": "string"})}
+    ),
+)
 
 class ProductKeywordRankViewSet(viewsets.ModelViewSet):
     """Operations on Product Keyword Rank."""
@@ -47,6 +56,31 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
         "productkeyword__keyword__name",
         "productkeyword__amazonproduct__asin",
     ]
+
+    @action(detail=False, methods=["post"])
+    def bulk_action(self, request, *args, **kwargs):
+        """Set the update_status_bulk action."""
+        serializer = serializers.KeywordsBulkActionSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            ids = serializer.validated_data.get("ids")
+            bulk_action = serializer.validated_data.get("action").lower()
+            member = get_member(
+                company_id=self.kwargs.get("company_pk", None),
+                user_id=self.request.user.id,
+            )
+            if bulk_action == "delete":
+                try:
+                    ids_cant_delete = ProductKeywordRank.objects.bulk_delete(ids)
+                    content = {"detail": _("All selected Keywords are deleted.")}
+                    return Response(
+                        content, status=status.HTTP_200_OK
+                    )
+                except IntegrityError:
+                    return Response(
+                        {"detail": _("Can't delete Keywords")},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    )
+
 
 
 class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
