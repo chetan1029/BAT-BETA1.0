@@ -113,7 +113,7 @@ THIRD_PARTY_APPS = [
     # store the periodic celery task schedule in the database
     "django_celery_beat",
     # Django WYSIWYG editor
-    "ckeditor",
+    "django_summernote",
 ]
 LOCAL_APPS = [
     "bat.users.apps.UsersConfig",
@@ -125,6 +125,7 @@ LOCAL_APPS = [
     "bat.subscription.apps.SubscriptionConfig",
     "bat.market.apps.MarketConfig",
     "bat.autoemail.apps.AutoemailConfig",
+    "bat.keywordtracking.apps.KeywordtrackingConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -481,3 +482,7 @@ SELLING_REGIONS = {
 # auto mail
 
 MAIL_FROM_ADDRESS = env("MAIL_FROM_ADDRESS")
+
+# Summernote theme
+SUMMERNOTE_THEME = "bs4"
+X_FRAME_OPTIONS = "SAMEORIGIN"

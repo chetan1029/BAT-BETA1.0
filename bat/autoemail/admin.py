@@ -1,6 +1,6 @@
-from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.contrib import admin
+from django_summernote.admin import SummernoteModelAdmin
 
 from bat.autoemail.models import (
     EmailCampaign,
@@ -12,31 +12,14 @@ from bat.autoemail.models import (
     SesEmailTemplateMarketPlace,
 )
 
+
 # Register your models here.
+class GlobalEmailTemplateAdmin(SummernoteModelAdmin):
+    summernote_fields = ("template",)
 
 
-class GlobalEmailTemplateForm(forms.ModelForm):
-    template = forms.CharField(widget=CKEditorWidget())
-
-    class Meta:
-        model = GlobalEmailTemplate
-        fields = "__all__"
-
-
-class GlobalEmailTemplateAdmin(admin.ModelAdmin):
-    form = GlobalEmailTemplateForm
-
-
-class EmailTemplateForm(forms.ModelForm):
-    template = forms.CharField(widget=CKEditorWidget())
-
-    class Meta:
-        model = EmailTemplate
-        fields = "__all__"
-
-
-class EmailTemplateAdmin(admin.ModelAdmin):
-    form = EmailTemplateForm
+class EmailTemplateAdmin(SummernoteModelAdmin):
+    summernote_fields = ("template",)
 
 
 admin.site.register(GlobalEmailTemplate, GlobalEmailTemplateAdmin)
