@@ -311,12 +311,13 @@ class ProductKeywordAPIView(APIView):
         return Response(stats, status=status.HTTP_200_OK)
 
 
-
 class TestImportGlobalKeywordAPIView(APIView):
     def get(self, request, **kwargs):
 
         GlobalKeyword.objects.from_csv(
-            "./Amazon Search Terms_Search Terms_US.csv",  # The path to a source file (a Python file object is also acceptable)
-            dict(department='Department', name='Search Term', frequency="Search Frequency Rank", asin_1="#1 Clicked ASIN", asin_2="#2 Clicked ASIN", asin_3="#3 Clicked ASIN")  # A crosswalk of model fields to CSV headers.
+            # The path to a source file (a Python file object is also acceptable)
+            "./Amazon Search Terms_Search Terms_US.csv",
+            dict(department='Department', name='Search Term', frequency="Search Frequency Rank", asin_1="#1 Clicked ASIN", asin_2="#2 Clicked ASIN",
+                 asin_3="#3 Clicked ASIN", drop_constraints=False, drop_indexes=False)  # A crosswalk of model fields to CSV headers.
         )
-        return Response({"detail" : "done"}, status=status.HTTP_200_OK)
+        return Response({"detail": "done"}, status=status.HTTP_200_OK)
