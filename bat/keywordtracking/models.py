@@ -2,6 +2,8 @@ from django.contrib.postgres.fields import HStoreField
 from django.db import models, transaction
 from django.utils import timezone
 
+from postgres_copy import CopyManager
+
 from bat.keywordtracking.constants import KEYWORD_STATUS_ACTIVE
 from bat.market.models import AmazonMarketplace, AmazonProduct
 from bat.setting.models import Status
@@ -11,20 +13,20 @@ from bat.setting.models import Status
 class GlobalKeyword(models.Model):
     """Global Keyword Search Frequency From Amazon."""
 
-    amazonmarketplace = models.ForeignKey(
-        AmazonMarketplace, on_delete=models.CASCADE
-    )
+    department = models.CharField(max_length=256)
     name = models.CharField(max_length=512)
     frequency = models.PositiveIntegerField(default=0)
     asin_1 = models.CharField(max_length=50, blank=True)
     asin_2 = models.CharField(max_length=50, blank=True)
     asin_3 = models.CharField(max_length=50, blank=True)
     create_date = models.DateTimeField(default=timezone.now)
+    objects = CopyManager()
+
 
     class Meta:
         """Keywords Meta."""
 
-        unique_together = ("amazonmarketplace", "name")
+        unique_together = ("department", "name")
 
     def __str__(self):
         """Return Value."""
