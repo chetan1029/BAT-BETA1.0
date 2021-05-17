@@ -8,6 +8,29 @@ from bat.setting.models import Status
 
 
 # Create your models here.
+class GlobalKeyword(models.Model):
+    """Global Keyword Search Frequency From Amazon."""
+
+    amazonmarketplace = models.ForeignKey(
+        AmazonMarketplace, on_delete=models.CASCADE
+    )
+    name = models.CharField(max_length=512)
+    frequency = models.PositiveIntegerField(default=0)
+    asin_1 = models.CharField(max_length=50, blank=True)
+    asin_2 = models.CharField(max_length=50, blank=True)
+    asin_3 = models.CharField(max_length=50, blank=True)
+    create_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Keywords Meta."""
+
+        unique_together = ("amazonmarketplace", "name")
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.name) + " - " + str(self.amazonmarketplace.country)
+
+
 class Keyword(models.Model):
     """Search Keywords."""
 
@@ -39,9 +62,7 @@ class ProductKeyword(models.Model):
     keyword = models.ForeignKey(
         Keyword, on_delete=models.CASCADE, verbose_name="Select Keyword"
     )
-    status = models.ForeignKey(
-        Status, on_delete=models.PROTECT
-    )
+    status = models.ForeignKey(Status, on_delete=models.PROTECT)
     create_date = models.DateField(default=timezone.now)
 
     class Meta:
@@ -57,7 +78,9 @@ class ProductKeyword(models.Model):
 class ProductKeywordRankManager(models.Manager):
     def bulk_delete(self, id_list):
         with transaction.atomic():
-            keywords = ProductKeywordRank.objects.filter(id__in=id_list).delete()
+            keywords = ProductKeywordRank.objects.filter(
+                id__in=id_list
+            ).delete()
         return ""
 
 
