@@ -1,11 +1,11 @@
-from django.db.models.aggregates import Avg
-from django.shortcuts import get_object_or_404
-import pytz
 import operator
 from datetime import date, datetime
 
+import pytz
 from django.db import transaction
+from django.db.models.aggregates import Avg
 from django.db.utils import IntegrityError
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
@@ -21,7 +21,11 @@ from rest_framework.views import APIView
 
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
-from bat.keywordtracking.models import Keyword, ProductKeyword, ProductKeywordRank
+from bat.keywordtracking.models import (
+    Keyword,
+    ProductKeyword,
+    ProductKeywordRank,
+)
 from bat.market.models import AmazonMarketplace, AmazonProduct
 from bat.setting.utils import get_status
 
@@ -175,7 +179,11 @@ class SaveProductKeyword(APIView):
     name="get",
     decorator=swagger_auto_schema(
         operation_description="dashboard data for product keyword rank.",
-        responses={status.HTTP_200_OK: SwaggerResponse([{"name": "string", "data": "list"}])},
+        responses={
+            status.HTTP_200_OK: SwaggerResponse(
+                [{"name": "string", "data": "list"}]
+            )
+        },
     ),
 )
 class OverallDashboardAPIView(APIView):
@@ -213,12 +221,16 @@ class OverallDashboardAPIView(APIView):
         marketplace = request.GET.get("marketplace", None)
         if marketplace:
             try:
-                marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
+                marketplace = get_object_or_404(
+                    AmazonMarketplace, pk=marketplace
+                )
                 all_product_keyword_rank = all_product_keyword_rank.filter(
                     productkeyword__amazonproduct__amazonaccounts__marketplace_id=marketplace.id
                 )
-            except ValueError as e:                
-                return Response({"detail" : str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError as e:
+                return Response(
+                    {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         product_keyword_rank_par_day = list(
             all_product_keyword_rank.values("date")
@@ -231,12 +243,7 @@ class OverallDashboardAPIView(APIView):
         for date, avg_visibility_score in product_keyword_rank_par_day:
             data[date.strftime(dt_format)] = int(avg_visibility_score)
 
-        stats = [
-            {
-                "name": "Visibilty Score",
-                "data": data,
-            }
-        ]
+        stats = [{"name": "Visibilty Score", "data": data}]
 
         return Response(stats, status=status.HTTP_200_OK)
 
