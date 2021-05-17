@@ -109,9 +109,9 @@ class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
             company_id=company_id, user_id=self.request.user.id
         )
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(
-            amazonaccounts__company_id=company_id
-        ).order_by("-create_date")
+        return queryset.filter(amazonaccounts__company_id=company_id).order_by(
+            "-create_date"
+        )
 
 
 @method_decorator(
@@ -209,6 +209,7 @@ class ProductKeywordAPIView(APIView):
                     "05/10/2021": 4,
                     "05/12/2021": 56,
                     "05/13/2021": 68,
+                    "05/01/2021": 68,
                 },
             },
             {
@@ -225,6 +226,7 @@ class ProductKeywordAPIView(APIView):
                     "05/10/2021": 45,
                     "05/12/2021": 78,
                     "05/13/2021": 12,
+                    "05/01/2021": 68,
                 },
             },
         ]
