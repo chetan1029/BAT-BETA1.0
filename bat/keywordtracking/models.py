@@ -1,7 +1,6 @@
 from django.contrib.postgres.fields import HStoreField
 from django.db import models, transaction
 from django.utils import timezone
-
 from postgres_copy import CopyManager
 
 from bat.keywordtracking.constants import KEYWORD_STATUS_ACTIVE
@@ -22,15 +21,9 @@ class GlobalKeyword(models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     objects = CopyManager()
 
-
-    class Meta:
-        """Keywords Meta."""
-
-        unique_together = ("department", "name")
-
     def __str__(self):
         """Return Value."""
-        return str(self.name) + " - " + str(self.amazonmarketplace.country)
+        return str(self.name)
 
 
 class Keyword(models.Model):
