@@ -5,6 +5,7 @@ from bat.company.urls import router
 from bat.keywordtracking.views import (
     KeywordTrackingProductViewsets,
     OverallDashboardAPIView,
+    ProductKeywordAPIView,
     ProductKeywordRankViewSet,
     ProductKeywordViewSet,
     SaveProductKeyword,
@@ -49,6 +50,11 @@ urlpatterns = [
     path(
         "companies/<company_pk>/keyword-tracking/dashboard/",
         OverallDashboardAPIView.as_view(),
-        name="email-campaign-dashboard",
+        name="keyword-tracking-dashboard",
+    ),
+    path(
+        "companies/<company_pk>/keyword-tracking/<keyword_id>dashboard/",
+        ProductKeywordAPIView.as_view(),
+        name="product-keyword-dashboard",
     ),
 ]

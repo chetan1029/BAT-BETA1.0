@@ -166,6 +166,30 @@ class OverallDashboardAPIView(APIView):
                     "05/12/2021": 56,
                     "05/13/2021": 68,
                 },
+            }
+        ]
+
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+class ProductKeywordAPIView(APIView):
+    def get(self, request, company_pk=None, **kwargs):
+        stats = [
+            {
+                "name": "Visibilty Score",
+                "data": {
+                    "05/01/2021": 10,
+                    "05/02/2021": 20,
+                    "05/03/2021": 50,
+                    "05/04/2021": 4,
+                    "05/05/2021": 34,
+                    "05/07/2021": 67,
+                    "05/08/2021": 11,
+                    "05/09/2021": 120,
+                    "05/10/2021": 4,
+                    "05/12/2021": 56,
+                    "05/13/2021": 68,
+                },
             },
             {
                 "name": "Rank",
