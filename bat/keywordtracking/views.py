@@ -57,6 +57,16 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
         "productkeyword__amazonproduct__asin",
     ]
 
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        _member = get_member(
+            company_id=company_id, user_id=self.request.user.id
+        )
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            productkeyword__amazonproduct__amazonaccounts__company_id=company_id
+        ).order_by("-date")
+
     @action(detail=False, methods=["post"])
     def bulk_action(self, request, *args, **kwargs):
         """Set the update_status_bulk action."""
@@ -92,6 +102,16 @@ class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["productkeyword__amazonproduct_id"]
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        _member = get_member(
+            company_id=company_id, user_id=self.request.user.id
+        )
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            amazonaccounts__company_id=company_id
+        ).order_by("-create_date")
 
 
 @method_decorator(

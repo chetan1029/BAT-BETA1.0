@@ -90,7 +90,7 @@ class AmazonProductViewsets(viewsets.ReadOnlyModelViewSet):
         )
         queryset = super().filter_queryset(queryset)
         return queryset.filter(
-            amazonaccounts__company__id=company_id
+            amazonaccounts__company_id=company_id
         ).order_by("-create_date")
 
 
