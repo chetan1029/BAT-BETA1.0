@@ -53,7 +53,7 @@ urlpatterns = [
         name="keyword-tracking-dashboard",
     ),
     path(
-        "companies/<company_pk>/product-keywords/dashboard/",
+        "companies/<company_pk>/keyword-tracking/<keyword_id>/dashboard/",
         ProductKeywordAPIView.as_view(),
         name="product-keyword-dashboard",
     ),
