@@ -189,6 +189,8 @@ class SaveProductKeyword(APIView):
 class OverallDashboardAPIView(APIView):
     def get(self, request, company_pk=None, **kwargs):
 
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+
         all_product_keyword_rank = ProductKeywordRank.objects.filter(
             productkeyword__amazonproduct__amazonaccounts__company_id=company_pk
         )
@@ -249,42 +251,60 @@ class OverallDashboardAPIView(APIView):
 
 
 class ProductKeywordAPIView(APIView):
-    def get(self, request, company_pk=None, **kwargs):
+    def get(self, request, company_pk=None, product_keyword_pk=None, **kwargs):
+
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+
+        _product_keyword = get_object_or_404(
+            ProductKeyword, pk=product_keyword_pk, amazonproduct__amazonaccounts__company_id=company_pk)
+
+        all_product_keyword_rank = ProductKeywordRank.objects.filter(
+            productkeyword_id=product_keyword_pk
+        )
+
+        dt_format = "%m/%d/%Y"
+
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+
+        start_date = (
+            pytz.utc.localize(datetime.strptime(start_date, dt_format))
+            if start_date
+            else None
+        )
+        end_date = (
+            pytz.utc.localize(datetime.strptime(end_date, dt_format))
+            if end_date
+            else None
+        )
+
+        if start_date:
+            all_product_keyword_rank = all_product_keyword_rank.filter(
+                date__gte=start_date
+            )
+        if end_date:
+            all_product_keyword_rank = all_product_keyword_rank.filter(
+                date__lte=end_date
+            )
+
+        all_product_keyword_rank = all_product_keyword_rank.values_list(
+            "date", "visibility_score", "rank")
+
+        visibility_score_data = {}
+        rank_data = {}
+
+        for date, visibility_score, rank in all_product_keyword_rank:
+            visibility_score_data[date.strftime(dt_format)] = visibility_score
+            rank_data[date.strftime(dt_format)] = rank
+
         stats = [
             {
                 "name": "Visibilty Score",
-                "data": {
-                    "05/01/2021": 10,
-                    "05/02/2021": 20,
-                    "05/03/2021": 50,
-                    "05/04/2021": 4,
-                    "05/05/2021": 34,
-                    "05/07/2021": 67,
-                    "05/08/2021": 11,
-                    "05/09/2021": 120,
-                    "05/10/2021": 4,
-                    "05/12/2021": 56,
-                    "05/13/2021": 68,
-                    "05/01/2021": 68,
-                },
+                "data": visibility_score_data,
             },
             {
                 "name": "Rank",
-                "data": {
-                    "05/01/2021": 50,
-                    "05/02/2021": 23,
-                    "05/03/2021": 4,
-                    "05/04/2021": 56,
-                    "05/05/2021": 54,
-                    "05/07/2021": 68,
-                    "05/08/2021": 124,
-                    "05/09/2021": 3,
-                    "05/10/2021": 45,
-                    "05/12/2021": 78,
-                    "05/13/2021": 12,
-                    "05/01/2021": 68,
-                },
+                "data": rank_data,
             },
         ]
-
         return Response(stats, status=status.HTTP_200_OK)
