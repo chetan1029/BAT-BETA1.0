@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
 from bat.keywordtracking.models import (
+    GlobalKeyword,
     Keyword,
     ProductKeyword,
     ProductKeywordRank,
@@ -193,7 +194,7 @@ class OverallDashboardAPIView(APIView):
 
         all_product_keyword_rank = ProductKeywordRank.objects.filter(
             productkeyword__amazonproduct__amazonaccounts__company_id=company_pk
-        )
+        ).order_by("-date")
 
         dt_format = "%m/%d/%Y"
 
@@ -260,7 +261,7 @@ class ProductKeywordAPIView(APIView):
 
         all_product_keyword_rank = ProductKeywordRank.objects.filter(
             productkeyword_id=product_keyword_pk
-        )
+        ).order_by("-date")
 
         dt_format = "%m/%d/%Y"
 
@@ -308,3 +309,15 @@ class ProductKeywordAPIView(APIView):
             },
         ]
         return Response(stats, status=status.HTTP_200_OK)
+
+
+class TestImportGlobalKeywordAPIView(APIView):
+    def get(self, request, **kwargs):
+
+        GlobalKeyword.objects.from_csv(
+            # The path to a source file (a Python file object is also acceptable)
+            "./Amazon Search Terms_Search Terms_US.csv",
+            dict(department='Department', name='Search Term', frequency="Search Frequency Rank", asin_1="#1 Clicked ASIN", asin_2="#2 Clicked ASIN",
+                 asin_3="#3 Clicked ASIN", drop_constraints=False, drop_indexes=False)  # A crosswalk of model fields to CSV headers.
+        )
+        return Response({"detail": "done"}, status=status.HTTP_200_OK)
