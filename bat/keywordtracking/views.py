@@ -1,5 +1,8 @@
+from django.db.models.aggregates import Avg
+from django.shortcuts import get_object_or_404
+import pytz
 import operator
-from datetime import date
+from datetime import date, datetime
 
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -19,7 +22,7 @@ from rest_framework.views import APIView
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
 from bat.keywordtracking.models import Keyword, ProductKeyword, ProductKeywordRank
-from bat.market.models import AmazonProduct
+from bat.market.models import AmazonMarketplace, AmazonProduct
 from bat.setting.utils import get_status
 
 # Create your views here.
@@ -168,24 +171,70 @@ class SaveProductKeyword(APIView):
         )
 
 
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(
+        operation_description="dashboard data for product keyword rank.",
+        responses={status.HTTP_200_OK: SwaggerResponse([{"name": "string", "data": "list"}])},
+    ),
+)
 class OverallDashboardAPIView(APIView):
     def get(self, request, company_pk=None, **kwargs):
+
+        all_product_keyword_rank = ProductKeywordRank.objects.filter(
+            productkeyword__amazonproduct__amazonaccounts__company_id=company_pk
+        )
+
+        dt_format = "%m/%d/%Y"
+
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+
+        start_date = (
+            pytz.utc.localize(datetime.strptime(start_date, dt_format))
+            if start_date
+            else None
+        )
+        end_date = (
+            pytz.utc.localize(datetime.strptime(end_date, dt_format))
+            if end_date
+            else None
+        )
+
+        if start_date:
+            all_product_keyword_rank = all_product_keyword_rank.filter(
+                date__gte=start_date
+            )
+        if end_date:
+            all_product_keyword_rank = all_product_keyword_rank.filter(
+                date__lte=end_date
+            )
+
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace:
+            try:
+                marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
+                all_product_keyword_rank = all_product_keyword_rank.filter(
+                    productkeyword__amazonproduct__amazonaccounts__marketplace_id=marketplace.id
+                )
+            except ValueError as e:                
+                return Response({"detail" : str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        product_keyword_rank_par_day = list(
+            all_product_keyword_rank.values("date")
+            .annotate(avg_visibility_score=Avg("visibility_score"))
+            .values_list("date", "avg_visibility_score")
+            .order_by("date")
+        )
+
+        data = {}
+        for date, avg_visibility_score in product_keyword_rank_par_day:
+            data[date.strftime(dt_format)] = int(avg_visibility_score)
+
         stats = [
             {
                 "name": "Visibilty Score",
-                "data": {
-                    "05/01/2021": 10,
-                    "05/02/2021": 20,
-                    "05/03/2021": 50,
-                    "05/04/2021": 4,
-                    "05/05/2021": 34,
-                    "05/07/2021": 67,
-                    "05/08/2021": 11,
-                    "05/09/2021": 120,
-                    "05/10/2021": 4,
-                    "05/12/2021": 56,
-                    "05/13/2021": 68,
-                },
+                "data": data,
             }
         ]
 
