@@ -32,12 +32,16 @@ class HeroAdmin(admin.ModelAdmin):
     def import_csv(self, request):
         def _clean(csv_file):
             decoded_file = csv_file.read().decode('utf-8').splitlines()
-            reader = csv.DictReader(decoded_file, delimiter=',')
-            headers = reader.fieldnames
+            csv_reader = csv.DictReader(decoded_file, delimiter=',')
+            headers = csv_reader.fieldnames
             data=[]
-            for row in reader:
+            department = None
+            for row in csv_reader:
                 r = row.copy()
                 for key, value in row.items():
+                    if department is None:
+                        if key == "Department":
+                            department = value
                     if key == "Search Frequency Rank":
                         r[key] = value.replace(',', '')
                 data.append(r)
@@ -46,13 +50,31 @@ class HeroAdmin(admin.ModelAdmin):
             dict_writer.writeheader()
             dict_writer.writerows(data)
             csvfile.seek(0)
-            return csvfile
 
+            # delete
+            if not department is None:
+                GlobalKeyword.objects.filter(department=department).delete()
+
+            return csvfile
+        
+        def _delete(csv_file):
+            csv_reader = csv.DictReader(csv_file, delimiter=',')
+            department = ""
+            # try:
+            for row in csv_reader:
+                for key, value in row.items():
+                    if key == "Department":
+                        department = value
+                        break
+            # except StopIteration:
+            #     pass
+            print(department)
+            GlobalKeyword.objects.filter(department=department).delete()
 
         if request.method == "POST":
             csv_file1 = request.FILES["csv_file"]
             csv_file = _clean(csv_file1)
-
+            # _delete(csv_file1)
             GlobalKeyword.objects.from_csv(
             csv_file,
             mapping=dict(department='Department',
