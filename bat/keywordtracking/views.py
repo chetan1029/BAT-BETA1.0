@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytz
 from django.db import transaction
+from django.db.models import Q
 from django.db.models.aggregates import Avg
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
@@ -13,7 +14,7 @@ from drf_yasg2.openapi import Response as SwaggerResponse
 from drf_yasg2.utils import swagger_auto_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -57,11 +58,19 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ProductKeywordRankSerializer
     queryset = ProductKeywordRank.objects.all()
     permission_classes = (IsAuthenticated,)
-    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["date", "productkeyword__amazonproduct"]
     search_fields = [
         "productkeyword__keyword__name",
         "productkeyword__amazonproduct__asin",
+    ]
+    ordering_fields = [
+        "frequency",
+        "rank",
+        "id",
+        "index",
+        "visibility_score",
+        "productkeyword__keyword__name",
     ]
 
     def filter_queryset(self, queryset):
@@ -316,4 +325,22 @@ class ProductKeywordAPIView(APIView):
             {"name": "Visibilty Score", "data": visibility_score_data},
             {"name": "Rank", "data": rank_data},
         ]
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+class SuggestKeywordAPIView(APIView):
+    def get(self, request, company_pk=None, **kwargs):
+
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+
+        asin = self.request.GET.get("asins")
+        asin = asin.split(",")
+
+        suggested_keywords = GlobalKeyword.objects.filter(
+            Q(asin_1__in=asin) | Q(asin_2__in=asin) | Q(asin_3__in=asin)
+        ).order_by("-frequency")
+
+        suggested_keywords = suggested_keywords.values_list("name", flat=True)
+
+        stats = {"data": suggested_keywords}
         return Response(stats, status=status.HTTP_200_OK)

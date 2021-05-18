@@ -9,6 +9,7 @@ from bat.keywordtracking.views import (
     ProductKeywordRankViewSet,
     ProductKeywordViewSet,
     SaveProductKeyword,
+    SuggestKeywordAPIView,
 )
 
 product_keyword_router = routers.NestedSimpleRouter(
@@ -56,5 +57,10 @@ urlpatterns = [
         "companies/<company_pk>/keyword-tracking/<product_keyword_pk>/dashboard/",
         ProductKeywordAPIView.as_view(),
         name="product-keyword-dashboard",
+    ),
+    path(
+        "companies/<company_pk>/suggested-keywords/",
+        SuggestKeywordAPIView.as_view(),
+        name="suggested-keywords",
     ),
 ]

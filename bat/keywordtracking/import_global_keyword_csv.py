@@ -14,6 +14,7 @@ class CsvImportForm(forms.Form):
 def import_global_keyword_csv(csv_file):
     def _clean(csv_file):
         decoded_file = csv_file.read().decode("utf-8").splitlines()
+        decoded_file.pop(0)
         csv_reader = csv.DictReader(decoded_file, delimiter=",")
         headers = csv_reader.fieldnames
         data = []
@@ -26,7 +27,8 @@ def import_global_keyword_csv(csv_file):
                         department = value
                 if key == "Search Frequency Rank":
                     r[key] = value.replace(",", "")
-            data.append(r)
+            if r["Search Term"] != "" and r["Search Term"] != None:
+                data.append(r)
         csvfile = StringIO()
         dict_writer = csv.DictWriter(csvfile, headers, extrasaction="ignore")
         dict_writer.writeheader()
