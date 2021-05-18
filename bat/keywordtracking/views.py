@@ -1,5 +1,5 @@
 import operator
-from datetime import date, datetime
+from datetime import datetime
 
 import pytz
 from django.db import transaction
@@ -11,7 +11,6 @@ from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg2.openapi import Response as SwaggerResponse
 from drf_yasg2.utils import swagger_auto_schema
-from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -21,12 +20,7 @@ from rest_framework.views import APIView
 
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
-from bat.keywordtracking.models import (
-    GlobalKeyword,
-    Keyword,
-    ProductKeyword,
-    ProductKeywordRank,
-)
+from bat.keywordtracking.models import Keyword, ProductKeyword, ProductKeywordRank
 from bat.market.models import AmazonMarketplace, AmazonProduct
 from bat.setting.utils import get_status
 
@@ -307,21 +301,3 @@ class ProductKeywordAPIView(APIView):
             {"name": "Rank", "data": rank_data},
         ]
         return Response(stats, status=status.HTTP_200_OK)
-
-
-class TestImportGlobalKeywordAPIView(APIView):
-    def get(self, request, **kwargs):
-
-        GlobalKeyword.objects.from_csv(
-            # The path to a source file (a Python file object is also acceptable)
-            "/Volumes/Volutz/amazon-search-terms.csv",
-            dict(
-                department="Department",
-                name="Search Term",
-                frequency="Search Frequency Rank",
-                asin_1="#1 Clicked ASIN",
-                asin_2="#2 Clicked ASIN",
-                asin_3="#3 Clicked ASIN",
-            ),  # A crosswalk of model fields to CSV headers.
-        )
-        return Response({"detail": "done"}, status=status.HTTP_200_OK)

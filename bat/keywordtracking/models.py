@@ -23,7 +23,7 @@ class GlobalKeyword(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return str(self.name)
+        return str(self.name) + " - " + str(self.department)
 
 
 class Keyword(models.Model):
