@@ -258,7 +258,10 @@ class ProductKeywordAPIView(APIView):
         _member = get_member(company_id=company_pk, user_id=request.user.id)
 
         _product_keyword = get_object_or_404(
-            ProductKeyword, pk=product_keyword_pk, amazonproduct__amazonaccounts__company_id=company_pk)
+            ProductKeyword,
+            pk=product_keyword_pk,
+            amazonproduct__amazonaccounts__company_id=company_pk,
+        )
 
         all_product_keyword_rank = ProductKeywordRank.objects.filter(
             productkeyword_id=product_keyword_pk
@@ -290,7 +293,8 @@ class ProductKeywordAPIView(APIView):
             )
 
         all_product_keyword_rank = all_product_keyword_rank.values_list(
-            "date", "visibility_score", "rank")
+            "date", "visibility_score", "rank"
+        )
 
         visibility_score_data = {}
         rank_data = {}
@@ -300,23 +304,16 @@ class ProductKeywordAPIView(APIView):
             rank_data[date.strftime(dt_format)] = rank
 
         stats = [
-            {
-                "name": "Visibilty Score",
-                "data": visibility_score_data,
-            },
-            {
-                "name": "Rank",
-                "data": rank_data,
-            },
+            {"name": "Visibilty Score", "data": visibility_score_data},
+            {"name": "Rank", "data": rank_data},
         ]
         return Response(stats, status=status.HTTP_200_OK)
 
 
 class TestImportGlobalKeywordAPIView(APIView):
     def get(self, request, **kwargs):
-        print(timezone.now().isoformat())
         GlobalKeyword.objects.from_csv(
-            "../Amazon Search Terms_Search Terms_US.csv",
+            "../amazon-search-terms.csv",
             mapping=dict(department='Department',
                          name='Search Term',
                          frequency="Search Frequency Rank",

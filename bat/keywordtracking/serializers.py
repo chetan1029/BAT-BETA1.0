@@ -1,9 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
-from django.utils.translation import ugettext_lazy as _
-
-from rest_framework import serializers
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
+from rest_framework import serializers
+
 from bat.globalutils.utils import get_status_object
 from bat.keywordtracking.constants import KEYWORD_STATUS_CHOICE
 from bat.keywordtracking.models import Keyword, ProductKeyword, ProductKeywordRank
@@ -13,6 +13,8 @@ from bat.serializersFields.serializers_fields import StatusField
 
 
 class KeywordSerializer(serializers.ModelSerializer):
+    amazonmarketplace = AmazonMarketplaceSerializer(read_only=True)
+
     class Meta:
         model = Keyword
         fields = ("id", "name", "frequency", "amazonmarketplace")
@@ -75,18 +77,24 @@ class SaveKeywordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         member = self.context.get("member")
-        try :
-            AmazonProduct.objects.get(pk=attrs.get(
-                "amazon_product_pk"), amazonaccounts__company_id=member.company.id, amazonaccounts__user_id=member.user.id)
-        except ObjectDoesNotExist :
+        try:
+            AmazonProduct.objects.get(
+                pk=attrs.get("amazon_product_pk"),
+                amazonaccounts__company_id=member.company.id,
+                amazonaccounts__user_id=member.user.id,
+            )
+        except ObjectDoesNotExist:
             raise serializers.ValidationError(
-                    {"amazon_product_pk": _("Invalid product selectd.")}
-                )
+                {"amazon_product_pk": _("Invalid product selectd.")}
+            )
         return super().validate(attrs)
+
 
 class KeywordsBulkActionSerializer(serializers.Serializer):
     ids = serializers.ListField(required=True)
-    action = serializers.ChoiceField(required=True, choices=list(["delete", "Delete"]))
+    action = serializers.ChoiceField(
+        required=True, choices=list(["delete", "Delete"])
+    )
 
     def validate(self, attrs):
         data = super().validate(attrs)

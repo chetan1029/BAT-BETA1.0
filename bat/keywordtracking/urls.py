@@ -58,6 +58,9 @@ urlpatterns = [
         ProductKeywordAPIView.as_view(),
         name="product-keyword-dashboard",
     ),
-    path("aaaaa/TestImportGlobalKeywordAPIView", TestImportGlobalKeywordAPIView.as_view(),
-        name="TestImportGlobalKeywordAPIView",)
+    path(
+        "aaaaa/TestImportGlobalKeywordAPIView",
+        TestImportGlobalKeywordAPIView.as_view(),
+        name="TestImportGlobalKeywordAPIView",
+    ),
 ]
