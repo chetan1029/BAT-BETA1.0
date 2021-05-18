@@ -1,3 +1,6 @@
+import csv
+from io import StringIO
+
 from django.contrib import admin
 from django import forms
 from django.urls import path 
@@ -27,8 +30,29 @@ class HeroAdmin(admin.ModelAdmin):
         return my_urls + urls
 
     def import_csv(self, request):
+        def _clean(csv_file):
+            decoded_file = csv_file.read().decode('utf-8').splitlines()
+            reader = csv.DictReader(decoded_file, delimiter=',')
+            headers = reader.fieldnames
+            data=[]
+            for row in reader:
+                r = row.copy()
+                for key, value in row.items():
+                    if key == "Search Frequency Rank":
+                        r[key] = value.replace(',', '')
+                data.append(r)
+            csvfile = StringIO()
+            dict_writer = csv.DictWriter(csvfile, headers, extrasaction='ignore')
+            dict_writer.writeheader()
+            dict_writer.writerows(data)
+            csvfile.seek(0)
+            return csvfile
+
+
         if request.method == "POST":
-            csv_file = request.FILES["csv_file"]
+            csv_file1 = request.FILES["csv_file"]
+            csv_file = _clean(csv_file1)
+
             GlobalKeyword.objects.from_csv(
             csv_file,
             mapping=dict(department='Department',
