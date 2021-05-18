@@ -30,7 +30,7 @@ class GlobalKeyword(models.Model):
 
     def __str__(self):
         """Return Value."""
-        return str(self.name) + " - " + str(self.amazonmarketplace.country)
+        return str(self.name) + " - " + str(self.department)
 
 
 class Keyword(models.Model):

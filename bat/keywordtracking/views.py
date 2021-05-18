@@ -1,5 +1,6 @@
 import operator
 from datetime import date, datetime
+from django.utils import timezone
 
 import pytz
 from django.db import transaction
@@ -313,11 +314,17 @@ class ProductKeywordAPIView(APIView):
 
 class TestImportGlobalKeywordAPIView(APIView):
     def get(self, request, **kwargs):
-
+        print(timezone.now().isoformat())
         GlobalKeyword.objects.from_csv(
-            # The path to a source file (a Python file object is also acceptable)
-            "./Amazon Search Terms_Search Terms_US.csv",
-            dict(department='Department', name='Search Term', frequency="Search Frequency Rank", asin_1="#1 Clicked ASIN", asin_2="#2 Clicked ASIN",
-                 asin_3="#3 Clicked ASIN", drop_constraints=False, drop_indexes=False)  # A crosswalk of model fields to CSV headers.
+            "../Amazon Search Terms_Search Terms_US.csv",
+            mapping=dict(department='Department',
+                         name='Search Term',
+                         frequency="Search Frequency Rank",
+                         asin_1="#1 Clicked ASIN",
+                         asin_2="#2 Clicked ASIN",
+                         asin_3="#3 Clicked ASIN"),
+            static_mapping={"create_date": timezone.now().isoformat()},
+            drop_indexes=False,
+            drop_constraints=False
         )
         return Response({"detail": "done"}, status=status.HTTP_200_OK)
