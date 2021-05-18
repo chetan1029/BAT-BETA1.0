@@ -52,7 +52,7 @@ class HeroAdmin(admin.ModelAdmin):
             csvfile.seek(0)
 
             # delete
-            if not department is None:
+            if department is not None:
                 GlobalKeyword.objects.filter(department=department).delete()
 
             return csvfile
