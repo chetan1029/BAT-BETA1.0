@@ -20,7 +20,12 @@ from rest_framework.views import APIView
 
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
-from bat.keywordtracking.models import Keyword, ProductKeyword, ProductKeywordRank
+from bat.keywordtracking.models import (
+    GlobalKeyword,
+    Keyword,
+    ProductKeyword,
+    ProductKeywordRank,
+)
 from bat.market.models import AmazonMarketplace, AmazonProduct
 from bat.setting.utils import get_status
 
@@ -103,7 +108,7 @@ class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.KeywordTrackingProductSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["productkeyword__amazonproduct_id"]
+    filterset_fields = ["status__name"]
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
@@ -137,17 +142,27 @@ class SaveProductKeyword(APIView):
                 pk=serializer.validated_data.get("amazon_product_pk")
             )
             keywords = serializer.validated_data.get("keywords")
-            print(amazon_product)
-            print(keywords)
+
             if operator.contains(keywords, ","):
                 keywords = keywords.split(",")
             else:
                 keywords = keywords.split("\n")
             amazonmarketplace = amazon_product.amazonaccounts.marketplace
             for word in keywords:
-                keyword, _keyword_c = Keyword.objects.get_or_create(
-                    amazonmarketplace=amazonmarketplace, name=word
+
+                search_frequency = 0
+                globalkeyword = GlobalKeyword.objects.filter(
+                    department=amazonmarketplace.sales_channel_name, name=word
                 )
+                if globalkeyword.exists():
+                    search_frequency = globalkeyword.first().frequency
+
+                keyword, _keyword_c = Keyword.objects.update_or_create(
+                    amazonmarketplace=amazonmarketplace,
+                    name=word,
+                    defaults={"frequency": search_frequency},
+                )
+
                 product_keyword, _product_keyword_C = ProductKeyword.objects.get_or_create(
                     amazonproduct=amazon_product,
                     keyword=keyword,
@@ -161,7 +176,8 @@ class SaveProductKeyword(APIView):
                 try:
                     with transaction.atomic():
                         product_keyword_rank = ProductKeywordRank.objects.create(
-                            productkeyword=product_keyword
+                            productkeyword=product_keyword,
+                            frequency=search_frequency,
                         )
                 except IntegrityError:
                     pass
