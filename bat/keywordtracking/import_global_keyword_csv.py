@@ -23,7 +23,8 @@ def import_global_keyword_csv(csv_file):
                         department = value
                 if key == "Search Frequency Rank":
                     r[key] = value.replace(',', '')
-            data.append(r)
+            if r["Search Term"] != "" and r["Search Term"] != None:
+                data.append(r)
         csvfile = StringIO()
         dict_writer = csv.DictWriter(csvfile, headers, extrasaction='ignore')
         dict_writer.writeheader()
