@@ -56,25 +56,10 @@ class HeroAdmin(admin.ModelAdmin):
                 GlobalKeyword.objects.filter(department=department).delete()
 
             return csvfile
-        
-        def _delete(csv_file):
-            csv_reader = csv.DictReader(csv_file, delimiter=',')
-            department = ""
-            # try:
-            for row in csv_reader:
-                for key, value in row.items():
-                    if key == "Department":
-                        department = value
-                        break
-            # except StopIteration:
-            #     pass
-            print(department)
-            GlobalKeyword.objects.filter(department=department).delete()
 
         if request.method == "POST":
             csv_file1 = request.FILES["csv_file"]
             csv_file = _clean(csv_file1)
-            # _delete(csv_file1)
             GlobalKeyword.objects.from_csv(
             csv_file,
             mapping=dict(department='Department',
