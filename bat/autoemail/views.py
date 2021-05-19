@@ -190,6 +190,31 @@ class EmailCampaignViewsets(
         )
 
 
+class EmailTemplateViewsets(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = EmailTemplate.objects.all()
+    serializer_class = serializers.EmailTemplateSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ["name"]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(company__id=company_id).order_by("id")
+
+
 class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
     queryset = EmailQueue.objects.all()
     serializer_class = serializers.EmailQueueSerializer
