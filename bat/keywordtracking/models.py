@@ -4,6 +4,7 @@ from django.utils import timezone
 from postgres_copy import CopyManager
 
 from bat.keywordtracking.constants import KEYWORD_STATUS_ACTIVE
+from bat.keywordtracking.utils import get_visibility_score
 from bat.market.models import AmazonMarketplace, AmazonProduct
 from bat.setting.models import Status
 
@@ -116,3 +117,13 @@ class ProductKeywordRank(models.Model):
             + " - Date: "
             + str(self.date)
         )
+
+    def save(self, *args, **kwargs):
+        try:
+            visibility_score = get_visibility_score(
+                self.frequency, self.rank, self.page
+            )
+            self.visibility_score = visibility_score
+            return super().save(*args, **kwargs)
+        except e:
+            return super().save(*args, **kwargs)

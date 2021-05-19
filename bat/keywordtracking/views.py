@@ -1,3 +1,4 @@
+import json
 import operator
 from datetime import datetime
 
@@ -340,7 +341,7 @@ class SuggestKeywordAPIView(APIView):
             Q(asin_1__in=asin) | Q(asin_2__in=asin) | Q(asin_3__in=asin)
         ).order_by("-frequency")
 
-        suggested_keywords = suggested_keywords.values_list("name", flat=True)
+        suggested_keywords = suggested_keywords.values("name")
 
         stats = {"data": suggested_keywords}
         return Response(stats, status=status.HTTP_200_OK)
