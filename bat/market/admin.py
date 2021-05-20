@@ -9,6 +9,8 @@ from bat.market.models import (
     AmazonOrderItem,
     AmazonOrderShipping,
     AmazonProduct,
+    PPCCredentials,
+    PPCProfile,
 )
 
 # Register your models here.
@@ -21,3 +23,5 @@ admin.site.register(AmazonOrder)
 admin.site.register(AmazonOrderItem)
 admin.site.register(AmazonOrderShipping)
 admin.site.register(AmazonCompany)
+admin.site.register(PPCCredentials)
+admin.site.register(PPCProfile)

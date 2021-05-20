@@ -190,12 +190,7 @@ class EmailCampaignViewsets(
         )
 
 
-class EmailTemplateViewsets(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
+class EmailTemplateViewsets(viewsets.ModelViewSet):
     queryset = EmailTemplate.objects.all()
     serializer_class = serializers.EmailTemplateSerializer
     permission_classes = (IsAuthenticated,)

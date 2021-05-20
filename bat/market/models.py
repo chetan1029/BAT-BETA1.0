@@ -14,7 +14,11 @@ from taggit.managers import TaggableManager
 from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
+from bat.product.models import (
+    Image,
+    IsDeletableMixin,
+    UniqueWithinCompanyMixin,
+)
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -659,3 +663,72 @@ class AmazonOrderShipping(models.Model):
     def __str__(self):
         """Return Value."""
         return str(self.amazonorder.order_id)
+
+
+class PPCCredentials(models.Model):
+    """
+    PPC - Credentials to hold up auth code, access token, refresh token, etc
+    """
+
+    auth_code = models.CharField(
+        verbose_name="Auth Code", max_length=1024, blank=False, null=False
+    )
+    access_token = models.CharField(
+        verbose_name="Access Token", max_length=2024, blank=False, null=False
+    )
+    refresh_token = models.CharField(
+        verbose_name="Refresh Token", max_length=2024, blank=False, null=False
+    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    create_date = models.DateTimeField(default=timezone.now)
+    update_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("PPC Credentials")
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.company.name)
+
+
+class PPCProfileManager(models.Manager):
+    def create_multiple_from_data(self, user, data):
+        profiles = []
+        for profileData in data:
+            profile, created = self.update_or_create(
+                profileId=profileData.get("profileId"),
+                user=user,
+                defaults=profileData,
+            )
+            profiles.append(profile)
+        return profiles
+
+
+class PPCProfile(models.Model):
+    """
+    PPC Profile
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    profile_id = models.BigIntegerField(
+        _("Profile ID"), null=False, blank=False
+    )
+    amazonmarketplace = models.ForeignKey(
+        AmazonMarketplace, on_delete=models.PROTECT
+    )
+
+    class Meta:
+        """Meta Class."""
+
+        verbose_name_plural = _("PPC Profile")
+
+    def __str__(self):
+        """Return Value."""
+        return (
+            str(self.company.name)
+            + " - "
+            + str(self.amazonmarketplace.country)
+        )

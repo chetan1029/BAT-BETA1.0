@@ -460,16 +460,19 @@ SELLING_REGIONS = {
         "name": "North America",
         "endpoint": "https://sellingpartnerapi-na.amazon.com",
         "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
+        "ad_region": env("AMAZON_PPC_REGION"),
     },
     "eu_west_1": {
         "name": "Europe",
         "endpoint": "https://sellingpartnerapi-eu.amazon.com",
         "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL_EUROPE"),
+        "ad_region": env("AMAZON_PPC_REGION_EU"),
     },
     "us_west_2": {
         "name": "Far East",
         "endpoint": "https://sellingpartnerapi-fe.amazon.com",
         "auth_url": env("AMAZON_SELLER_CENTRAL_AUTHORIZE_URL"),
+        "ad_region": env("AMAZON_PPC_REGION_FE"),
     },
 }
 
@@ -486,3 +489,22 @@ MAIL_FROM_ADDRESS = env("MAIL_FROM_ADDRESS")
 # Summernote theme
 SUMMERNOTE_THEME = "bs4"
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+# AMAZON PPC
+AMAZON_PPC_AUTH_ENDPOINT = env(
+    "AMAZON_PPC_AUTH_ENDPOINT", default="https://www.amazon.com/ap/oa"
+)
+AMAZON_PPC_TOKEN_ENDPOINT = env(
+    "AMAZON_PPC_TOKEN_ENDPOINT", default="https://api.amazon.com/auth/o2/token"
+)
+AMAZON_PPC_AUTH_SCOPE = env(
+    "AMAZON_PPC_AUTH_SCOPE", default="cpc_advertising:campaign_management"
+)
+AMAZON_PPC_CLIENT_ID = env("AMAZON_PPC_CLIENT_ID")
+AMAZON_PPC_CLIENT_SECRET = env("AMAZON_PPC_CLIENT_SECRET")
+AMAZON_PPC_PROFILE_ID = env(
+    "AMAZON_PPC_PROFILE_ID", default="2719691478200925"
+)
+AMAZON_PPC_REGION = env(
+    "AMAZON_PPC_REGION", default="advertising-api-test.amazon.com"
+)

@@ -118,12 +118,9 @@ class ProductKeywordRank(models.Model):
             + str(self.date)
         )
 
-    def save(self, *args, **kwargs):
-        try:
-            visibility_score = get_visibility_score(
-                self.frequency, self.rank, self.page
-            )
-            self.visibility_score = visibility_score
-            return super().save(*args, **kwargs)
-        except e:
-            return super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     visibility_score = get_visibility_score(
+    #         self.frequency, self.rank, self.page
+    #     )
+    #     self.visibility_score = visibility_score
+    #     return super().save(*args, **kwargs)

@@ -3,6 +3,7 @@ import operator
 from datetime import datetime
 
 import pytz
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.aggregates import Avg
@@ -28,7 +29,14 @@ from bat.keywordtracking.models import (
     ProductKeyword,
     ProductKeywordRank,
 )
-from bat.market.models import AmazonMarketplace, AmazonProduct
+from bat.market.amazon_ad_api import Keywords
+from bat.market.models import (
+    AmazonAccounts,
+    AmazonMarketplace,
+    AmazonProduct,
+    PPCCredentials,
+    PPCProfile,
+)
 from bat.setting.utils import get_status
 
 # Create your views here.
@@ -185,7 +193,7 @@ class SaveProductKeyword(APIView):
                 )
                 try:
                     with transaction.atomic():
-                        product_keyword_rank = ProductKeywordRank.objects.create(
+                        ProductKeywordRank.objects.create(
                             productkeyword=product_keyword,
                             frequency=search_frequency,
                         )
@@ -334,14 +342,54 @@ class SuggestKeywordAPIView(APIView):
 
         _member = get_member(company_id=company_pk, user_id=request.user.id)
 
-        asin = self.request.GET.get("asins")
-        asin = asin.split(",")
+        amazonaccount_id = self.request.GET.get("amazonaccount_id")
+        amazonaccount = get_object_or_404(AmazonAccounts, pk=amazonaccount_id)
+        ad_region = settings.SELLING_REGIONS.get(
+            amazonaccount.marketplace.region
+        ).get("ad_region")
 
-        suggested_keywords = GlobalKeyword.objects.filter(
-            Q(asin_1__in=asin) | Q(asin_2__in=asin) | Q(asin_3__in=asin)
-        ).order_by("-frequency")
+        asins = self.request.GET.get("asins")
+        asins = asins.split(",")
 
-        suggested_keywords = suggested_keywords.values("name")
+        credentials = PPCCredentials.objects.first()
+        ppcprofile = PPCProfile.objects.filter(
+            amazonmarketplace=amazonaccount.marketplace
+        ).first()
+        keyword_list = []
+        if ppcprofile:
+            if credentials:
+                KeywordsAPI = Keywords(
+                    credentials.access_token,
+                    credentials.refresh_token,
+                    scope=ppcprofile.profile_id,
+                    region=ad_region,
+                )
+                KeywordsAPI.do_refresh_token()
+                params = {"maxNumSuggestions": 1000}
+
+                for asin in asins:
+                    keywords = KeywordsAPI.get_asin_suggested_keywords(
+                        asin, params
+                    )
+                    for keyword in keywords:
+                        keyword_list.append(keyword["keywordText"])
+
+        print(len(keyword_list))
+
+        suggested_keywords = (
+            GlobalKeyword.objects.filter(
+                Q(asin_1__in=asins) | Q(asin_2__in=asins) | Q(asin_3__in=asins)
+            )
+            .filter(department=amazonaccount.marketplace.sales_channel_name)
+            .order_by("-frequency")
+        )
+
+        suggested_keywords = (
+            list(suggested_keywords.values_list("name", flat=True))
+            + keyword_list
+        )
+
+        print(len(suggested_keywords))
 
         stats = {"data": suggested_keywords}
         return Response(stats, status=status.HTTP_200_OK)
