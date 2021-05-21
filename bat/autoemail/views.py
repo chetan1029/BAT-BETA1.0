@@ -209,6 +209,14 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
         queryset = super().filter_queryset(queryset)
         return queryset.filter(company__id=company_id).order_by("id")
 
+    def perform_create(self, serializer):
+        """Set the data for who is the owner or creater."""
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        serializer.save(company=member.company)
+
 
 class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
     queryset = EmailQueue.objects.all()
