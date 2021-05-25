@@ -284,7 +284,7 @@ class EmailCampaign(models.Model):
         choices=SCHEDULE_CHOICES,
         default=DAILY,
     )
-    schedule_time = models.TimeField(default=timezone.now)
+    schedule_time = models.TimeField(auto_now_add=True)
     schedule_days = models.PositiveIntegerField(default=1)
     buyer_purchase_count = MultiSelectField(
         max_length=512,

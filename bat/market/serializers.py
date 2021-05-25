@@ -53,7 +53,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_status(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         accounts = AmazonAccounts.objects.filter(
             marketplace_id=obj.id,
             user_id=user.id,
@@ -66,7 +66,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_email(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         accounts = AmazonAccounts.objects.filter(
             marketplace_id=obj.id, user_id=user.id, company_id=company_id
         )
@@ -78,7 +78,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_email_verified(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         accounts = AmazonAccounts.objects.filter(
             marketplace_id=obj.id, user_id=user.id, company_id=company_id
         )
@@ -90,7 +90,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_amazoncompany_id(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         account = AmazonAccounts.objects.filter(
             marketplace_id=obj.id,
             user_id=user.id,
@@ -112,7 +112,9 @@ class AmazonMarketplaceSerializerField(serializers.Field):
         give json of Amazon Marketplace .
         """
         if isinstance(value, AmazonMarketplace):
-            return AmazonMarketplaceSerializer(value).data
+            return AmazonMarketplaceSerializer(
+                value, context=self.context
+            ).data
         return value
 
     def to_internal_value(self, data):
