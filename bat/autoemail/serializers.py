@@ -17,7 +17,10 @@ from bat.autoemail.constants import (
 from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 from bat.globalutils.utils import get_status_object
 from bat.market.constants import AMAZON_ORDER_STATUS_CHOICE
-from bat.market.serializers import AmazonMarketplaceSerializer, AmazonOrderSerializer
+from bat.market.serializers import (
+    AmazonMarketplaceSerializerField,
+    AmazonOrderSerializer,
+)
 from bat.serializersFields.serializers_fields import StatusField
 from bat.setting.models import Status
 from bat.setting.serializers import StatusSerializer
@@ -58,11 +61,7 @@ class EmailTemplateSerializerField(serializers.Field):
             return obj
         except ObjectDoesNotExist:
             raise ValidationError(
-                {
-                    "current_location": _(
-                        f"{data} is not a valid Email Template."
-                    )
-                }
+                {"emailtemplate": _(f"{data} is not a valid Email Template.")}
             )
 
 
@@ -81,7 +80,7 @@ class OrderStatusSerializerField(serializers.Field):
             return obj
         except ObjectDoesNotExist:
             raise ValidationError(
-                {"current_location": _(f"{data} is not a valid Status.")}
+                {"order_status": _(f"{data} is not a valid Status.")}
             )
 
 
@@ -89,7 +88,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
     status = StatusField(choices=EMAIL_CAMPAIGN_STATUS_CHOICE)
     order_status = OrderStatusSerializerField()
     emailtemplate = EmailTemplateSerializerField()
-    amazonmarketplace = AmazonMarketplaceSerializer(read_only=True)
+    amazonmarketplace = AmazonMarketplaceSerializerField()
     channel = serializers.MultipleChoiceField(choices=CHANNEL_CHOICES)
     buyer_purchase_count = serializers.MultipleChoiceField(
         choices=BUYER_PURCHASE_CHOICES
@@ -175,6 +174,10 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
         if last_email:
             return last_email.send_date
         return None
+
+    def create(self, validated_data):
+        validated_data["status"] = get_status_object(validated_data)
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         if self.partial:

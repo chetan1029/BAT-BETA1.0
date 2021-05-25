@@ -1,4 +1,6 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from bat.market import constants
 from bat.market.models import (
@@ -102,6 +104,29 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
             if amazoncompany:
                 return amazoncompany.id
         return None
+
+
+class AmazonMarketplaceSerializerField(serializers.Field):
+    def to_representation(self, value):
+        """
+        give json of Amazon Marketplace .
+        """
+        if isinstance(value, AmazonMarketplace):
+            return AmazonMarketplaceSerializer(value).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = AmazonMarketplace.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {
+                    "amazonmarketplace": _(
+                        f"{data} is not a valid Amazon Marketplace."
+                    )
+                }
+            )
 
 
 class SingleAmazonProductSerializer(serializers.ModelSerializer):
