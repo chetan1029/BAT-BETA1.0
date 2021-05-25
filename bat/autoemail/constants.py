@@ -22,12 +22,12 @@ SCHEDULE_CHOICES = (
 )
 
 PURCHASE_1ST = "1st Purchase"
-PURCHASE_2ND = "1nd Purchase"
+PURCHASE_2ND = "2nd Purchase"
 PURCHASE_3RD = "3rd Purchase"
 PURCHASE_4TH = "4th Purchase"
 BUYER_PURCHASE_CHOICES = (
     (PURCHASE_1ST, "1st Purchase"),
-    (PURCHASE_2ND, "1nd Purchase"),
+    (PURCHASE_2ND, "2nd Purchase"),
     (PURCHASE_3RD, "3rd Purchase"),
     (PURCHASE_4TH, "4th Purchase"),
 )
@@ -39,6 +39,8 @@ FEEDBACK_4_STAR = "Positive Feedback(4 star)"
 FEEDBACK_5_STAR = "Positive Feedback(5 star)"
 WITH_RETURNS = "With Returns"
 WITH_REFUNDS = "With Refunds"
+ITEM_DISCOUNT = "Item Discount"
+SHIPPING_DISCOUNT = "Shipping Discount"
 EXCLUDE_ORDERS_CHOICES = (
     (FEEDBACK_1_STAR, "Negative Feedback(1 star)"),
     (FEEDBACK_2_STAR, "Negative Feedback(2 star)"),
@@ -47,6 +49,8 @@ EXCLUDE_ORDERS_CHOICES = (
     (FEEDBACK_5_STAR, "Positive Feedback(5 star)"),
     (WITH_RETURNS, "With Returns"),
     (WITH_REFUNDS, "With Refunds"),
+    (ITEM_DISCOUNT, "Item Discount"),
+    (SHIPPING_DISCOUNT, "Shipping Discount"),
 )
 
 ORDER_EMAIL_PARENT_STATUS = "order_email_status"

@@ -1,6 +1,8 @@
 import datetime
 
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from bat.autoemail.constants import (
     BUYER_PURCHASE_CHOICES,
@@ -17,6 +19,8 @@ from bat.globalutils.utils import get_status_object
 from bat.market.constants import AMAZON_ORDER_STATUS_CHOICE
 from bat.market.serializers import AmazonMarketplaceSerializer, AmazonOrderSerializer
 from bat.serializersFields.serializers_fields import StatusField
+from bat.setting.models import Status
+from bat.setting.serializers import StatusSerializer
 
 
 class EmailTemplateSerializer(serializers.ModelSerializer):
@@ -39,12 +43,52 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "slug", "company", "is_active", "extra_data")
 
 
+class EmailTemplateSerializerField(serializers.Field):
+    def to_representation(self, value):
+        """
+        give json of Email Template .
+        """
+        if isinstance(value, EmailTemplate):
+            return EmailTemplateSerializer(value).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = EmailTemplate.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {
+                    "current_location": _(
+                        f"{data} is not a valid Email Template."
+                    )
+                }
+            )
+
+
+class OrderStatusSerializerField(serializers.Field):
+    def to_representation(self, value):
+        """
+        give json of Email Template .
+        """
+        if isinstance(value, Status):
+            return StatusSerializer(value).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = Status.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {"current_location": _(f"{data} is not a valid Status.")}
+            )
+
+
 class EmailCampaignSerializer(serializers.ModelSerializer):
     status = StatusField(choices=EMAIL_CAMPAIGN_STATUS_CHOICE)
-    order_status = StatusField(
-        choices=AMAZON_ORDER_STATUS_CHOICE, required=False
-    )
-    emailtemplate = EmailTemplateSerializer(read_only=True)
+    order_status = OrderStatusSerializerField()
+    emailtemplate = EmailTemplateSerializerField()
     amazonmarketplace = AmazonMarketplaceSerializer(read_only=True)
     channel = serializers.MultipleChoiceField(choices=CHANNEL_CHOICES)
     buyer_purchase_count = serializers.MultipleChoiceField(
@@ -136,10 +180,8 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
         if self.partial:
             if validated_data.get("status", None):
                 validated_data["status"] = get_status_object(validated_data)
-            _order_status = validated_data.pop("order_status", None)
         else:
             validated_data["status"] = get_status_object(validated_data)
-            _order_status = validated_data.pop("order_status", None)
         return super().update(instance, validated_data)
 
     def get_email_sent_today(self, obj):

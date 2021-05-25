@@ -41,12 +41,7 @@ from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonOrderItem
         responses={status.HTTP_200_OK: SwaggerResponse({"detail": "string"})},
     ),
 )
-class EmailCampaignViewsets(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
+class EmailCampaignViewsets(viewsets.ModelViewSet):
     queryset = EmailCampaign.objects.all()
     serializer_class = serializers.EmailCampaignSerializer
     permission_classes = (IsAuthenticated,)
