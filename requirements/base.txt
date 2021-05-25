@@ -218,4 +218,4 @@ python-amazon-sp-api==0.3.1
 django-celery-beat==2.2.0
 
 # Django WYSIWYG editor
-django-ckeditor==6.0.0
+django-summernote==0.8.11.6

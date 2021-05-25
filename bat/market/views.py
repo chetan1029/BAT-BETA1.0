@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -89,7 +90,7 @@ class AmazonProductViewsets(viewsets.ReadOnlyModelViewSet):
         )
         queryset = super().filter_queryset(queryset)
         return queryset.filter(
-            amazonaccounts__company__id=company_id
+            amazonaccounts__company_id=company_id
         ).order_by("-create_date")
 
 
@@ -328,8 +329,16 @@ class AccountsReceiveAmazonCallback(View):
                                 + e
                             )
                         # call task to collect data from amazon account
-                        amazon_account_products_orders_sync.delay(
-                            new_account.id, last_no_of_days=8
+                        amazonaccount = AmazonAccounts.objects.get(
+                            marketplace=marketplace,
+                            user=user,
+                            company=company,
+                            credentails=account_credentails,
+                        )
+                        transaction.on_commit(
+                            lambda: amazon_account_products_orders_sync.delay(
+                                amazonaccount.pk, last_no_of_days=8
+                            )
                         )
 
                         # Change the consumption for the markplaces in the company plan.
@@ -455,7 +464,7 @@ class AmazonCompanyViewSet(
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
 
-        amazonaccount = AmazonAccounts.objects.get(pk=34)
+        amazonaccount = AmazonAccounts.objects.get(pk=50)
         data = ""
         # Get is_amazon_review_request_allowed via Solicitations
         # solicitations = get_solicitation(amazonaccount)

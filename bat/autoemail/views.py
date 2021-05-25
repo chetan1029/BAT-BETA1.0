@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from decimal import Decimal
 
@@ -40,12 +41,7 @@ from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonOrderItem
         responses={status.HTTP_200_OK: SwaggerResponse({"detail": "string"})},
     ),
 )
-class EmailCampaignViewsets(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
+class EmailCampaignViewsets(viewsets.ModelViewSet):
     queryset = EmailCampaign.objects.all()
     serializer_class = serializers.EmailCampaignSerializer
     permission_classes = (IsAuthenticated,)
@@ -66,6 +62,14 @@ class EmailCampaignViewsets(
         if marketplace:
             queryset = queryset.filter(amazonmarketplace_id=marketplace)
         return queryset.filter(company__id=company_id).order_by("id")
+
+    def perform_create(self, serializer):
+        """Set the data for who is the owner or creater."""
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        serializer.save(company=member.company)
 
     @action(detail=True, methods=["post"])
     def test_email(self, request, company_pk=None, pk=None):
@@ -187,6 +191,34 @@ class EmailCampaignViewsets(
         return Response(
             {"detail": _("email sent successfully")}, status=status.HTTP_200_OK
         )
+
+
+class EmailTemplateViewsets(viewsets.ModelViewSet):
+    queryset = EmailTemplate.objects.all()
+    serializer_class = serializers.EmailTemplateSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ["name"]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(company__id=company_id).order_by("id")
+
+    def perform_create(self, serializer):
+        """Set the data for who is the owner or creater."""
+        member = get_member(
+            company_id=self.kwargs.get("company_pk", None),
+            user_id=self.request.user.id,
+        )
+        serializer.save(company=member.company)
 
 
 class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):

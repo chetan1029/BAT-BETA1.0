@@ -65,7 +65,9 @@ def set_default_email_campaign_templates(company, marketplace):
             template_data["default_cc"] = global_template.default_cc
             template_data["language"] = global_template.language
             template_data["template"] = global_template.template
-            template_data["slug"] = global_template.slug
+            template_data["slug"] = (
+                str(global_template.slug) + "-" + str(company.id)
+            )
             return template_data
 
         all_global_email_campaigns_of_marketplace = GlobalEmailCampaign.objects.filter(

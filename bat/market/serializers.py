@@ -1,4 +1,6 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from bat.market import constants
 from bat.market.models import (
@@ -51,7 +53,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_status(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         accounts = AmazonAccounts.objects.filter(
             marketplace_id=obj.id,
             user_id=user.id,
@@ -64,7 +66,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_email(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         accounts = AmazonAccounts.objects.filter(
             marketplace_id=obj.id, user_id=user.id, company_id=company_id
         )
@@ -76,7 +78,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_email_verified(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         accounts = AmazonAccounts.objects.filter(
             marketplace_id=obj.id, user_id=user.id, company_id=company_id
         )
@@ -88,7 +90,7 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
 
     def get_amazoncompany_id(self, obj):
         company_id = self.context.get("company_id")
-        user = self.context["request"].user
+        user = self.context.get("request").user
         account = AmazonAccounts.objects.filter(
             marketplace_id=obj.id,
             user_id=user.id,
@@ -102,6 +104,31 @@ class AmazonMarketplaceSerializer(serializers.ModelSerializer):
             if amazoncompany:
                 return amazoncompany.id
         return None
+
+
+class AmazonMarketplaceSerializerField(serializers.Field):
+    def to_representation(self, value):
+        """
+        give json of Amazon Marketplace .
+        """
+        if isinstance(value, AmazonMarketplace):
+            return AmazonMarketplaceSerializer(
+                value, context=self.context
+            ).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = AmazonMarketplace.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {
+                    "amazonmarketplace": _(
+                        f"{data} is not a valid Amazon Marketplace."
+                    )
+                }
+            )
 
 
 class SingleAmazonProductSerializer(serializers.ModelSerializer):

@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template import Context
+from django.utils.html import strip_tags
 
 User = get_user_model()
 
@@ -33,8 +34,14 @@ def send_mail(
     connection = connection or get_connection(
         username=auth_user, password=auth_password, fail_silently=fail_silently
     )
+    html_message = message
+    plain_message = strip_tags(message)
     mail = EmailMultiAlternatives(
-        subject, message, from_email, recipient_list, connection=connection
+        subject,
+        plain_message,
+        from_email,
+        recipient_list,
+        connection=connection,
     )
 
     if attachment_files:
@@ -44,7 +51,7 @@ def send_mail(
                 attachment_file.read(),
                 "application/pdf",
             )
-    html_message = message
+
     if html_message:
         mail.attach_alternative(html_message, "text/html")
 
