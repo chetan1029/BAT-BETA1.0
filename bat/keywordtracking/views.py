@@ -20,6 +20,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django_auto_prefetching import AutoPrefetchViewSetMixin
 
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
@@ -42,7 +43,7 @@ from bat.setting.utils import get_status
 # Create your views here.
 
 
-class ProductKeywordViewSet(viewsets.ModelViewSet):
+class ProductKeywordViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """Operations on Product Keywords."""
 
     serializer_class = serializers.ProductKeywordSerializer
@@ -61,7 +62,9 @@ class ProductKeywordViewSet(viewsets.ModelViewSet):
         responses={status.HTTP_200_OK: SwaggerResponse({"detail": "string"})},
     ),
 )
-class ProductKeywordRankViewSet(viewsets.ModelViewSet):
+class ProductKeywordRankViewSet(
+    AutoPrefetchViewSetMixin, viewsets.ModelViewSet
+):
     """Operations on Product Keyword Rank."""
 
     serializer_class = serializers.ProductKeywordRankSerializer
@@ -88,9 +91,7 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
             company_id=company_id, user_id=self.request.user.id
         )
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(
-            productkeyword__amazonproduct__amazonaccounts__company_id=company_id
-        ).order_by("-date")
+        return queryset.filter(company_id=company_id).order_by("-date")
 
     @action(detail=False, methods=["post"])
     def bulk_action(self, request, *args, **kwargs):
@@ -121,7 +122,9 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
                     )
 
 
-class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
+class KeywordTrackingProductViewsets(
+    AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet
+):
     queryset = AmazonProduct.objects.all()
     serializer_class = serializers.KeywordTrackingProductSerializer
     permission_classes = (IsAuthenticated,)
@@ -194,6 +197,7 @@ class SaveProductKeyword(APIView):
                 try:
                     with transaction.atomic():
                         ProductKeywordRank.objects.create(
+                            company_id=company_pk,
                             productkeyword=product_keyword,
                             frequency=search_frequency,
                         )
@@ -221,7 +225,7 @@ class OverallDashboardAPIView(APIView):
         _member = get_member(company_id=company_pk, user_id=request.user.id)
 
         all_product_keyword_rank = ProductKeywordRank.objects.filter(
-            productkeyword__amazonproduct__amazonaccounts__company_id=company_pk
+            company_id=company_pk
         ).order_by("-date")
 
         dt_format = "%m/%d/%Y"
