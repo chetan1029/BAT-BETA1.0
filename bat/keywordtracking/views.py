@@ -389,7 +389,25 @@ class SuggestKeywordAPIView(APIView):
             + keyword_list
         )
 
-        print(len(suggested_keywords))
-
         stats = {"data": suggested_keywords}
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+class AsinPerformanceView(APIView):
+    def get(self, request, company_pk=None, product_keyword_pk=None, **kwargs):
+
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+
+        stats = [
+            {
+                "best": [
+                    {"asin": "DDDD1111", "visibility_score": 1200},
+                    {"asin": "C1C2C461", "visibility_score": 900},
+                ],
+                "worst": [
+                    {"asin": "DDDD1111", "visibility_score": 0},
+                    {"asin": "C1C2C461", "visibility_score": 10},
+                ],
+            }
+        ]
         return Response(stats, status=status.HTTP_200_OK)

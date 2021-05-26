@@ -3,6 +3,7 @@ from rest_framework_nested import routers
 
 from bat.company.urls import router
 from bat.keywordtracking.views import (
+    AsinPerformanceView,
     KeywordTrackingProductViewsets,
     OverallDashboardAPIView,
     ProductKeywordAPIView,
@@ -61,6 +62,11 @@ urlpatterns = [
     path(
         "companies/<company_pk>/suggested-keywords/",
         SuggestKeywordAPIView.as_view(),
+        name="suggested-keywords",
+    ),
+    path(
+        "companies/<company_pk>/asin-performance/",
+        AsinPerformanceView.as_view(),
         name="suggested-keywords",
     ),
 ]
