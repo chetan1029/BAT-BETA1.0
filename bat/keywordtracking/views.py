@@ -5,12 +5,13 @@ from datetime import datetime
 import pytz
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q, Sum
 from django.db.models.aggregates import Avg
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
+from django_auto_prefetching import AutoPrefetchViewSetMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg2.openapi import Response as SwaggerResponse
 from drf_yasg2.utils import swagger_auto_schema
@@ -20,7 +21,6 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django_auto_prefetching import AutoPrefetchViewSetMixin
 
 from bat.company.utils import get_member
 from bat.keywordtracking import constants, serializers
@@ -34,6 +34,7 @@ from bat.market.amazon_ad_api import Keywords
 from bat.market.models import (
     AmazonAccounts,
     AmazonMarketplace,
+    AmazonOrder,
     AmazonProduct,
     PPCCredentials,
     PPCProfile,
@@ -269,14 +270,14 @@ class OverallDashboardAPIView(APIView):
 
         product_keyword_rank_par_day = list(
             all_product_keyword_rank.values("date")
-            .annotate(avg_visibility_score=Avg("visibility_score"))
-            .values_list("date", "avg_visibility_score")
+            .annotate(sum_visibility_score=Sum("visibility_score"))
+            .values_list("date", "sum_visibility_score")
             .order_by("date")
         )
 
         data = {}
-        for date, avg_visibility_score in product_keyword_rank_par_day:
-            data[date.strftime(dt_format)] = int(avg_visibility_score)
+        for date, sum_visibility_score in product_keyword_rank_par_day:
+            data[date.strftime(dt_format)] = int(sum_visibility_score)
 
         stats = [{"name": "Visibilty Score", "data": data}]
 
@@ -378,8 +379,6 @@ class SuggestKeywordAPIView(APIView):
                     for keyword in keywords:
                         keyword_list.append(keyword["keywordText"])
 
-        print(len(keyword_list))
-
         suggested_keywords = (
             GlobalKeyword.objects.filter(
                 Q(asin_1__in=asins) | Q(asin_2__in=asins) | Q(asin_3__in=asins)
@@ -402,16 +401,138 @@ class AsinPerformanceView(APIView):
 
         _member = get_member(company_id=company_pk, user_id=request.user.id)
 
-        stats = [
-            {
-                "best": [
-                    {"asin": "DDDD1111", "visibility_score": 1200},
-                    {"asin": "C1C2C461", "visibility_score": 900},
-                ],
-                "worst": [
-                    {"asin": "DDDD1111", "visibility_score": 0},
-                    {"asin": "C1C2C461", "visibility_score": 10},
-                ],
-            }
+        product_visibility = ProductKeywordRank.objects.filter(
+            company_id=company_pk
+        )
+
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            try:
+                marketplace = get_object_or_404(
+                    AmazonMarketplace, pk=marketplace
+                )
+                product_visibility = product_visibility.filter(
+                    productkeyword__amazonproduct__amazonaccounts__marketplace_id=marketplace.id
+                )
+            except ValueError as e:
+                return Response(
+                    {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                )
+
+        dt_format = "%m/%d/%Y"
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+
+        start_date = (
+            pytz.utc.localize(datetime.strptime(start_date, dt_format))
+            if start_date
+            else None
+        )
+        end_date = (
+            pytz.utc.localize(datetime.strptime(end_date, dt_format))
+            if end_date
+            else None
+        )
+
+        if start_date:
+            product_visibility = product_visibility.filter(
+                date__gte=start_date
+            )
+        if end_date:
+            product_visibility = product_visibility.filter(date__lte=end_date)
+
+        product_visibility = product_visibility.values(
+            asin=F("productkeyword__amazonproduct__asin")
+        ).annotate(sum_visibility_score=Sum("visibility_score"))
+
+        best = product_visibility.order_by("-sum_visibility_score", "asin")[
+            :10
         ]
+        worst = product_visibility.order_by("sum_visibility_score", "asin")[
+            :10
+        ]
+        trending = product_visibility.order_by(
+            "-sum_visibility_score", "asin"
+        )[:10]
+
+        stats = [{"best": best, "worst": worst, "trending": trending}]
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+class SalesChartDataAPIView(APIView):
+    def get(self, request, company_pk=None, **kwargs):
+
+        dt_format = "%m/%d/%Y"
+
+        all_amazon_orders = AmazonOrder.objects.filter(
+            amazonaccounts__company_id=company_pk
+        )
+
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+
+        start_date = (
+            pytz.utc.localize(datetime.strptime(start_date, dt_format))
+            if start_date
+            else None
+        )
+        end_date = (
+            pytz.utc.localize(datetime.strptime(end_date, dt_format))
+            if end_date
+            else None
+        )
+
+        if start_date:
+            all_amazon_orders = all_amazon_orders.filter(
+                purchase_date__gte=start_date
+            )
+        if end_date:
+            all_amazon_orders = all_amazon_orders.filter(
+                purchase_date__lte=end_date
+            )
+
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
+            all_amazon_orders = all_amazon_orders.filter(
+                amazonaccounts__marketplace_id=marketplace.id
+            )
+
+        currency = request.GET.get("currency", None)
+        if currency:
+            currency = currency.upper()
+            all_amazon_orders = all_amazon_orders.filter(
+                amount_currency=currency
+            )
+
+        total_orders = all_amazon_orders.count()
+
+        total_sales = all_amazon_orders.aggregate(Sum("amount")).get(
+            "amount__sum"
+        )
+
+        amount_par_day = list(
+            all_amazon_orders.values("purchase_date__date")
+            .annotate(total_amount=Sum("amount"))
+            .values_list("purchase_date__date", "total_amount")
+            .order_by("purchase_date__date")
+        )
+        data = {}
+        for date, total_amount in amount_par_day:
+            data[date.strftime(dt_format)] = total_amount
+
+        stats = {
+            "chartData": [
+                {"name": "Amount", "data": data},
+                {
+                    "name": "Conversion Rate",
+                    "data": {"05/25/2021": 12, "05/26/2021": 3.45},
+                },
+            ],
+            "stats": {
+                "total_sales": total_sales,
+                "total_orders": total_orders,
+            },
+        }
+
         return Response(stats, status=status.HTTP_200_OK)

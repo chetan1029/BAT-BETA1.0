@@ -9,6 +9,7 @@ from bat.keywordtracking.views import (
     ProductKeywordAPIView,
     ProductKeywordRankViewSet,
     ProductKeywordViewSet,
+    SalesChartDataAPIView,
     SaveProductKeyword,
     SuggestKeywordAPIView,
 )
@@ -68,5 +69,10 @@ urlpatterns = [
         "companies/<company_pk>/asin-performance/",
         AsinPerformanceView.as_view(),
         name="suggested-keywords",
+    ),
+    path(
+        "companies/<company_pk>/sales-chart-data/",
+        SalesChartDataAPIView.as_view(),
+        name="sales-chart-data",
     ),
 ]

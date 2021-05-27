@@ -2,8 +2,8 @@ from django.urls import include, path
 from rest_framework_nested import routers
 
 from bat.autoemail.views import (
-    DashboardAPIView,
     EmailCampaignViewsets,
+    EmailChartDataAPIView,
     EmailQueueViewsets,
     EmailTemplateViewsets,
 )
@@ -38,8 +38,8 @@ urlpatterns = [
     path("", include(email_template_router.urls)),
     path("", include(email_queue_router.urls)),
     path(
-        "companies/<company_pk>/email-campaign-dashboard/",
-        DashboardAPIView.as_view(),
-        name="email-campaign-dashboard",
+        "companies/<company_pk>/email-chart-data/",
+        EmailChartDataAPIView.as_view(),
+        name="email-chart-data",
     ),
 ]
