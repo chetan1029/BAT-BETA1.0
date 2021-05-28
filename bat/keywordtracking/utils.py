@@ -20,3 +20,15 @@ def get_visibility_score(frequency, rank, page):
             (keyword_quantity_score * search_share) / 100, 2
         )
     return visibility_score
+
+
+def get_compare_percentage(value, value_compare):
+    """Calculate increase or descrease in percentage."""
+    compare_percentage = 0
+    try:
+        compare_percentage = round(
+            ((value - value_compare) / value_compare) * 100
+        )
+    except (TypeError, ZeroDivisionError):
+        pass
+    return compare_percentage

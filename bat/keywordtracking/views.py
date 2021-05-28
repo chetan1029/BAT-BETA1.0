@@ -1,6 +1,6 @@
 import json
 import operator
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from django.conf import settings
@@ -30,6 +30,7 @@ from bat.keywordtracking.models import (
     ProductKeyword,
     ProductKeywordRank,
 )
+from bat.keywordtracking.utils import get_compare_percentage
 from bat.market.amazon_ad_api import Keywords
 from bat.market.models import (
     AmazonAccounts,
@@ -487,21 +488,6 @@ class SalesChartDataAPIView(APIView):
             else None
         )
 
-        if start_date:
-            all_amazon_orders = all_amazon_orders.filter(
-                purchase_date__gte=start_date
-            )
-            all_amazon_conversion = all_amazon_conversion.filter(
-                date__gte=start_date
-            )
-        if end_date:
-            all_amazon_orders = all_amazon_orders.filter(
-                purchase_date__lte=end_date
-            )
-            all_amazon_conversion = all_amazon_conversion.filter(
-                date__lte=end_date
-            )
-
         marketplace = request.GET.get("marketplace", None)
         if marketplace and marketplace != "all":
             marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
@@ -519,10 +505,61 @@ class SalesChartDataAPIView(APIView):
                 amount_currency=currency
             )
 
+        difference_days = 0
+        if start_date and end_date:
+            days = end_date - start_date
+            difference_days = days.days
+        start_date_compare = start_date - timedelta(days=difference_days)
+        end_date_compare = end_date - timedelta(days=difference_days)
+
+        all_amazon_orders_compare = all_amazon_orders
+
+        if start_date:
+            all_amazon_orders = all_amazon_orders.filter(
+                purchase_date__gte=start_date
+            )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                date__gte=start_date
+            )
+
+            # Campare data for same date difference
+            all_amazon_orders_compare = all_amazon_orders_compare.filter(
+                purchase_date__gte=start_date_compare
+            )
+
+        if end_date:
+            all_amazon_orders = all_amazon_orders.filter(
+                purchase_date__lte=end_date
+            )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                date__lte=end_date
+            )
+
+            # Campare data for same date difference
+            all_amazon_orders_compare = all_amazon_orders_compare.filter(
+                purchase_date__lte=end_date_compare
+            )
+
         total_orders = all_amazon_orders.count()
 
         total_sales = all_amazon_orders.aggregate(Sum("amount")).get(
             "amount__sum"
+        )
+
+        total_orders_compare = all_amazon_orders_compare.count()
+
+        total_sales_compare = all_amazon_orders_compare.aggregate(
+            Sum("amount")
+        ).get("amount__sum")
+
+        print(str(total_sales) + " " + str(total_sales_compare))
+        print(str(total_orders) + " " + str(total_orders_compare))
+
+        total_orders_percentage = get_compare_percentage(
+            total_orders, total_orders_compare
+        )
+        total_sales_percentage = get_compare_percentage(
+            total_sales, total_sales_compare
         )
 
         amount_par_day = list(
@@ -555,6 +592,8 @@ class SalesChartDataAPIView(APIView):
             "stats": {
                 "total_sales": total_sales,
                 "total_orders": total_orders,
+                "total_sales_percentage": total_sales_percentage,
+                "total_orders_percentage": total_orders_percentage,
             },
         }
 

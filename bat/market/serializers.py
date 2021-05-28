@@ -1,11 +1,9 @@
 from collections import OrderedDict
-from rest_framework.fields import SkipField
-from rest_framework.relations import PKOnlyObject  # NOQA # isort:skip
-
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import SkipField
 
 from bat.market import constants
 from bat.market.models import (
@@ -23,6 +21,11 @@ from bat.serializersFields.serializers_fields import (
     StatusField,
     TagField,
 )
+
+from rest_framework.relations import PKOnlyObject  # NOQA # isort:skip
+
+
+
 
 
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
@@ -282,12 +285,3 @@ class AmazonProductSessionsSerializer(serializers.ModelSerializer):
             "date",
         )
         read_only_fields = ("id", "amazonproduct")
-
-
-    # @property
-    # def _readable_fields(self):
-    #     for field_name in self.fields:
-    #         field = self.fields.get(field_name)
-    #         if not field.write_only and field_name != "sku":
-    #             yield field
-    
