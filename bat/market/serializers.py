@@ -282,4 +282,12 @@ class AmazonProductSessionsSerializer(serializers.ModelSerializer):
             "date",
         )
         read_only_fields = ("id", "amazonproduct")
+
+
+    # @property
+    # def _readable_fields(self):
+    #     for field_name in self.fields:
+    #         field = self.fields.get(field_name)
+    #         if not field.write_only and field_name != "sku":
+    #             yield field
     
