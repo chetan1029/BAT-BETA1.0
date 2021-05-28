@@ -36,6 +36,7 @@ from bat.market.models import (
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
+    AmazonProductSessions,
     PPCCredentials,
     PPCProfile,
 )
@@ -468,6 +469,10 @@ class SalesChartDataAPIView(APIView):
             amazonaccounts__company_id=company_pk
         )
 
+        all_amazon_conversion = AmazonProductSessions.objects.filter(
+            amazonproduct__amazonaccounts__company_id=company_pk
+        )
+
         start_date = self.request.GET.get("start_date")
         end_date = self.request.GET.get("end_date")
 
@@ -486,9 +491,15 @@ class SalesChartDataAPIView(APIView):
             all_amazon_orders = all_amazon_orders.filter(
                 purchase_date__gte=start_date
             )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                date__gte=start_date
+            )
         if end_date:
             all_amazon_orders = all_amazon_orders.filter(
                 purchase_date__lte=end_date
+            )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                date__lte=end_date
             )
 
         marketplace = request.GET.get("marketplace", None)
@@ -496,6 +507,9 @@ class SalesChartDataAPIView(APIView):
             marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
             all_amazon_orders = all_amazon_orders.filter(
                 amazonaccounts__marketplace_id=marketplace.id
+            )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                amazonproduct__amazonaccounts__marketplace_id=marketplace.id
             )
 
         currency = request.GET.get("currency", None)
@@ -517,17 +531,26 @@ class SalesChartDataAPIView(APIView):
             .values_list("purchase_date__date", "total_amount")
             .order_by("purchase_date__date")
         )
-        data = {}
+
+        conversion_per_day = list(
+            all_amazon_conversion.values("date")
+            .annotate(avg_conversion_rate=Avg("conversion_rate"))
+            .values_list("date", "avg_conversion_rate")
+            .order_by("date")
+        )
+
+        conversion_data = {}
+        for date, avg_conversion_rate in conversion_per_day:
+            conversion_data[date.strftime(dt_format)] = avg_conversion_rate
+
+        amount_data = {}
         for date, total_amount in amount_par_day:
-            data[date.strftime(dt_format)] = total_amount
+            amount_data[date.strftime(dt_format)] = total_amount
 
         stats = {
             "chartData": [
-                {"name": "Amount", "data": data},
-                {
-                    "name": "Conversion Rate",
-                    "data": {"05/25/2021": 12, "05/26/2021": 3.45},
-                },
+                {"name": "Amount", "data": amount_data},
+                {"name": "Conversion Rate", "data": conversion_data},
             ],
             "stats": {
                 "total_sales": total_sales,

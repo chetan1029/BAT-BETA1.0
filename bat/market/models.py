@@ -732,3 +732,27 @@ class PPCProfile(models.Model):
             + " - "
             + str(self.amazonmarketplace.country)
         )
+
+
+class AmazonProductSessions(models.Model):
+    """Amazon Product Sessions."""
+
+    amazonproduct = models.ForeignKey(
+        AmazonProduct,
+        on_delete=models.CASCADE,
+        verbose_name="Select Amazon Product",
+    )
+    sessions = models.PositiveIntegerField(default=0)
+    page_views = models.PositiveIntegerField(default=0)
+    conversion_rate = models.PositiveIntegerField(default=0)
+    date = models.DateField(default=timezone.now)
+
+    class Meta:
+        """Product Keyword Meta."""
+
+        unique_together = ("amazonproduct", "date")
+        verbose_name_plural = _("Amazon Product Sessions")
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.amazonproduct.title)

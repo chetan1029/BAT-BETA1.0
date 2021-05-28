@@ -9,6 +9,7 @@ from bat.market.models import (
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
+    AmazonProductSessions,
 )
 from bat.product.serializers import ImageSerializer
 from bat.serializersFields.serializers_fields import (
@@ -256,3 +257,23 @@ class AmazonCompanySerializer(serializers.ModelSerializer):
             "extra_data",
         )
         read_only_fields = ("id", "extra_data")
+
+
+class AmazonProductSessionsSerializer(serializers.ModelSerializer):
+    """Amazon Product Sessions serializers."""
+
+    amazonproduct = SingleAmazonProductSerializer(read_only=True)
+    sku = serializers.CharField(required=True)
+
+    class Meta:
+        model = AmazonProductSessions
+        fields = (
+            "id",
+            "sku",
+            "amazonproduct",
+            "sessions",
+            "page_views",
+            "conversion_rate",
+            "date",
+        )
+        read_only_fields = ("id", "amazonproduct")

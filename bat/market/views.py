@@ -52,6 +52,7 @@ from bat.market.models import (
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
+    AmazonProductSessions,
 )
 from bat.market.orders_data_builder import AmazonOrderProcessData
 from bat.market.report_parser import (
@@ -89,9 +90,9 @@ class AmazonProductViewsets(viewsets.ReadOnlyModelViewSet):
             company_id=company_id, user_id=self.request.user.id
         )
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(
-            amazonaccounts__company_id=company_id
-        ).order_by("-create_date")
+        return queryset.filter(amazonaccounts__company_id=company_id).order_by(
+            "-create_date"
+        )
 
 
 class AmazonOrderViewsets(viewsets.ReadOnlyModelViewSet):
@@ -503,3 +504,42 @@ class TestAmazonClientCatalog(View):
         # print(report_csv.read())
 
         return HttpResponse(str(data))
+
+
+class AmazonProductSessionsViewsets(viewsets.ModelViewSet):
+    queryset = AmazonProductSessions.objects.all()
+    serializer_class = serializers.AmazonProductSessionsSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        company_id = self.kwargs.get("company_pk", None)
+        context["company_id"] = company_id
+        context["user"] = self.request.user
+        return context
+
+    def filter_queryset(self, queryset):
+        company_id = self.kwargs.get("company_pk", None)
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(
+            amazonproduct__amazonaccounts__company_id=company_id
+        ).order_by("id")
+
+    def perform_create(self, serializer):
+        """Set the data for who is the owner or creater."""
+        company_pk = self.kwargs.get("company_pk", None)
+        validatedData = serializer.validated_data.copy()
+        sku = validatedData.get("sku")
+        serializer.validated_data.pop("sku", None)
+        member = get_member(
+            company_id=company_pk, user_id=self.request.user.id
+        )
+        amazonproduct = AmazonProduct.objects.filter(
+            amazonaccounts__company_id=company_pk, sku=sku
+        )
+        if amazonproduct.exists():
+            amazonproduct = amazonproduct.first()
+            serializer.save(amazonproduct=amazonproduct)
+        else:
+            pass
