@@ -268,7 +268,7 @@ class AmazonProductSessionsSerializer(serializers.ModelSerializer):
     """Amazon Product Sessions serializers."""
 
     amazonproduct = SingleAmazonProductSerializer(read_only=True)
-    sku = serializers.CharField(required=True)
+    sku = serializers.CharField(required=True, write_only=True)
 
     class Meta:
         model = AmazonProductSessions
@@ -282,12 +282,4 @@ class AmazonProductSessionsSerializer(serializers.ModelSerializer):
             "date",
         )
         read_only_fields = ("id", "amazonproduct")
-
-
-    @property
-    def _readable_fields(self):
-        for field_name in self.fields:
-            field = self.fields.get(field_name)
-            if not field.write_only and field_name != "sku":
-                yield field
     
