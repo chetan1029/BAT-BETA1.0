@@ -216,11 +216,10 @@ def get_status_json(obj):
         json_status = {
             "id": obj.id,
             "name": obj.name,
-            "user": obj.user.id,
             "parent": get_status_json(obj.parent),
         }
     else:
-        json_status = {"id": obj.id, "name": obj.name, "user": obj.user.id}
+        json_status = {"id": obj.id, "name": obj.name}
     return json_status
 
 
