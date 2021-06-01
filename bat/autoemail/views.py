@@ -277,25 +277,21 @@ class EmailChartDataAPIView(APIView):
         all_email_queue_compare = all_email_queue
 
         if start_date:
-            all_email_queue = all_email_queue.filter(
-                schedule_date__gte=start_date
-            )
+            all_email_queue = all_email_queue.filter(send_date__gte=start_date)
             all_email_queue_compare = all_email_queue_compare.filter(
-                schedule_date__gte=start_date_compare
+                send_date__gte=start_date_compare
             )
         if end_date:
-            all_email_queue = all_email_queue.filter(
-                schedule_date__lte=end_date
-            )
+            all_email_queue = all_email_queue.filter(send_date__lte=end_date)
             all_email_queue_compare = all_email_queue_compare.filter(
-                schedule_date__lte=end_date_compare
+                send_date__lte=end_date_compare
             )
 
         email_par_day = list(
-            all_email_queue.values("schedule_date__date")
+            all_email_queue.values("send_date__date")
             .annotate(total_email=Count("id"))
-            .values_list("schedule_date__date", "total_email")
-            .order_by("schedule_date__date")
+            .values_list("send_date__date", "total_email")
+            .order_by("send_date__date")
         )
         data = {}
         for date, total_email in email_par_day:
