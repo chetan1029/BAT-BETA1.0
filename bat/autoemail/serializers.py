@@ -127,6 +127,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             "email_opt_out",
             "last_email_send_in_queue",
             "include_invoice",
+            "send_optout",
             "email_in_queue",
             "email_sent_today",
             "email_queue_today",
@@ -216,6 +217,42 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             create_date__month=today.month,
             create_date__day=today.day,
         ).count()
+
+    def validate(self, data):
+        """Validate conditions."""
+        company_id = self.context.get("company_id", None)
+        campaign_id = self.context.get("campaign_id", None)
+        user = self.context.get("user", None)
+        include_invoice = data.get("include_invoice", None)
+        send_optout = data.get("send_optout", None)
+        amazonmarketplace_id = data.get("amazonmarketplace", None)
+
+        if campaign_id:
+            amazonmarketplace_id = EmailCampaign.objects.get(
+                pk=campaign_id
+            ).amazonmarketplace_id
+
+        if include_invoice and amazonmarketplace_id:
+            if EmailCampaign.objects.filter(
+                amazonmarketplace_id=amazonmarketplace_id,
+                company_id=company_id,
+                include_invoice=True,
+            ).exists():
+                raise serializers.ValidationError(
+                    "You already have Include Invoice for one of your campaign for the same marketplace."
+                )
+
+        if send_optout and amazonmarketplace_id:
+            if EmailCampaign.objects.filter(
+                amazonmarketplace_id=amazonmarketplace_id,
+                company_id=company_id,
+                send_optout=True,
+            ).exists():
+                raise serializers.ValidationError(
+                    "You already have Opt-out email sending for one of your campaign for the same marketplace."
+                )
+
+        return super().validate(data)
 
 
 class EmailQueueSerializer(serializers.ModelSerializer):

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytz
@@ -29,7 +29,7 @@ from bat.autoemail.filters import EmailQueueFilter
 from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
-from bat.globalutils.utils import pdf_file_from_html
+from bat.globalutils.utils import get_compare_percentage, pdf_file_from_html
 from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonOrderItem
 
 
@@ -246,6 +246,13 @@ class EmailChartDataAPIView(APIView):
             emailcampaign__company_id=company_pk
         )
 
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
+            all_email_queue = all_email_queue.filter(
+                emailcampaign__amazonmarketplace_id=marketplace.id
+            )
+
         start_date = self.request.GET.get("start_date")
         end_date = self.request.GET.get("end_date")
 
@@ -260,16 +267,24 @@ class EmailChartDataAPIView(APIView):
             else None
         )
 
+        difference_days = 0
+        if start_date and end_date:
+            days = end_date - start_date
+            difference_days = days.days
+        start_date_compare = start_date - timedelta(days=difference_days)
+        end_date_compare = end_date - timedelta(days=difference_days)
+
+        all_email_queue_compare = all_email_queue
+
         if start_date:
             all_email_queue = all_email_queue.filter(send_date__gte=start_date)
+            all_email_queue_compare = all_email_queue_compare.filter(
+                send_date__gte=start_date_compare
+            )
         if end_date:
             all_email_queue = all_email_queue.filter(send_date__lte=end_date)
-
-        marketplace = request.GET.get("marketplace", None)
-        if marketplace and marketplace != "all":
-            marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
-            all_email_queue = all_email_queue.filter(
-                emailcampaign__amazonmarketplace_id=marketplace.id
+            all_email_queue_compare = all_email_queue_compare.filter(
+                send_date__lte=end_date_compare
             )
 
         email_par_day = list(
@@ -282,6 +297,7 @@ class EmailChartDataAPIView(APIView):
         for date, total_amount in email_par_day:
             data[date.strftime(dt_format)] = total_amount
 
+        # original stats
         total_email_sent = all_email_queue.filter(
             status__name=ORDER_EMAIL_STATUS_SEND
         ).count()
@@ -301,6 +317,42 @@ class EmailChartDataAPIView(APIView):
             ]
         ).count()
 
+        # Compare email stats.
+        total_email_sent_compare = all_email_queue_compare.filter(
+            status__name=ORDER_EMAIL_STATUS_SEND
+        ).count()
+
+        total_opt_out_email_compare = all_email_queue_compare.filter(
+            status__name=ORDER_EMAIL_STATUS_OPTOUT
+        ).count()
+
+        opt_out_rate_compare = 0
+        if total_opt_out_email_compare:
+            opt_out_rate_compare = round(
+                (total_email_sent_compare / total_opt_out_email_compare), 2
+            )
+
+        total_email_in_queue_compare = all_email_queue_compare.filter(
+            status__name__in=[
+                ORDER_EMAIL_STATUS_SCHEDULED,
+                ORDER_EMAIL_STATUS_QUEUED,
+            ]
+        ).count()
+
+        # Comapre percentage
+        total_email_sent_percentage = get_compare_percentage(
+            total_email_sent, total_email_sent_compare
+        )
+        total_opt_out_email_percentage = get_compare_percentage(
+            total_opt_out_email, total_opt_out_email_compare
+        )
+        opt_out_rate_percentage = get_compare_percentage(
+            opt_out_rate, opt_out_rate_compare
+        )
+        total_email_in_queue_percentage = get_compare_percentage(
+            total_email_in_queue, total_email_in_queue_compare
+        )
+
         stats = {
             "chartData": [{"name": "Email Sent", "data": data}],
             "stats": {
@@ -308,6 +360,10 @@ class EmailChartDataAPIView(APIView):
                 "total_email_in_queue": total_email_in_queue,
                 "total_opt_out_email": total_opt_out_email,
                 "opt_out_rate": opt_out_rate,
+                "email_sent_percentage": total_email_sent_percentage,
+                "opt_out_email_percentage": total_opt_out_email_percentage,
+                "opt_out_rate_percentage": opt_out_rate_percentage,
+                "email_in_queue_percentage": total_email_in_queue_percentage,
             },
         }
 

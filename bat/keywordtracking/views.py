@@ -23,6 +23,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bat.company.utils import get_member
+from bat.globalutils.utils import get_compare_percentage
 from bat.keywordtracking import constants, serializers
 from bat.keywordtracking.models import (
     GlobalKeyword,
@@ -30,7 +31,6 @@ from bat.keywordtracking.models import (
     ProductKeyword,
     ProductKeywordRank,
 )
-from bat.keywordtracking.utils import get_compare_percentage
 from bat.market.amazon_ad_api import Keywords
 from bat.market.models import (
     AmazonAccounts,
@@ -436,25 +436,81 @@ class AsinPerformanceView(APIView):
             else None
         )
 
+        difference_days = 0
+        if start_date and end_date:
+            days = end_date - start_date
+            difference_days = days.days
+        start_date_compare = start_date - timedelta(days=difference_days)
+        end_date_compare = end_date - timedelta(days=difference_days)
+
+        product_visibility_compare = product_visibility
+
         if start_date:
             product_visibility = product_visibility.filter(
                 date__gte=start_date
             )
+            # Campare data for same date difference
+            product_visibility_compare = product_visibility_compare.filter(
+                date__gte=start_date_compare
+            )
         if end_date:
             product_visibility = product_visibility.filter(date__lte=end_date)
+            # Campare data for same date difference
+            product_visibility_compare = product_visibility_compare.filter(
+                date__lte=end_date_compare
+            )
 
-        product_visibility = product_visibility.values(
-            asin=F("productkeyword__amazonproduct__asin")
-        ).annotate(sum_visibility_score=Sum("visibility_score"))
+        product_visibility = (
+            product_visibility.values(
+                asin=F("productkeyword__amazonproduct__asin")
+            )
+            .annotate(sum_visibility_score=Sum("visibility_score"))
+            .order_by("asin")
+        )
 
-        best = product_visibility.order_by("-sum_visibility_score", "asin")[
-            :10
-        ]
-        worst = product_visibility.order_by("sum_visibility_score", "asin")[
-            :10
-        ]
-        trending = product_visibility.order_by(
-            "-sum_visibility_score", "asin"
+        product_visibility_compare = (
+            product_visibility_compare.values(
+                asin=F("productkeyword__amazonproduct__asin")
+            )
+            .annotate(sum_visibility_score=Sum("visibility_score"))
+            .order_by("asin")
+        )
+
+        final_visibility_score = []
+        for product in product_visibility:
+            item_found = False
+            data_new = {}
+            for product_compare in product_visibility_compare:
+                visibility_score_per = 0
+                data = {}
+                if product["asin"] == product_compare["asin"]:
+                    visibility_score_per = get_compare_percentage(
+                        product["sum_visibility_score"],
+                        product_compare["sum_visibility_score"],
+                    )
+                    data["asin"] = product["asin"]
+                    data["visibility_score"] = product["sum_visibility_score"]
+                    data["visibility_score_per"] = visibility_score_per
+                    final_visibility_score.append(data)
+                    item_found = True
+            if not item_found:
+                data_new["asin"] = product["asin"]
+                data_new["visibility_score"] = product["sum_visibility_score"]
+                data_new["visibility_score_per"] = 0
+                final_visibility_score.append(data_new)
+
+        best = sorted(
+            final_visibility_score,
+            key=lambda k: k["visibility_score"],
+            reverse=True,
+        )[:10]
+        worst = sorted(
+            final_visibility_score, key=lambda k: k["visibility_score"]
+        )[:10]
+        trending = sorted(
+            final_visibility_score,
+            key=lambda k: k["visibility_score_per"],
+            reverse=True,
         )[:10]
 
         stats = [{"best": best, "worst": worst, "trending": trending}]
@@ -551,9 +607,6 @@ class SalesChartDataAPIView(APIView):
         total_sales_compare = all_amazon_orders_compare.aggregate(
             Sum("amount")
         ).get("amount__sum")
-
-        print(str(total_sales) + " " + str(total_sales_compare))
-        print(str(total_orders) + " " + str(total_orders_compare))
 
         total_orders_percentage = get_compare_percentage(
             total_orders, total_orders_compare

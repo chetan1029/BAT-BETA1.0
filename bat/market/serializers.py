@@ -25,9 +25,6 @@ from bat.serializersFields.serializers_fields import (
 from rest_framework.relations import PKOnlyObject  # NOQA # isort:skip
 
 
-
-
-
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
     country = CountrySerializerField(required=False)
     status = serializers.SerializerMethodField()
