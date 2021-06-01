@@ -1,6 +1,9 @@
+from collections import OrderedDict
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import SkipField
 
 from bat.market import constants
 from bat.market.models import (
@@ -9,6 +12,7 @@ from bat.market.models import (
     AmazonMarketplace,
     AmazonOrder,
     AmazonProduct,
+    AmazonProductSessions,
 )
 from bat.product.serializers import ImageSerializer
 from bat.serializersFields.serializers_fields import (
@@ -17,6 +21,8 @@ from bat.serializersFields.serializers_fields import (
     StatusField,
     TagField,
 )
+
+from rest_framework.relations import PKOnlyObject  # NOQA # isort:skip
 
 
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
@@ -256,3 +262,23 @@ class AmazonCompanySerializer(serializers.ModelSerializer):
             "extra_data",
         )
         read_only_fields = ("id", "extra_data")
+
+
+class AmazonProductSessionsSerializer(serializers.ModelSerializer):
+    """Amazon Product Sessions serializers."""
+
+    amazonproduct = SingleAmazonProductSerializer(read_only=True)
+    sku = serializers.CharField(required=True, write_only=True)
+
+    class Meta:
+        model = AmazonProductSessions
+        fields = (
+            "id",
+            "sku",
+            "amazonproduct",
+            "sessions",
+            "page_views",
+            "conversion_rate",
+            "date",
+        )
+        read_only_fields = ("id", "amazonproduct")

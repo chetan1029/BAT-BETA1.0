@@ -1,14 +1,13 @@
 import os
 import tempfile
-
 from decimal import Decimal
-from weasyprint import HTML
-from rolepermissions.checkers import has_permission
 
 from django.core.files import File
 from django.template.loader import render_to_string
+from rolepermissions.checkers import has_permission
+from weasyprint import HTML
 
-from bat.product.constants import PRODUCT_STATUS_DRAFT, PRODUCT_PARENT_STATUS
+from bat.product.constants import PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT
 from bat.setting.utils import get_status
 
 
@@ -60,16 +59,7 @@ def get_cbm(length, width, depth, unit):
             )
 
         elif unit == "m":
-            cbm = round(
-                (
-
-                    Decimal(length)
-                    * Decimal(width)
-                    * Decimal(depth)
-
-                ),
-                2,
-            )
+            cbm = round((Decimal(length) * Decimal(width) * Decimal(depth)), 2)
         return cbm
 
 
@@ -79,17 +69,10 @@ def pdf_file_from_html(data, template_path, file_name, as_File_obj=True):
     """
 
     tmp_dir = tempfile.TemporaryDirectory()
-    tmp_file_path = tmp_dir.name + "/"+file_name + ".pdf"
+    tmp_file_path = tmp_dir.name + "/" + file_name + ".pdf"
     path = "pdf-templates/"
-    html_template = render_to_string(
-        path + template_path,
-        data,
-    )
-    pdf_file = HTML(
-        string=html_template
-    ).write_pdf(
-        tmp_file_path
-    )
+    html_template = render_to_string(path + template_path, data)
+    pdf_file = HTML(string=html_template).write_pdf(tmp_file_path)
     f = open(tmp_file_path, "rb")
     if as_File_obj:
         final_file = File(f)
@@ -99,8 +82,19 @@ def pdf_file_from_html(data, template_path, file_name, as_File_obj=True):
 
 def get_status_object(data, status_field="status"):
     if not data.get(status_field, None):
-        return get_status(
-            PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT)
+        return get_status(PRODUCT_PARENT_STATUS, PRODUCT_STATUS_DRAFT)
     else:
         status_name = data.get(status_field, None)
         return get_status("Basic", status_name)
+
+
+def get_compare_percentage(value, value_compare):
+    """Calculate increase or descrease in percentage."""
+    compare_percentage = 0
+    try:
+        compare_percentage = round(
+            ((value - value_compare) / value_compare) * 100
+        )
+    except (TypeError, ZeroDivisionError):
+        pass
+    return compare_percentage

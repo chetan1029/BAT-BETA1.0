@@ -3,6 +3,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from postgres_copy import CopyManager
 
+from bat.company.models import Company
 from bat.keywordtracking.constants import KEYWORD_STATUS_ACTIVE
 from bat.keywordtracking.utils import get_visibility_score
 from bat.market.models import AmazonMarketplace, AmazonProduct
@@ -83,6 +84,7 @@ class ProductKeywordRankManager(models.Manager):
 class ProductKeywordRank(models.Model):
     """Keyword rank for amazon product."""
 
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     productkeyword = models.ForeignKey(
         ProductKeyword,
         on_delete=models.CASCADE,
@@ -118,9 +120,9 @@ class ProductKeywordRank(models.Model):
             + str(self.date)
         )
 
-    # def save(self, *args, **kwargs):
-    #     visibility_score = get_visibility_score(
-    #         self.frequency, self.rank, self.page
-    #     )
-    #     self.visibility_score = visibility_score
-    #     return super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        visibility_score = get_visibility_score(
+            self.frequency, self.rank, self.page
+        )
+        self.visibility_score = visibility_score
+        return super().save(*args, **kwargs)

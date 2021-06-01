@@ -5,12 +5,13 @@ from bat.company.urls import router as company_router
 from bat.market.views import (
     AccountsReceiveAmazonCallback,
     AmazonAccountsAuthorization,
-    AmazonMarketplaceViewsets,
-    AmazonOrderViewsets,
-    AmazonProductViewsets,
-    TestAmazonClientCatalog,
     AmazonAccountsDisconnect,
     AmazonCompanyViewSet,
+    AmazonMarketplaceViewsets,
+    AmazonOrderViewsets,
+    AmazonProductSessionsViewsets,
+    AmazonProductViewsets,
+    TestAmazonClientCatalog,
 )
 
 amazon_marketplaces_router = nested_routers.NestedSimpleRouter(
@@ -45,6 +46,15 @@ amazon_company_router.register(
     "amazon-company", AmazonCompanyViewSet, basename="company-amazon-company"
 )
 
+amazon_product_sessions_router = nested_routers.NestedSimpleRouter(
+    company_router, "companies", lookup="company"
+)
+amazon_product_sessions_router.register(
+    "amazon-product-sessions",
+    AmazonProductSessionsViewsets,
+    basename="amazon-product-sessions",
+)
+
 
 app_name = "market"
 
@@ -63,9 +73,9 @@ urlpatterns = [
         AccountsReceiveAmazonCallback.as_view(),
     ),
     path("test-amazon-client/catalog", TestAmazonClientCatalog.as_view()),
-
     path("", include(amazon_company_router.urls)),
     path("", include(amazon_product_router.urls)),
     path("", include(amazon_order_router.urls)),
     path("", include(amazon_marketplaces_router.urls)),
+    path("", include(amazon_product_sessions_router.urls)),
 ]

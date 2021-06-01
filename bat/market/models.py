@@ -14,11 +14,7 @@ from taggit.managers import TaggableManager
 from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import (
-    Image,
-    IsDeletableMixin,
-    UniqueWithinCompanyMixin,
-)
+from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -732,3 +728,38 @@ class PPCProfile(models.Model):
             + " - "
             + str(self.amazonmarketplace.country)
         )
+
+
+class AmazonProductSessions(models.Model):
+    """Amazon Product Sessions."""
+
+    amazonproduct = models.ForeignKey(
+        AmazonProduct,
+        on_delete=models.CASCADE,
+        verbose_name="Select Amazon Product",
+    )
+    sessions = models.PositiveIntegerField(default=0)
+    page_views = models.PositiveIntegerField(default=0)
+    conversion_rate = models.PositiveIntegerField(default=0)
+    date = models.DateField(default=timezone.now)
+
+    class Meta:
+        """Product Keyword Meta."""
+
+        unique_together = ("amazonproduct", "date")
+        verbose_name_plural = _("Amazon Product Sessions")
+
+    def __str__(self):
+        """Return Value."""
+        return str(self.amazonproduct.title)
+
+    def save(self, *args, **kwargs):
+        orders = AmazonOrderItem.objects.filter(
+            amazonproduct=self.amazonproduct,
+            amazonorder__purchase_date__date=self.date,
+        ).count()
+        conversion_rate = 0
+        if orders and self.sessions:
+            conversion_rate = round((orders / self.sessions) * 100)
+        self.conversion_rate = conversion_rate
+        return super().save(*args, **kwargs)

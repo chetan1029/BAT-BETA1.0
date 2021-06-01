@@ -1,9 +1,9 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytz
-from django.db.models import Sum
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
@@ -29,7 +29,7 @@ from bat.autoemail.filters import EmailQueueFilter
 from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
-from bat.globalutils.utils import pdf_file_from_html
+from bat.globalutils.utils import get_compare_percentage, pdf_file_from_html
 from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonOrderItem
 
 
@@ -237,18 +237,21 @@ class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
         )
 
 
-class DashboardAPIView(APIView):
+class EmailChartDataAPIView(APIView):
     def get(self, request, company_pk=None, **kwargs):
 
         dt_format = "%m/%d/%Y"
 
-        all_amazon_orders = AmazonOrder.objects.filter(
-            amazonaccounts__company_id=company_pk
-        )
-
         all_email_queue = EmailQueue.objects.filter(
             emailcampaign__company_id=company_pk
         )
+
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
+            all_email_queue = all_email_queue.filter(
+                emailcampaign__amazonmarketplace_id=marketplace.id
+            )
 
         start_date = self.request.GET.get("start_date")
         end_date = self.request.GET.get("end_date")
@@ -264,49 +267,37 @@ class DashboardAPIView(APIView):
             else None
         )
 
+        difference_days = 0
+        if start_date and end_date:
+            days = end_date - start_date
+            difference_days = days.days
+        start_date_compare = start_date - timedelta(days=difference_days)
+        end_date_compare = end_date - timedelta(days=difference_days)
+
+        all_email_queue_compare = all_email_queue
+
         if start_date:
-            all_amazon_orders = all_amazon_orders.filter(
-                purchase_date__gte=start_date
-            )
-            all_email_queue = all_email_queue.filter(
-                amazonorder__purchase_date__gte=start_date
+            all_email_queue = all_email_queue.filter(send_date__gte=start_date)
+            all_email_queue_compare = all_email_queue_compare.filter(
+                send_date__gte=start_date_compare
             )
         if end_date:
-            all_amazon_orders = all_amazon_orders.filter(
-                purchase_date__lte=end_date
-            )
-            all_email_queue = all_email_queue.filter(
-                amazonorder__purchase_date__lte=end_date
+            all_email_queue = all_email_queue.filter(send_date__lte=end_date)
+            all_email_queue_compare = all_email_queue_compare.filter(
+                send_date__lte=end_date_compare
             )
 
-        marketplace = request.GET.get("marketplace", None)
-        if marketplace:
-            marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
-            all_amazon_orders = all_amazon_orders.filter(
-                amazonaccounts__marketplace_id=marketplace.id
-            )
-
-            all_email_queue = all_email_queue.filter(
-                emailcampaign__amazonmarketplace_id=marketplace.id
-            )
-
-        currency = request.GET.get("currency", None)
-        if currency:
-            currency = currency.upper()
-            all_amazon_orders = all_amazon_orders.filter(
-                amount_currency=currency
-            )
-
-            all_email_queue = all_email_queue.filter(
-                amazonorder__amount_currency=currency
-            )
-
-        total_orders = all_amazon_orders.count()
-
-        total_sales = all_amazon_orders.aggregate(Sum("amount")).get(
-            "amount__sum"
+        email_par_day = list(
+            all_email_queue.values("send_date__date")
+            .annotate(total_email=Count("id"))
+            .values_list("send_date__date", "total_email")
+            .order_by("send_date__date")
         )
+        data = {}
+        for date, total_amount in email_par_day:
+            data[date.strftime(dt_format)] = total_amount
 
+        # original stats
         total_email_sent = all_email_queue.filter(
             status__name=ORDER_EMAIL_STATUS_SEND
         ).count()
@@ -326,24 +317,54 @@ class DashboardAPIView(APIView):
             ]
         ).count()
 
-        amount_par_day = list(
-            all_amazon_orders.values("purchase_date__date")
-            .annotate(total_amount=Sum("amount"))
-            .values_list("purchase_date__date", "total_amount")
-            .order_by("purchase_date__date")
+        # Compare email stats.
+        total_email_sent_compare = all_email_queue_compare.filter(
+            status__name=ORDER_EMAIL_STATUS_SEND
+        ).count()
+
+        total_opt_out_email_compare = all_email_queue_compare.filter(
+            status__name=ORDER_EMAIL_STATUS_OPTOUT
+        ).count()
+
+        opt_out_rate_compare = 0
+        if total_opt_out_email_compare:
+            opt_out_rate_compare = round(
+                (total_email_sent_compare / total_opt_out_email_compare), 2
+            )
+
+        total_email_in_queue_compare = all_email_queue_compare.filter(
+            status__name__in=[
+                ORDER_EMAIL_STATUS_SCHEDULED,
+                ORDER_EMAIL_STATUS_QUEUED,
+            ]
+        ).count()
+
+        # Comapre percentage
+        total_email_sent_percentage = get_compare_percentage(
+            total_email_sent, total_email_sent_compare
         )
-        data = {}
-        for date, total_amount in amount_par_day:
-            data[date.strftime(dt_format)] = total_amount
+        total_opt_out_email_percentage = get_compare_percentage(
+            total_opt_out_email, total_opt_out_email_compare
+        )
+        opt_out_rate_percentage = get_compare_percentage(
+            opt_out_rate, opt_out_rate_compare
+        )
+        total_email_in_queue_percentage = get_compare_percentage(
+            total_email_in_queue, total_email_in_queue_compare
+        )
 
         stats = {
-            "data": data,
-            "total_sales": total_sales,
-            "total_orders": total_orders,
-            "total_email_sent": total_email_sent,
-            "total_email_in_queue": total_email_in_queue,
-            "total_opt_out_email": total_opt_out_email,
-            "opt_out_rate": opt_out_rate,
+            "chartData": [{"name": "Email Sent", "data": data}],
+            "stats": {
+                "total_email_sent": total_email_sent,
+                "total_email_in_queue": total_email_in_queue,
+                "total_opt_out_email": total_opt_out_email,
+                "opt_out_rate": opt_out_rate,
+                "email_sent_percentage": total_email_sent_percentage,
+                "opt_out_email_percentage": total_opt_out_email_percentage,
+                "opt_out_rate_percentage": opt_out_rate_percentage,
+                "email_in_queue_percentage": total_email_in_queue_percentage,
+            },
         }
 
         return Response(stats, status=status.HTTP_200_OK)

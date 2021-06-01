@@ -1,16 +1,17 @@
 import json
 import operator
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q, Sum
 from django.db.models.aggregates import Avg
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
+from django_auto_prefetching import AutoPrefetchViewSetMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg2.openapi import Response as SwaggerResponse
 from drf_yasg2.utils import swagger_auto_schema
@@ -22,6 +23,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bat.company.utils import get_member
+from bat.globalutils.utils import get_compare_percentage
 from bat.keywordtracking import constants, serializers
 from bat.keywordtracking.models import (
     GlobalKeyword,
@@ -33,7 +35,9 @@ from bat.market.amazon_ad_api import Keywords
 from bat.market.models import (
     AmazonAccounts,
     AmazonMarketplace,
+    AmazonOrder,
     AmazonProduct,
+    AmazonProductSessions,
     PPCCredentials,
     PPCProfile,
 )
@@ -42,7 +46,7 @@ from bat.setting.utils import get_status
 # Create your views here.
 
 
-class ProductKeywordViewSet(viewsets.ModelViewSet):
+class ProductKeywordViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """Operations on Product Keywords."""
 
     serializer_class = serializers.ProductKeywordSerializer
@@ -61,7 +65,9 @@ class ProductKeywordViewSet(viewsets.ModelViewSet):
         responses={status.HTTP_200_OK: SwaggerResponse({"detail": "string"})},
     ),
 )
-class ProductKeywordRankViewSet(viewsets.ModelViewSet):
+class ProductKeywordRankViewSet(
+    AutoPrefetchViewSetMixin, viewsets.ModelViewSet
+):
     """Operations on Product Keyword Rank."""
 
     serializer_class = serializers.ProductKeywordRankSerializer
@@ -88,9 +94,7 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
             company_id=company_id, user_id=self.request.user.id
         )
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(
-            productkeyword__amazonproduct__amazonaccounts__company_id=company_id
-        ).order_by("-date")
+        return queryset.filter(company_id=company_id).order_by("-date")
 
     @action(detail=False, methods=["post"])
     def bulk_action(self, request, *args, **kwargs):
@@ -121,7 +125,9 @@ class ProductKeywordRankViewSet(viewsets.ModelViewSet):
                     )
 
 
-class KeywordTrackingProductViewsets(viewsets.ReadOnlyModelViewSet):
+class KeywordTrackingProductViewsets(
+    AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet
+):
     queryset = AmazonProduct.objects.all()
     serializer_class = serializers.KeywordTrackingProductSerializer
     permission_classes = (IsAuthenticated,)
@@ -194,6 +200,7 @@ class SaveProductKeyword(APIView):
                 try:
                     with transaction.atomic():
                         ProductKeywordRank.objects.create(
+                            company_id=company_pk,
                             productkeyword=product_keyword,
                             frequency=search_frequency,
                         )
@@ -221,7 +228,7 @@ class OverallDashboardAPIView(APIView):
         _member = get_member(company_id=company_pk, user_id=request.user.id)
 
         all_product_keyword_rank = ProductKeywordRank.objects.filter(
-            productkeyword__amazonproduct__amazonaccounts__company_id=company_pk
+            company_id=company_pk
         ).order_by("-date")
 
         dt_format = "%m/%d/%Y"
@@ -265,14 +272,14 @@ class OverallDashboardAPIView(APIView):
 
         product_keyword_rank_par_day = list(
             all_product_keyword_rank.values("date")
-            .annotate(avg_visibility_score=Avg("visibility_score"))
-            .values_list("date", "avg_visibility_score")
+            .annotate(sum_visibility_score=Sum("visibility_score"))
+            .values_list("date", "sum_visibility_score")
             .order_by("date")
         )
 
         data = {}
-        for date, avg_visibility_score in product_keyword_rank_par_day:
-            data[date.strftime(dt_format)] = int(avg_visibility_score)
+        for date, sum_visibility_score in product_keyword_rank_par_day:
+            data[date.strftime(dt_format)] = int(sum_visibility_score)
 
         stats = [{"name": "Visibilty Score", "data": data}]
 
@@ -374,8 +381,6 @@ class SuggestKeywordAPIView(APIView):
                     for keyword in keywords:
                         keyword_list.append(keyword["keywordText"])
 
-        print(len(keyword_list))
-
         suggested_keywords = (
             GlobalKeyword.objects.filter(
                 Q(asin_1__in=asins) | Q(asin_2__in=asins) | Q(asin_3__in=asins)
@@ -389,7 +394,260 @@ class SuggestKeywordAPIView(APIView):
             + keyword_list
         )
 
-        print(len(suggested_keywords))
-
         stats = {"data": suggested_keywords}
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+class AsinPerformanceView(APIView):
+    def get(self, request, company_pk=None, product_keyword_pk=None, **kwargs):
+
+        _member = get_member(company_id=company_pk, user_id=request.user.id)
+
+        product_visibility = ProductKeywordRank.objects.filter(
+            company_id=company_pk
+        )
+
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            try:
+                marketplace = get_object_or_404(
+                    AmazonMarketplace, pk=marketplace
+                )
+                product_visibility = product_visibility.filter(
+                    productkeyword__amazonproduct__amazonaccounts__marketplace_id=marketplace.id
+                )
+            except ValueError as e:
+                return Response(
+                    {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                )
+
+        dt_format = "%m/%d/%Y"
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+
+        start_date = (
+            pytz.utc.localize(datetime.strptime(start_date, dt_format))
+            if start_date
+            else None
+        )
+        end_date = (
+            pytz.utc.localize(datetime.strptime(end_date, dt_format))
+            if end_date
+            else None
+        )
+
+        difference_days = 0
+        if start_date and end_date:
+            days = end_date - start_date
+            difference_days = days.days
+        start_date_compare = start_date - timedelta(days=difference_days)
+        end_date_compare = end_date - timedelta(days=difference_days)
+
+        product_visibility_compare = product_visibility
+
+        if start_date:
+            product_visibility = product_visibility.filter(
+                date__gte=start_date
+            )
+            # Campare data for same date difference
+            product_visibility_compare = product_visibility_compare.filter(
+                date__gte=start_date_compare
+            )
+        if end_date:
+            product_visibility = product_visibility.filter(date__lte=end_date)
+            # Campare data for same date difference
+            product_visibility_compare = product_visibility_compare.filter(
+                date__lte=end_date_compare
+            )
+
+        product_visibility = (
+            product_visibility.values(
+                asin=F("productkeyword__amazonproduct__asin")
+            )
+            .annotate(sum_visibility_score=Sum("visibility_score"))
+            .order_by("asin")
+        )
+
+        product_visibility_compare = (
+            product_visibility_compare.values(
+                asin=F("productkeyword__amazonproduct__asin")
+            )
+            .annotate(sum_visibility_score=Sum("visibility_score"))
+            .order_by("asin")
+        )
+
+        final_visibility_score = []
+        for product in product_visibility:
+            item_found = False
+            data_new = {}
+            for product_compare in product_visibility_compare:
+                visibility_score_per = 0
+                data = {}
+                if product["asin"] == product_compare["asin"]:
+                    visibility_score_per = get_compare_percentage(
+                        product["sum_visibility_score"],
+                        product_compare["sum_visibility_score"],
+                    )
+                    data["asin"] = product["asin"]
+                    data["visibility_score"] = product["sum_visibility_score"]
+                    data["visibility_score_per"] = visibility_score_per
+                    final_visibility_score.append(data)
+                    item_found = True
+            if not item_found:
+                data_new["asin"] = product["asin"]
+                data_new["visibility_score"] = product["sum_visibility_score"]
+                data_new["visibility_score_per"] = 0
+                final_visibility_score.append(data_new)
+
+        best = sorted(
+            final_visibility_score,
+            key=lambda k: k["visibility_score"],
+            reverse=True,
+        )[:10]
+        worst = sorted(
+            final_visibility_score, key=lambda k: k["visibility_score"]
+        )[:10]
+        trending = sorted(
+            final_visibility_score,
+            key=lambda k: k["visibility_score_per"],
+            reverse=True,
+        )[:10]
+
+        stats = [{"best": best, "worst": worst, "trending": trending}]
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+class SalesChartDataAPIView(APIView):
+    def get(self, request, company_pk=None, **kwargs):
+
+        dt_format = "%m/%d/%Y"
+
+        all_amazon_orders = AmazonOrder.objects.filter(
+            amazonaccounts__company_id=company_pk
+        )
+
+        all_amazon_conversion = AmazonProductSessions.objects.filter(
+            amazonproduct__amazonaccounts__company_id=company_pk
+        )
+
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+
+        start_date = (
+            pytz.utc.localize(datetime.strptime(start_date, dt_format))
+            if start_date
+            else None
+        )
+        end_date = (
+            pytz.utc.localize(datetime.strptime(end_date, dt_format))
+            if end_date
+            else None
+        )
+
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
+            all_amazon_orders = all_amazon_orders.filter(
+                amazonaccounts__marketplace_id=marketplace.id
+            )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                amazonproduct__amazonaccounts__marketplace_id=marketplace.id
+            )
+
+        currency = request.GET.get("currency", None)
+        if currency:
+            currency = currency.upper()
+            all_amazon_orders = all_amazon_orders.filter(
+                amount_currency=currency
+            )
+
+        difference_days = 0
+        if start_date and end_date:
+            days = end_date - start_date
+            difference_days = days.days
+        start_date_compare = start_date - timedelta(days=difference_days)
+        end_date_compare = end_date - timedelta(days=difference_days)
+
+        all_amazon_orders_compare = all_amazon_orders
+
+        if start_date:
+            all_amazon_orders = all_amazon_orders.filter(
+                purchase_date__gte=start_date
+            )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                date__gte=start_date
+            )
+
+            # Campare data for same date difference
+            all_amazon_orders_compare = all_amazon_orders_compare.filter(
+                purchase_date__gte=start_date_compare
+            )
+
+        if end_date:
+            all_amazon_orders = all_amazon_orders.filter(
+                purchase_date__lte=end_date
+            )
+            all_amazon_conversion = all_amazon_conversion.filter(
+                date__lte=end_date
+            )
+
+            # Campare data for same date difference
+            all_amazon_orders_compare = all_amazon_orders_compare.filter(
+                purchase_date__lte=end_date_compare
+            )
+
+        total_orders = all_amazon_orders.count()
+
+        total_sales = all_amazon_orders.aggregate(Sum("amount")).get(
+            "amount__sum"
+        )
+
+        total_orders_compare = all_amazon_orders_compare.count()
+
+        total_sales_compare = all_amazon_orders_compare.aggregate(
+            Sum("amount")
+        ).get("amount__sum")
+
+        total_orders_percentage = get_compare_percentage(
+            total_orders, total_orders_compare
+        )
+        total_sales_percentage = get_compare_percentage(
+            total_sales, total_sales_compare
+        )
+
+        amount_par_day = list(
+            all_amazon_orders.values("purchase_date__date")
+            .annotate(total_amount=Sum("amount"))
+            .values_list("purchase_date__date", "total_amount")
+            .order_by("purchase_date__date")
+        )
+
+        conversion_per_day = list(
+            all_amazon_conversion.values("date")
+            .annotate(avg_conversion_rate=Avg("conversion_rate"))
+            .values_list("date", "avg_conversion_rate")
+            .order_by("date")
+        )
+
+        conversion_data = {}
+        for date, avg_conversion_rate in conversion_per_day:
+            conversion_data[date.strftime(dt_format)] = avg_conversion_rate
+
+        amount_data = {}
+        for date, total_amount in amount_par_day:
+            amount_data[date.strftime(dt_format)] = total_amount
+
+        stats = {
+            "chartData": [
+                {"name": "Amount", "data": amount_data},
+                {"name": "Conversion Rate", "data": conversion_data},
+            ],
+            "stats": {
+                "total_sales": total_sales,
+                "total_orders": total_orders,
+                "total_sales_percentage": total_sales_percentage,
+                "total_orders_percentage": total_orders_percentage,
+            },
+        }
+
         return Response(stats, status=status.HTTP_200_OK)

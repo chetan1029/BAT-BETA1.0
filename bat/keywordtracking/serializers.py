@@ -48,7 +48,7 @@ class ProductKeywordRankSerializer(serializers.ModelSerializer):
             "scrap_status",
             "extra_data",
         )
-        read_only_fields = ("id", "extra_data")
+        read_only_fields = fields
 
 
 class KeywordTrackingProductSerializer(AmazonProductSerializer):

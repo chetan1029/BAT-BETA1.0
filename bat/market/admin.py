@@ -9,6 +9,7 @@ from bat.market.models import (
     AmazonOrderItem,
     AmazonOrderShipping,
     AmazonProduct,
+    AmazonProductSessions,
     PPCCredentials,
     PPCProfile,
 )
@@ -25,3 +26,4 @@ admin.site.register(AmazonOrderShipping)
 admin.site.register(AmazonCompany)
 admin.site.register(PPCCredentials)
 admin.site.register(PPCProfile)
+admin.site.register(AmazonProductSessions)

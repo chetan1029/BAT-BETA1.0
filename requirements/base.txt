@@ -219,3 +219,5 @@ django-celery-beat==2.2.0
 
 # Django WYSIWYG editor
 django-summernote==0.8.11.6
+
+django-auto-prefetching==0.1.10

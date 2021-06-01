@@ -299,6 +299,7 @@ class EmailCampaign(models.Model):
         blank=True,
     )
     include_invoice = models.BooleanField(default=False)
+    send_optout = models.BooleanField(default=False)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     activation_date = models.DateTimeField(default=timezone.now)
     extra_data = HStoreField(null=True, blank=True)
