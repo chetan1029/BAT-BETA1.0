@@ -13,8 +13,6 @@ from bat.serializersFields.serializers_fields import StatusField
 
 
 class KeywordSerializer(serializers.ModelSerializer):
-    amazonmarketplace = AmazonMarketplaceSerializer(read_only=True)
-
     class Meta:
         model = Keyword
         fields = ("id", "name", "frequency", "amazonmarketplace")
@@ -23,7 +21,6 @@ class KeywordSerializer(serializers.ModelSerializer):
 
 class ProductKeywordSerializer(serializers.ModelSerializer):
     keyword = KeywordSerializer()
-    status = StatusField(choices=KEYWORD_STATUS_CHOICE)
 
     class Meta:
         model = ProductKeyword

@@ -94,7 +94,7 @@ class ProductKeywordRankViewSet(
             company_id=company_id, user_id=self.request.user.id
         )
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(company_id=company_id).order_by("-date")
+        return queryset.filter(company_id=company_id)
 
     @action(detail=False, methods=["post"])
     def bulk_action(self, request, *args, **kwargs):

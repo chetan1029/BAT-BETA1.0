@@ -27,6 +27,29 @@ from rest_framework.relations import PKOnlyObject  # NOQA # isort:skip
 
 class AmazonMarketplaceSerializer(serializers.ModelSerializer):
     country = CountrySerializerField(required=False)
+
+    class Meta:
+        model = AmazonMarketplace
+        fields = (
+            "id",
+            "name",
+            "country",
+            "marketplaceId",
+            "region",
+            "sales_channel_name",
+        )
+        read_only_fields = (
+            "id",
+            "name",
+            "country",
+            "marketplaceId",
+            "region",
+            "sales_channel_name",
+        )
+
+
+class AmazonMarketplaceAdvancedSerializer(serializers.ModelSerializer):
+    country = CountrySerializerField(required=False)
     status = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     email_verified = serializers.SerializerMethodField()
@@ -118,7 +141,7 @@ class AmazonMarketplaceSerializerField(serializers.Field):
         give json of Amazon Marketplace .
         """
         if isinstance(value, AmazonMarketplace):
-            return AmazonMarketplaceSerializer(
+            return AmazonMarketplaceAdvancedSerializer(
                 value, context=self.context
             ).data
         return value
@@ -135,6 +158,15 @@ class AmazonMarketplaceSerializerField(serializers.Field):
                     )
                 }
             )
+
+
+class AmazonAccountsSerializer(serializers.ModelSerializer):
+    marketplace = AmazonMarketplaceSerializer(read_only=True)
+
+    class Meta:
+        model = AmazonAccounts
+        fields = ("id", "marketplace", "company")
+        read_only_fields = ("id", "marketplace", "company")
 
 
 class SingleAmazonProductSerializer(serializers.ModelSerializer):
@@ -168,6 +200,7 @@ class AmazonProductSerializer(serializers.ModelSerializer):
     tags = TagField(required=False)
     status = StatusField()
     parent = SingleAmazonProductSerializer()
+    amazonaccounts = AmazonAccountsSerializer(read_only=True)
 
     class Meta:
         model = AmazonProduct
