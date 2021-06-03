@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             model_name="productkeywordrank",
             name="company",
             field=models.ForeignKey(
-                default=6,
+                default=1,
                 on_delete=django.db.models.deletion.CASCADE,
                 to="company.company",
             ),

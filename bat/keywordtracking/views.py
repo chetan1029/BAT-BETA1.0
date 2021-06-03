@@ -84,6 +84,7 @@ class ProductKeywordRankViewSet(
         "rank",
         "id",
         "index",
+        "page",
         "visibility_score",
         "productkeyword__keyword__name",
     ]
@@ -94,7 +95,46 @@ class ProductKeywordRankViewSet(
             company_id=company_id, user_id=self.request.user.id
         )
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(company_id=company_id)
+
+        queryset.filter(company_id=company_id)
+
+        search_keywords = self.kwargs.get("search_keywords", None)
+        searchtype = self.kwargs.get("searchtype", None)
+        if searchtype and search_keywords:
+            search_keywords = list(search_keywords.split(","))
+            search_keywords = [x.strip(" ") for x in search_keywords]
+            search_keywords = [x.lower() for x in search_keywords]
+            
+            if search_type == "inclusive-all":
+                queryset = queryset.filter(
+                    reduce(
+                        operator.and_,
+                        (Q(name__contains=x) for x in search_keywords),
+                    )
+                )
+            elif search_type == "inclusive-any":
+                queryset = queryset.filter(
+                    reduce(
+                        operator.or_,
+                        (Q(name__contains=x) for x in search_keywords),
+                    )
+                )
+            elif search_type == "exclusive-all":
+                queryset = queryset.exclude(
+                    reduce(
+                        operator.and_,
+                        (Q(name__contains=x) for x in search_keywords),
+                    )
+                )
+            elif search_type == "exclusive-any":
+                queryset = queryset.exclude(
+                    reduce(
+                        operator.or_,
+                        (Q(name__contains=x) for x in search_keywords),
+                    )
+                )
+
+        return queryset
 
     @action(detail=False, methods=["post"])
     def bulk_action(self, request, *args, **kwargs):

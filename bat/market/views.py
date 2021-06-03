@@ -120,7 +120,7 @@ class AmazonMarketplaceViewsets(
 ):
     queryset = AmazonMarketplace.objects.all()
     permission_classes = (IsAuthenticated,)
-    serializer_class = serializers.AmazonMarketplaceSerializer
+    serializer_class = serializers.AmazonMarketplaceAdvancedSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["name"]
 
