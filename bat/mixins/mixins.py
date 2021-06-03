@@ -1,19 +1,17 @@
 import datetime
-import tempfile
-import djqscsv
 import json
-from openpyxl import Workbook
+import tempfile
 
+import djqscsv
 from django.db import IntegrityError, transaction
-from django.utils.translation import ugettext_lazy as _
 from django.http import HttpResponse
 from django.utils.text import slugify
-
+from django.utils.translation import ugettext_lazy as _
+from measurement.measures.mass import Mass
+from openpyxl import Workbook
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
-
-from measurement.measures.mass import Mass
 
 
 class ArchiveMixin:
@@ -23,13 +21,21 @@ class ArchiveMixin:
         instance = self.get_object()
 
         if not instance.is_active:
-            return Response({"detail": _("Already archived")}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": _("Already archived")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             with transaction.atomic():
                 instance.archive()
-            return Response({"detail": self.archive_message}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": self.archive_message}, status=status.HTTP_200_OK
+            )
         except IntegrityError:
-            return Response({"detail": _("Can't archive")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response(
+                {"detail": _("Can't archive")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
 
 
 class RestoreMixin:
@@ -38,35 +44,44 @@ class RestoreMixin:
         """Set the restore action."""
         instance = self.get_object()
         if instance.is_active:
-            return Response({"detail": _("Already active")}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": _("Already active")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             with transaction.atomic():
                 instance.restore()
-            return Response({"detail": self.restore_message}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": self.restore_message}, status=status.HTTP_200_OK
+            )
         except IntegrityError:
-            return Response({"detail": _("Can't restore")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response(
+                {"detail": _("Can't restore")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
 
 
 class ExportMixin:
-
     @action(detail=False, methods=["get"])
     def csvexport(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(
-            self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset())
         if getattr(self, "export_fields", None):
             queryset = queryset.values(*self.export_fields)
 
         if getattr(self, "field_header_map", None):
             return djqscsv.render_to_csv_response(
-                queryset, append_datestamp=True, field_header_map=self.field_header_map)
+                queryset,
+                append_datestamp=True,
+                field_header_map=self.field_header_map,
+            )
         else:
             return djqscsv.render_to_csv_response(
-                queryset, append_datestamp=True)
+                queryset, append_datestamp=True
+            )
 
     @action(detail=False, methods=["get"])
-    def xlsxeport(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(
-            self.get_queryset())
+    def xlsexport(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
         queryset_with_tags = None
         if getattr(self, "export_fields", None):
             if "tags" in self.export_fields:
@@ -79,8 +94,12 @@ class ExportMixin:
 
         # get filenames
         formatted_datestring = datetime.date.today().strftime("%Y%m%d")
-        filename_xlsx = slugify(queryset.model.__name__) + \
-            "_" + formatted_datestring + '_export.xlsx'
+        filename_xlsx = (
+            slugify(queryset.model.__name__)
+            + "_"
+            + formatted_datestring
+            + "_export.xlsx"
+        )
 
         # Temporary files
         tmp_dir = tempfile.TemporaryDirectory()
@@ -91,12 +110,12 @@ class ExportMixin:
         ws = wb.active
 
         # header mapping
-        if type(queryset).__name__ == 'ValuesQuerySet':
+        if type(queryset).__name__ == "ValuesQuerySet":
             values_qs = queryset
         else:
             # could be a non-values qs, or could be django 1.9+
-            iterable_class = getattr(queryset, '_iterable_class', object)
-            if iterable_class.__name__ == 'ValuesIterable':
+            iterable_class = getattr(queryset, "_iterable_class", object)
+            if iterable_class.__name__ == "ValuesIterable":
                 values_qs = queryset
             else:
                 values_qs = queryset.values()
@@ -126,7 +145,13 @@ class ExportMixin:
                             value = json.dumps(value)
                         row2.append(value)
                     if queryset_with_tags:
-                        tags = ",".join(list(queryset_with_tags.get(pk=row.get("id")).tags.names()))
+                        tags = ",".join(
+                            list(
+                                queryset_with_tags.get(
+                                    pk=row.get("id")
+                                ).tags.names()
+                            )
+                        )
                         row2.append(tags)
                     ws.append(row2)
             wb.save(tmp_xlsx_file_path)
@@ -135,11 +160,15 @@ class ExportMixin:
             # response
             f = open(tmp_xlsx_file_path, "rb")
 
-            response_args = {'content_type': 'application/xlsx'}
+            response_args = {"content_type": "application/xlsx"}
             response = HttpResponse(f, **response_args)
-            response['Content-Disposition'] = 'attachment; filename=' + \
-                filename_xlsx
-            response['Cache-Control'] = 'no-cache'
+            response["Content-Disposition"] = (
+                "attachment; filename=" + filename_xlsx
+            )
+            response["Cache-Control"] = "no-cache"
             return response
         except Exception:
-            return Response({"detail": _("Can't generate file")}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response(
+                {"detail": _("Can't generate file")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )

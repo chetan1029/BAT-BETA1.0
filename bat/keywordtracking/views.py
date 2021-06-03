@@ -1,6 +1,7 @@
 import json
 import operator
 from datetime import datetime, timedelta
+from functools import reduce
 
 import pytz
 from django.conf import settings
@@ -41,6 +42,7 @@ from bat.market.models import (
     PPCCredentials,
     PPCProfile,
 )
+from bat.mixins.mixins import ExportMixin
 from bat.setting.utils import get_status
 
 # Create your views here.
@@ -66,7 +68,7 @@ class ProductKeywordViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     ),
 )
 class ProductKeywordRankViewSet(
-    AutoPrefetchViewSetMixin, viewsets.ModelViewSet
+    AutoPrefetchViewSetMixin, ExportMixin, viewsets.ModelViewSet
 ):
     """Operations on Product Keyword Rank."""
 
@@ -89,6 +91,16 @@ class ProductKeywordRankViewSet(
         "productkeyword__keyword__name",
     ]
 
+    export_fields = [
+        "productkeyword__keyword__name",
+        "frequency",
+        "index",
+        "rank",
+        "page",
+        "visibility_score",
+    ]
+    field_header_map = {"productkeyword__keyword__name": "keyword"}
+
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
         _member = get_member(
@@ -98,39 +110,51 @@ class ProductKeywordRankViewSet(
 
         queryset.filter(company_id=company_id)
 
-        search_keywords = self.kwargs.get("search_keywords", None)
-        searchtype = self.kwargs.get("searchtype", None)
-        if searchtype and search_keywords:
+        search_keywords = self.request.GET.get("search_keywords", None)
+        search_type = self.request.GET.get("searchtype", None)
+        if search_type and search_keywords:
             search_keywords = list(search_keywords.split(","))
             search_keywords = [x.strip(" ") for x in search_keywords]
             search_keywords = [x.lower() for x in search_keywords]
-            
+
             if search_type == "inclusive-all":
                 queryset = queryset.filter(
                     reduce(
                         operator.and_,
-                        (Q(name__contains=x) for x in search_keywords),
+                        (
+                            Q(productkeyword__keyword__name__contains=x)
+                            for x in search_keywords
+                        ),
                     )
                 )
             elif search_type == "inclusive-any":
                 queryset = queryset.filter(
                     reduce(
                         operator.or_,
-                        (Q(name__contains=x) for x in search_keywords),
+                        (
+                            Q(productkeyword__keyword__name__contains=x)
+                            for x in search_keywords
+                        ),
                     )
                 )
             elif search_type == "exclusive-all":
                 queryset = queryset.exclude(
                     reduce(
                         operator.and_,
-                        (Q(name__contains=x) for x in search_keywords),
+                        (
+                            Q(productkeyword__keyword__name__contains=x)
+                            for x in search_keywords
+                        ),
                     )
                 )
             elif search_type == "exclusive-any":
                 queryset = queryset.exclude(
                     reduce(
                         operator.or_,
-                        (Q(name__contains=x) for x in search_keywords),
+                        (
+                            Q(productkeyword__keyword__name__contains=x)
+                            for x in search_keywords
+                        ),
                     )
                 )
 
@@ -397,6 +421,7 @@ class SuggestKeywordAPIView(APIView):
 
         asins = self.request.GET.get("asins")
         asins = asins.split(",")
+        asins = [x.strip(" ") for x in asins]
 
         credentials = PPCCredentials.objects.first()
         ppcprofile = PPCProfile.objects.filter(
@@ -433,6 +458,9 @@ class SuggestKeywordAPIView(APIView):
             list(suggested_keywords.values_list("name", flat=True))
             + keyword_list
         )
+        suggested_keywords = map(lambda x: x.lower(), suggested_keywords)
+
+        suggested_keywords = list(dict.fromkeys(suggested_keywords))
 
         stats = {"data": suggested_keywords}
         return Response(stats, status=status.HTTP_200_OK)
