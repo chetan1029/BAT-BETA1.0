@@ -362,15 +362,33 @@ class EmailQueue(models.Model):
         products = self.amazonorder.orderitem_order.all()
         products_title_s = ""
         asins = ""
+        skus = ""
         for product in products:
             products_title_s += product.amazonproduct.title + ", "
             asins += product.amazonproduct.asin + ","
+            skus += product.amazonproduct.sku + ","
         context = {
             "order_id": self.amazonorder.order_id,
-            "Product_title_s": products_title_s,
-            "Seller_name": self.emailcampaign.get_company().store_name,
+            "product_title": products_title_s,
+            "seller_name": self.emailcampaign.get_company().store_name,
             "marketplace_domain": self.emailcampaign.amazonmarketplace.sales_channel_name.lower(),
+            "purchase_date": str(
+                self.amazonorder.purchase_date.strftime("%d %B %Y")
+            ),
+            "payment_date": str(
+                self.amazonorder.payment_date.strftime("%d %B %Y")
+            ),
+            "shipment_date": str(
+                self.amazonorder.shipment_date.strftime("%d %B %Y")
+            ),
+            "delivery_date": str(
+                self.amazonorder.reporting_date.strftime("%d %B %Y")
+            ),
+            "order_items_count": str(self.amazonorder.quantity),
+            "total_amount": str(self.amazonorder.amount),
+            "order_items": products,
             "asin": asins,
+            "sku": skus,
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()

@@ -475,20 +475,7 @@ class AsinPerformanceView(APIView):
             company_id=company_pk
         )
 
-        marketplace = request.GET.get("marketplace", None)
-        if marketplace and marketplace != "all":
-            try:
-                marketplace = get_object_or_404(
-                    AmazonMarketplace, pk=marketplace
-                )
-                product_visibility = product_visibility.filter(
-                    productkeyword__amazonproduct__amazonaccounts__marketplace_id=marketplace.id
-                )
-            except ValueError as e:
-                return Response(
-                    {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
-                )
-
+        # get dates
         dt_format = "%m/%d/%Y"
         start_date = self.request.GET.get("start_date")
         end_date = self.request.GET.get("end_date")
@@ -511,61 +498,151 @@ class AsinPerformanceView(APIView):
         start_date_compare = start_date - timedelta(days=difference_days)
         end_date_compare = end_date - timedelta(days=difference_days)
 
-        product_visibility_compare = product_visibility
+        # get marketplace
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            try:
+                marketplace = get_object_or_404(
+                    AmazonMarketplace, pk=marketplace
+                )
+                product_visibility = product_visibility.filter(
+                    productkeyword__amazonproduct__amazonaccounts__marketplace_id=marketplace.id
+                )
+            except ValueError as e:
+                return Response(
+                    {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                )
 
-        if start_date:
-            product_visibility = product_visibility.filter(
-                date__gte=start_date
-            )
-            # Campare data for same date difference
-            product_visibility_compare = product_visibility_compare.filter(
-                date__gte=start_date_compare
-            )
-        if end_date:
-            product_visibility = product_visibility.filter(date__lte=end_date)
-            # Campare data for same date difference
-            product_visibility_compare = product_visibility_compare.filter(
-                date__lte=end_date_compare
+            product_visibility_compare = product_visibility
+
+            if start_date:
+                product_visibility = product_visibility.filter(
+                    date__gte=start_date
+                )
+                # Campare data for same date difference
+                product_visibility_compare = product_visibility_compare.filter(
+                    date__gte=start_date_compare
+                )
+            if end_date:
+                product_visibility = product_visibility.filter(
+                    date__lte=end_date
+                )
+                # Campare data for same date difference
+                product_visibility_compare = product_visibility_compare.filter(
+                    date__lte=end_date_compare
+                )
+
+            product_visibility = (
+                product_visibility.values(
+                    asin=F("productkeyword__amazonproduct__asin"),
+                    images=F("productkeyword__amazonproduct__images"),
+                )
+                .annotate(sum_visibility_score=Sum("visibility_score"))
+                .order_by("asin")
             )
 
-        product_visibility = (
-            product_visibility.values(
-                asin=F("productkeyword__amazonproduct__asin")
+            product_visibility_compare = (
+                product_visibility_compare.values(
+                    asin=F("productkeyword__amazonproduct__asin")
+                )
+                .annotate(sum_visibility_score=Sum("visibility_score"))
+                .order_by("asin")
             )
-            .annotate(sum_visibility_score=Sum("visibility_score"))
-            .order_by("asin")
-        )
 
-        product_visibility_compare = (
-            product_visibility_compare.values(
-                asin=F("productkeyword__amazonproduct__asin")
-            )
-            .annotate(sum_visibility_score=Sum("visibility_score"))
-            .order_by("asin")
-        )
+            final_visibility_score = []
+            for product in product_visibility:
+                item_found = False
+                data_new = {}
+                for product_compare in product_visibility_compare:
+                    visibility_score_per = 0
+                    data = {}
+                    if product["asin"] == product_compare["asin"]:
+                        visibility_score_per = get_compare_percentage(
+                            product["sum_visibility_score"],
+                            product_compare["sum_visibility_score"],
+                        )
+                        data["asin"] = product["asin"]
+                        data["images"] = product["images"]
+                        data["visibility_score"] = product[
+                            "sum_visibility_score"
+                        ]
+                        data["visibility_score_per"] = visibility_score_per
+                        final_visibility_score.append(data)
+                        item_found = True
+                if not item_found:
+                    data_new["asin"] = product["asin"]
+                    data_new["images"] = product["images"]
+                    data_new["visibility_score"] = product[
+                        "sum_visibility_score"
+                    ]
+                    data_new["visibility_score_per"] = 0
+                    final_visibility_score.append(data_new)
+        else:
+            product_visibility_compare = product_visibility
 
-        final_visibility_score = []
-        for product in product_visibility:
-            item_found = False
-            data_new = {}
-            for product_compare in product_visibility_compare:
-                visibility_score_per = 0
-                data = {}
-                if product["asin"] == product_compare["asin"]:
-                    visibility_score_per = get_compare_percentage(
-                        product["sum_visibility_score"],
-                        product_compare["sum_visibility_score"],
+            if start_date:
+                product_visibility = product_visibility.filter(
+                    date__gte=start_date
+                )
+                # Campare data for same date difference
+                product_visibility_compare = product_visibility_compare.filter(
+                    date__gte=start_date_compare
+                )
+            if end_date:
+                product_visibility = product_visibility.filter(
+                    date__lte=end_date
+                )
+                # Campare data for same date difference
+                product_visibility_compare = product_visibility_compare.filter(
+                    date__lte=end_date_compare
+                )
+
+            product_visibility = (
+                product_visibility.values(
+                    name=F(
+                        "productkeyword__amazonproduct__amazonaccounts__marketplace__country"
                     )
-                    data["asin"] = product["asin"]
-                    data["visibility_score"] = product["sum_visibility_score"]
-                    data["visibility_score_per"] = visibility_score_per
-                    final_visibility_score.append(data)
-                    item_found = True
-            if not item_found:
-                data_new["asin"] = product["asin"]
-                data_new["visibility_score"] = product["sum_visibility_score"]
-                data_new["visibility_score_per"] = 0
-                final_visibility_score.append(data_new)
+                )
+                .annotate(sum_visibility_score=Sum("visibility_score"))
+                .order_by("name")
+            )
+
+            product_visibility_compare = (
+                product_visibility_compare.values(
+                    name=F(
+                        "productkeyword__amazonproduct__amazonaccounts__marketplace__country"
+                    )
+                )
+                .annotate(sum_visibility_score=Sum("visibility_score"))
+                .order_by("name")
+            )
+
+            final_visibility_score = []
+            for product in product_visibility:
+                item_found = False
+                data_new = {}
+                for product_compare in product_visibility_compare:
+                    visibility_score_per = 0
+                    data = {}
+                    if product["name"] == product_compare["name"]:
+                        visibility_score_per = get_compare_percentage(
+                            product["sum_visibility_score"],
+                            product_compare["sum_visibility_score"],
+                        )
+                        data["name"] = product["name"]
+                        data["visibility_score"] = product[
+                            "sum_visibility_score"
+                        ]
+                        data["visibility_score_per"] = visibility_score_per
+                        final_visibility_score.append(data)
+                        item_found = True
+                if not item_found:
+                    data_new["name"] = product["name"]
+                    data_new["visibility_score"] = product[
+                        "sum_visibility_score"
+                    ]
+                    data_new["visibility_score_per"] = 0
+                    final_visibility_score.append(data_new)
 
         best = sorted(
             final_visibility_score,

@@ -114,16 +114,28 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
             products = order.orderitem_order.all()
             products_title_s = ""
             asins = ""
+            skus = ""
             for product in products:
                 products_title_s += product.amazonproduct.title + ", "
                 asins += product.amazonproduct.asin + ","
+                skus += product.amazonproduct.sku + ","
             # For the email description and title
             context = {
                 "order_id": order.order_id,
-                "Product_title_s": products_title_s,
+                "product_title": products_title_s,
                 "marketplace_domain": campaign.amazonmarketplace.sales_channel_name.lower(),
-                "Seller_name": campaign.get_company().store_name,
+                "seller_name": campaign.get_company().store_name,
+                "purchase_date": str(order.purchase_date.strftime("%d %B %Y")),
+                "payment_date": str(order.payment_date.strftime("%d %B %Y")),
+                "shipment_date": str(order.shipment_date.strftime("%d %B %Y")),
+                "delivery_date": str(
+                    order.reporting_date.strftime("%d %B %Y")
+                ),
+                "order_items_count": str(order.quantity),
+                "total_amount": str(order.amount),
+                "order_items": products,
                 "asin": asins,
+                "sku": skus,
             }
 
             if campaign.include_invoice:
