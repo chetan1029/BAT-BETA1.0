@@ -119,11 +119,15 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
                 products_title_s += product.amazonproduct.title + ", "
                 asins += product.amazonproduct.asin + ","
                 skus += product.amazonproduct.sku + ","
+
+            marketplace_domain = (
+                campaign.amazonmarketplace.sales_channel_name.lower()
+            )
             # For the email description and title
             context = {
                 "order_id": order.order_id,
                 "product_title": products_title_s,
-                "marketplace_domain": campaign.amazonmarketplace.sales_channel_name.lower(),
+                "marketplace_domain": marketplace_domain,
                 "seller_name": campaign.get_company().store_name,
                 "purchase_date": str(order.purchase_date.strftime("%d %B %Y")),
                 "payment_date": str(order.payment_date.strftime("%d %B %Y")),
@@ -136,6 +140,16 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
                 "order_items": products,
                 "asin": asins,
                 "sku": skus,
+                "product_review_link": '<a href="https://www.'
+                + marketplace_domain
+                + "/review/review-your-purchases/ref=?_encoding=UTF8&amp;asins="
+                + asins
+                + '" target="_blank">Write your review here</a>',
+                "feedback_review_link": '<a href="https://www.'
+                + marketplace_domain
+                + "/hz/feedback/?_encoding=UTF8&amp;orderID="
+                + order.order_id
+                + '" target="_blank">Leave feedback</a>',
             }
 
             if campaign.include_invoice:
