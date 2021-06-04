@@ -196,7 +196,10 @@ class KeywordTrackingProductViewsets(
     serializer_class = serializers.KeywordTrackingProductSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["status__name"]
+    filterset_fields = [
+        "status__name",
+        "amazonaccounts__marketplace__sales_channel_name",
+    ]
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
