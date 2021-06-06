@@ -27,14 +27,36 @@ class ProductKeywordSerializer(serializers.ModelSerializer):
         fields = ("id", "amazonproduct", "keyword", "status")
         read_only_fields = ("id",)
 
+class ProductKeywordSerializerField(serializers.Field):
+    def to_representation(self, value):
+        """
+        give json of Product Keywords.
+        """
+        if isinstance(value, ProductKeyword):
+            return ProductKeywordSerializer(value).data
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            obj = ProductKeyword.objects.get(pk=data)
+            return obj
+        except ObjectDoesNotExist:
+            raise ValidationError(
+                {"productkeyword": _(f"{data} is not a valid product keyword id.")}
+            )
+
 
 class ProductKeywordRankSerializer(serializers.ModelSerializer):
-    productkeyword = ProductKeywordSerializer()
+    productkeyword = ProductKeywordSerializerField(read_only=True)
+    keyword_name = serializers.CharField(required=True, write_only=True)
+    product_id = serializers.CharField(required=True, write_only=True)
 
     class Meta:
         model = ProductKeywordRank
         fields = (
             "id",
+            "keyword_name",
+            "product_id",
             "productkeyword",
             "index",
             "rank",
@@ -45,7 +67,7 @@ class ProductKeywordRankSerializer(serializers.ModelSerializer):
             "scrap_status",
             "extra_data",
         )
-        read_only_fields = fields
+        read_only_fields = ("id","productkeyword","frequency","visibility_score","extra_data")
 
 
 class KeywordTrackingProductSerializer(AmazonProductSerializer):

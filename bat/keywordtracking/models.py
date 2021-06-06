@@ -60,7 +60,7 @@ class ProductKeyword(models.Model):
         Keyword, on_delete=models.CASCADE, verbose_name="Select Keyword"
     )
     status = models.ForeignKey(Status, on_delete=models.PROTECT)
-    create_date = models.DateField(default=timezone.now)
+    create_date = models.DateTimeField(default=timezone.now)
 
     class Meta:
         """Product Keyword Meta."""
