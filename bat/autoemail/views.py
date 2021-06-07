@@ -30,7 +30,12 @@ from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
 from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_compare_percentage, pdf_file_from_html
-from bat.market.models import AmazonMarketplace, AmazonOrder, AmazonOrderItem
+from bat.market.models import (
+    AmazonMarketplace,
+    AmazonOrder,
+    AmazonOrderItem,
+    AmazonCompany,
+)
 
 
 @method_decorator(
@@ -245,6 +250,104 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
             user_id=self.request.user.id,
         )
         serializer.save(company=member.company)
+
+    @action(detail=True, methods=["post"])
+    def test_email(self, request, company_pk=None, pk=None):
+        """
+        test email for template!
+        """
+        member = get_member(
+            company_id=company_pk, user_id=self.request.user.id
+        )
+        company = member.company
+
+        context = self.get_serializer_context()
+
+        serializer = serializers.TestEmailSerializer(
+            data=request.data, context=context
+        )
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        email = serializer.data["email"]
+        template = self.get_object()
+
+        order = AmazonOrder.objects.filter(
+            amazonaccounts__company_id=company_pk
+        )
+        if order.exists():
+            order = order.first()
+            products = order.orderitem_order.all()
+            products_title_s = ""
+            asins = ""
+            skus = ""
+            for product in products:
+                products_title_s += product.amazonproduct.title + ", "
+                asins += product.amazonproduct.asin + ","
+                skus += product.amazonproduct.sku + ","
+
+            marketplace_domain = (
+                order.amazonaccounts.marketplace.sales_channel_name.lower()
+            )
+
+            order_id = order.order_id
+            purchase_date = order.purchase_date.strftime("%d %B %Y")
+            payment_date = order.payment_date.strftime("%d %B %Y")
+            shipment_date = order.shipment_date.strftime("%d %B %Y")
+            delivery_date = order.reporting_date.strftime("%d %B %Y")
+            order_items_count = order.quantity
+            total_amount = order.amount
+
+            company_detail = AmazonCompany.objects.get(
+                amazonaccounts=order.amazonaccounts
+            )
+            store_name = company_detail.store_name
+        else:
+            order_id = "1234567890"
+            products_title_s = "Product XYZ"
+            asins = "XYS345"
+            skus = "XYZ_PRODUCT_SKU"
+            marketplace_domain = "amazon.com"
+            purchase_date = datetime.now().strftime("%d %B %Y")
+            payment_date = datetime.now().strftime("%d %B %Y")
+            shipment_date = datetime.now().strftime("%d %B %Y")
+            delivery_date = datetime.now().strftime("%d %B %Y")
+            order_items_count = 2
+            total_amount = 200
+            store_name = "STORE XYZ"
+
+        context = {
+            "order_id": order_id,
+            "product_title": products_title_s,
+            "marketplace_domain": marketplace_domain,
+            "seller_name": store_name,
+            "purchase_date": str(purchase_date),
+            "payment_date": str(payment_date),
+            "shipment_date": str(shipment_date),
+            "delivery_date": str(delivery_date),
+            "order_items_count": str(order_items_count),
+            "total_amount": str(total_amount),
+            "order_items": products,
+            "asin": asins,
+            "sku": skus,
+            "product_review_link": '<a href="https://www.'
+            + marketplace_domain
+            + "/review/review-your-purchases/ref=?_encoding=UTF8&amp;asins="
+            + asins
+            + '" target="_blank">Write your review here</a>',
+            "feedback_review_link": '<a href="https://www.'
+            + marketplace_domain
+            + "/hz/feedback/?_encoding=UTF8&amp;orderID="
+            + order_id
+            + '" target="_blank">Leave feedback</a>',
+        }
+        send_email(template, email, context=context)
+
+        return Response(
+            {"detail": _("email sent successfully")}, status=status.HTTP_200_OK
+        )
 
 
 class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):

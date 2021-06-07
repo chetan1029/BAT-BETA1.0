@@ -319,18 +319,18 @@ class AccountsReceiveAmazonCallback(View):
 
                         try:
                             if amazon_accounts_is_created:
-                                set_default_email_campaign_templates(
-                                    company=company, marketplace=marketplace
-                                )
+                                # set_default_email_campaign_templates(
+                                #     company=company, marketplace=marketplace
+                                # )
                                 set_default_amazon_company(
                                     company=company, amazonaccounts=new_account
                                 )
                         except Exception as e:
                             return HttpResponseRedirect(
                                 settings.MARKET_LIST_URI
-                                + "auto-emails/"
+                                + "settings/"
                                 + str(company.id)
-                                + "/campaigns?error="
+                                + "/marketplace-permissions?error="
                                 + e
                             )
                         # call task to collect data from amazon account
@@ -352,42 +352,41 @@ class AccountsReceiveAmazonCallback(View):
 
                         return HttpResponseRedirect(
                             settings.MARKET_LIST_URI
-                            + "auto-emails/"
+                            + "settings/"
                             + str(company.id)
-                            + "/campaigns/"
-                            + str(marketplace.id)
-                            + "/?success=Your "
+                            + "/marketplace-permissions/"
+                            + "?success=Your "
                             + marketplace.name
                             + " marketplace account successfully linked. Give us 10-15 mins to sync your orders and queue the emails."
                         )
                 else:
                     return HttpResponseRedirect(
                         settings.MARKET_LIST_URI
-                        + "auto-emails/"
+                        + "settings/"
                         + str(company.id)
-                        + "/campaigns?error=Your Marketplace Quota limit is already consumed."
+                        + "/marketplace-permissions?error=Your Marketplace Quota limit is already consumed."
                     )
             else:
                 return HttpResponseRedirect(
                     settings.MARKET_LIST_URI
-                    + "auto-emails/"
+                    + "settings/"
                     + str(company.id)
-                    + "/campaigns?error=This Marketplace is already connected. You can't connect same Amazon Account with mulitple Logins."
+                    + "/marketplace-permissions?error=This Marketplace is already connected. You can't connect same Amazon Account with mulitple Logins."
                 )
         else:
             return HttpResponseRedirect(
                 settings.MARKET_LIST_URI
-                + "auto-emails/"
+                + "settings/"
                 + str(company.id)
-                + "/campaigns?error=Your "
+                + "/marketplace-permissions?error=Your "
                 + marketplace.name
                 + " marketplace account couldn't be linked due to: oauth_api_call_failed"
             )
         return HttpResponseRedirect(
             settings.MARKET_LIST_URI
-            + "auto-emails/"
+            + "settings/"
             + str(company.id)
-            + "/campaigns?error=status has been expired"
+            + "/marketplace-permissions?error=status has been expired"
         )
 
 
