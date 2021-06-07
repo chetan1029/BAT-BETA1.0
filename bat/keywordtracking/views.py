@@ -573,7 +573,7 @@ class AsinPerformanceView(APIView):
             product_visibility = (
                 product_visibility.values(
                     asin=F("productkeyword__amazonproduct__asin"),
-                    images=F("productkeyword__amazonproduct__images"),
+                    thumbnail=F("productkeyword__amazonproduct__thumbnail"),
                 )
                 .annotate(sum_visibility_score=Sum("visibility_score"))
                 .order_by("asin")
