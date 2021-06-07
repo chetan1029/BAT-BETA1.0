@@ -1,7 +1,8 @@
+import csv
+from io import StringIO
 from django.contrib.postgres.fields import HStoreField
-from django.db import models, transaction
+from django.db import connection, models, transaction
 from django.utils import timezone
-from postgres_copy import CopyManager
 
 from bat.company.models import Company
 from bat.keywordtracking.constants import KEYWORD_STATUS_ACTIVE
@@ -9,6 +10,17 @@ from bat.keywordtracking.utils import get_visibility_score
 from bat.market.models import AmazonMarketplace, AmazonProduct
 from bat.setting.models import Status
 
+from bat.keywordtracking.utils import StringIteratorIO
+
+
+class GlobalKeywordManager(models.Manager):
+    def bulk_copy(self, csv_file):
+        # table name
+        # table_name = GlobalKeyword._meta.db_table
+        # with open(csv_file,"rb") as csv_file_obj:
+        copy_query = "COPY keywordtracking_globalkeyword(department,name,frequency,asin_1,asin_2,asin_3,create_date) FROM '"+ csv_file +"' CSV HEADER;"
+        with connection.cursor() as cursor:
+            cursor.execute(copy_query)
 
 # Create your models here.
 class GlobalKeyword(models.Model):
@@ -21,7 +33,7 @@ class GlobalKeyword(models.Model):
     asin_2 = models.CharField(max_length=50, blank=True, null=True)
     asin_3 = models.CharField(max_length=50, blank=True, null=True)
     create_date = models.DateTimeField(default=timezone.now)
-    objects = CopyManager()
+    objects = GlobalKeywordManager()
 
     def __str__(self):
         """Return Value."""
