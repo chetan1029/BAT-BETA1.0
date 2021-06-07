@@ -59,7 +59,7 @@ def amazon_account_products_orders_sync(
         # import formated data
         AmazonProduct.objects.import_bulk(data, amazonaccount, columns)
 
-        get_product_image.apply_async([amazonaccount])
+        get_product_image.apply_async([amazonaccount.id])
 
         if is_orders_sync:
             amazon_orders_sync_account.apply_async(
@@ -175,8 +175,9 @@ def amazon_products_sync():
 
 
 @app.task
-def get_product_image(amazonaccount):
+def get_product_image(amazonaccount_id):
     """Fetch product image and save as a thumbnail."""
+    amazonaccount = AmazonAccounts.objects.get(pk=amazonaccount_id)
     catalogitems = get_catalogitems(amazonaccount)
     products = AmazonProduct.objects.filter(amazonaccounts=amazonaccount)
     for product in products:
