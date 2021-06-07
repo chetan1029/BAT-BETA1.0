@@ -17,9 +17,9 @@ class GlobalKeyword(models.Model):
     department = models.CharField(max_length=256)
     name = models.CharField(max_length=512)
     frequency = models.PositiveIntegerField(default=0)
-    asin_1 = models.CharField(max_length=50, blank=True)
-    asin_2 = models.CharField(max_length=50, blank=True)
-    asin_3 = models.CharField(max_length=50, blank=True)
+    asin_1 = models.CharField(max_length=50, blank=True, null=True)
+    asin_2 = models.CharField(max_length=50, blank=True, null=True)
+    asin_3 = models.CharField(max_length=50, blank=True, null=True)
     create_date = models.DateTimeField(default=timezone.now)
     objects = CopyManager()
 
