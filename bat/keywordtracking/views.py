@@ -2,7 +2,7 @@ import json
 import operator
 from datetime import datetime, timedelta
 from functools import reduce
-from django.utils import timezone
+
 import pytz
 from django.conf import settings
 from django.db import transaction
@@ -10,6 +10,7 @@ from django.db.models import F, Q, Sum
 from django.db.models.aggregates import Avg
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django_auto_prefetching import AutoPrefetchViewSetMixin
@@ -599,7 +600,7 @@ class AsinPerformanceView(APIView):
                             product_compare["sum_visibility_score"],
                         )
                         data["asin"] = product["asin"]
-                        data["images"] = product["images"]
+                        data["thumbnail"] = product["thumbnail"]
                         data["visibility_score"] = product[
                             "sum_visibility_score"
                         ]
@@ -608,7 +609,7 @@ class AsinPerformanceView(APIView):
                         item_found = True
                 if not item_found:
                     data_new["asin"] = product["asin"]
-                    data_new["images"] = product["images"]
+                    data_new["thumbnail"] = product["thumbnail"]
                     data_new["visibility_score"] = product[
                         "sum_visibility_score"
                     ]

@@ -1,5 +1,6 @@
 """Task that can run by celery will be placed here."""
 import tempfile
+import time
 from datetime import datetime, timedelta
 
 from celery.utils.log import get_task_logger
@@ -58,7 +59,7 @@ def amazon_account_products_orders_sync(
         # import formated data
         AmazonProduct.objects.import_bulk(data, amazonaccount, columns)
 
-        get_product_image.apply_async(amazonaccount)
+        get_product_image.apply_async([amazonaccount])
 
         if is_orders_sync:
             amazon_orders_sync_account.apply_async(
@@ -179,6 +180,7 @@ def get_product_image(amazonaccount):
     catalogitems = get_catalogitems(amazonaccount)
     products = AmazonProduct.objects.filter(amazonaccounts=amazonaccount)
     for product in products:
+        time.sleep(10)
         main_image = get_asin_main_images(catalogitems, product.asin)
         if main_image:
             product.thumbnail = main_image
