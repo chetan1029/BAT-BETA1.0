@@ -299,6 +299,7 @@ class EmailCampaign(models.Model):
         blank=True,
     )
     include_invoice = models.BooleanField(default=False)
+    send_optout = models.BooleanField(default=False)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     activation_date = models.DateTimeField(default=timezone.now)
     extra_data = HStoreField(null=True, blank=True)
@@ -361,15 +362,46 @@ class EmailQueue(models.Model):
         products = self.amazonorder.orderitem_order.all()
         products_title_s = ""
         asins = ""
+        skus = ""
         for product in products:
             products_title_s += product.amazonproduct.title + ", "
             asins += product.amazonproduct.asin + ","
+            skus += product.amazonproduct.sku + ","
+        marketplace_domain = (
+            self.emailcampaign.amazonmarketplace.sales_channel_name.lower()
+        )
         context = {
             "order_id": self.amazonorder.order_id,
-            "Product_title_s": products_title_s,
-            "Seller_name": self.emailcampaign.get_company().store_name,
-            "marketplace_domain": self.emailcampaign.amazonmarketplace.sales_channel_name.lower(),
+            "product_title": products_title_s,
+            "seller_name": self.emailcampaign.get_company().store_name,
+            "marketplace_domain": marketplace_domain,
+            "purchase_date": str(
+                self.amazonorder.purchase_date.strftime("%d %B %Y")
+            ),
+            "payment_date": str(
+                self.amazonorder.payment_date.strftime("%d %B %Y")
+            ),
+            "shipment_date": str(
+                self.amazonorder.shipment_date.strftime("%d %B %Y")
+            ),
+            "delivery_date": str(
+                self.amazonorder.reporting_date.strftime("%d %B %Y")
+            ),
+            "order_items_count": str(self.amazonorder.quantity),
+            "total_amount": str(self.amazonorder.amount),
+            "order_items": products,
             "asin": asins,
+            "sku": skus,
+            "product_review_link": '<a href="https://www.'
+            + marketplace_domain
+            + "/review/review-your-purchases/ref=?_encoding=UTF8&amp;asins="
+            + asins
+            + '" target="_blank">Write your review here</a>',
+            "feedback_review_link": '<a href="https://www.'
+            + marketplace_domain
+            + "/hz/feedback/?_encoding=UTF8&amp;orderID="
+            + self.amazonorder.order_id
+            + '" target="_blank">Leave feedback</a>',
         }
         if self.emailcampaign.include_invoice:
             f = self.generate_pdf_file()

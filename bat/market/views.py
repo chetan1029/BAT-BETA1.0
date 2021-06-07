@@ -16,6 +16,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -119,7 +120,7 @@ class AmazonMarketplaceViewsets(
 ):
     queryset = AmazonMarketplace.objects.all()
     permission_classes = (IsAuthenticated,)
-    serializer_class = serializers.AmazonMarketplaceSerializer
+    serializer_class = serializers.AmazonMarketplaceAdvancedSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["name"]
 

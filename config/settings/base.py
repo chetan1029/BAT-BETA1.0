@@ -508,3 +508,8 @@ AMAZON_PPC_PROFILE_ID = env(
 AMAZON_PPC_REGION = env(
     "AMAZON_PPC_REGION", default="advertising-api-test.amazon.com"
 )
+
+# Set number of fields that can be post
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+DATA_UPLOAD_MAX_MEMORY_SIZE = 838860800  # 800 MB = 838860800 Bytes
+FILE_UPLOAD_MAX_MEMORY_SIZE = 838860800  # 800 MB = 838860800 Bytes

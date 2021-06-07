@@ -60,7 +60,7 @@ class ProductKeyword(models.Model):
         Keyword, on_delete=models.CASCADE, verbose_name="Select Keyword"
     )
     status = models.ForeignKey(Status, on_delete=models.PROTECT)
-    create_date = models.DateField(default=timezone.now)
+    create_date = models.DateTimeField(default=timezone.now)
 
     class Meta:
         """Product Keyword Meta."""
@@ -120,9 +120,9 @@ class ProductKeywordRank(models.Model):
             + str(self.date)
         )
 
-    # def save(self, *args, **kwargs):
-    #     visibility_score = get_visibility_score(
-    #         self.frequency, self.rank, self.page
-    #     )
-    #     self.visibility_score = visibility_score
-    #     return super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        visibility_score = get_visibility_score(
+            self.frequency, self.rank, self.page
+        )
+        self.visibility_score = visibility_score
+        return super().save(*args, **kwargs)
