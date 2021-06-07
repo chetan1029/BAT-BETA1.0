@@ -13,6 +13,7 @@ from bat.autoemail.models import (
 )
 from bat.company.models import Company
 from bat.market.amazon_sp_api.amazon_sp_api import (
+    CatalogItems,
     Messaging,
     Reports,
     Solicitations,
@@ -322,3 +323,37 @@ def send_amazon_review_request(solicitations, marketplace, order_id):
         )
         status = True
     return status
+
+
+def get_catalogitems(amazonaccount):
+    """Get solicitations object."""
+    credentails = amazonaccount.credentails
+    marketplace = amazonaccount.marketplace
+    catalogitems = CatalogItems(
+        marketplace=Marketplaces[
+            MARKETPLACE_CODES.get(marketplace.marketplaceId)
+        ],
+        refresh_token=credentails.refresh_token,
+        credentials={
+            "refresh_token": credentails.refresh_token,
+            "lwa_app_id": settings.LWA_CLIENT_ID,
+            "lwa_client_secret": settings.LWA_CLIENT_SECRET,
+            "aws_access_key": settings.SP_AWS_ACCESS_KEY_ID,
+            "aws_secret_key": settings.SP_AWS_SECRET_ACCESS_KEY,
+            "role_arn": settings.ROLE_ARN,
+        },
+    )
+    return catalogitems
+
+
+def get_asin_main_images(catalogitems, asin):
+    """Fetch main image for the given product ASIN."""
+    imagelink = ""
+    data = catalogitems.get_catalog_item(asin, includedData=["images"])
+    try:
+        imagelink = data.kwargs["images"][0]["images"][0]["link"]
+        imagelink = imagelink.replace(".jpg", "._SL500_.jpg")
+    except IndexError:
+        imagelink = ""
+    # make it save url for shorter image
+    return imagelink

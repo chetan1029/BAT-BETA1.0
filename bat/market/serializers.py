@@ -170,7 +170,6 @@ class AmazonAccountsSerializer(serializers.ModelSerializer):
 
 
 class SingleAmazonProductSerializer(serializers.ModelSerializer):
-    images = ImageSerializer(many=True, read_only=True, required=False)
     tags = TagField(required=False)
     status = StatusField()
 
@@ -179,8 +178,8 @@ class SingleAmazonProductSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "amazonaccounts",
-            "images",
             "title",
+            "thumbnail",
             "sku",
             "ean",
             "asin",
@@ -196,7 +195,6 @@ class SingleAmazonProductSerializer(serializers.ModelSerializer):
 
 
 class AmazonProductSerializer(serializers.ModelSerializer):
-    images = ImageSerializer(many=True, read_only=True, required=False)
     tags = TagField(required=False)
     status = StatusField()
     parent = SingleAmazonProductSerializer()
@@ -207,7 +205,7 @@ class AmazonProductSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "amazonaccounts",
-            "images",
+            "thumbnail",
             "title",
             "sku",
             "ean",

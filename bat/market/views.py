@@ -65,6 +65,8 @@ from bat.market.utils import (
     AmazonAPI,
     generate_uri,
     get_amazon_report,
+    get_asin_main_images,
+    get_catalogitems,
     get_messaging,
     get_order_messaging_actions,
     get_solicitation,
@@ -72,6 +74,7 @@ from bat.market.utils import (
     set_default_amazon_company,
     set_default_email_campaign_templates,
 )
+from bat.product.models import Image
 from bat.subscription.constants import QUOTA_CODE_MARKETPLACES
 from bat.subscription.utils import get_feature_by_quota_code
 
@@ -468,6 +471,15 @@ class TestAmazonClientCatalog(View):
 
         amazonaccount = AmazonAccounts.objects.get(pk=50)
         data = ""
+
+        # Get is_amazon_review_request_allowed via Solicitations
+        catalogitems = get_catalogitems(amazonaccount)
+        products = AmazonProduct.objects.filter(amazonaccounts=amazonaccount)
+        for product in products:
+            main_image = get_asin_main_images(catalogitems, "B073V2LY6B")
+            if main_image:
+                product.thumbnail = main_image
+                product.save()
         # Get is_amazon_review_request_allowed via Solicitations
         # solicitations = get_solicitation(amazonaccount)
         # data = send_amazon_review_request(
@@ -479,25 +491,25 @@ class TestAmazonClientCatalog(View):
         # data = get_order_messaging_actions(messaging, "206-8430629-9049145")
 
         # Temporary files
-        timestamp = datetime.timestamp(datetime.now())
-        tmp_dir = tempfile.TemporaryDirectory()
-        tmp_csv_file_path = (
-            tmp_dir.name + "/feedback_report" + str(timestamp) + ".csv"
-        )
-
-        report_file = open(tmp_csv_file_path, "w+")
-
-        start_time = (datetime.utcnow() - timedelta(days=25)).isoformat()
-        end_time = (datetime.utcnow()).isoformat()
-
-        # get report data (report api call)
-        is_done = get_amazon_report(
-            amazonaccount,
-            ReportType.GET_SELLER_FEEDBACK_DATA,
-            report_file,
-            start_time,
-            end_time,
-        )
+        # timestamp = datetime.timestamp(datetime.now())
+        # tmp_dir = tempfile.TemporaryDirectory()
+        # tmp_csv_file_path = (
+        #     tmp_dir.name + "/feedback_report" + str(timestamp) + ".csv"
+        # )
+        #
+        # report_file = open(tmp_csv_file_path, "w+")
+        #
+        # start_time = (datetime.utcnow() - timedelta(days=25)).isoformat()
+        # end_time = (datetime.utcnow()).isoformat()
+        #
+        # # get report data (report api call)
+        # is_done = get_amazon_report(
+        #     amazonaccount,
+        #     ReportType.GET_SELLER_FEEDBACK_DATA,
+        #     report_file,
+        #     start_time,
+        #     end_time,
+        # )
 
         # read report data from files
         # report_csv = open(tmp_csv_file_path, "r")

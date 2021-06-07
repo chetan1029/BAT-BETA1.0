@@ -32,6 +32,18 @@ class Catalog(APIClient):
         return self._request(kwargs.pop("path"), params=kwargs)
 
 
+class CatalogItems(APIClient):
+    @sp_endpoint("/catalog/2020-12-01/items/{}", method="GET")
+    def get_catalog_item(self, asin, **kwargs) -> ApiResponse:
+        return self._request(
+            fill_query_params(kwargs.pop("path"), asin), params=kwargs
+        )
+
+    @sp_endpoint("/catalog/2020-12-01/items", method="GET")
+    def search_catalog_items(self, **kwargs) -> ApiResponse:
+        return self._request(kwargs.pop("path"), params=kwargs)
+
+
 class Orders(APIClient):
     @sp_endpoint("/orders/v0/orders")
     def get_orders(self, **kwargs) -> ApiResponse:

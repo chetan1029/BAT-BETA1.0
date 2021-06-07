@@ -14,7 +14,11 @@ from taggit.managers import TaggableManager
 from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
+from bat.product.models import (
+    Image,
+    IsDeletableMixin,
+    UniqueWithinCompanyMixin,
+)
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -222,7 +226,9 @@ class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
         on_delete=models.CASCADE,
         verbose_name="Select Amazon Account",
     )
-    images = GenericRelation(Image)
+    thumbnail = models.CharField(
+        verbose_name=_("Image url"), blank=True, max_length=1000
+    )
     title = models.CharField(verbose_name=_("Title"), max_length=500)
     sku = models.CharField(verbose_name="Seller SKU", max_length=200)
     ean = models.CharField(
