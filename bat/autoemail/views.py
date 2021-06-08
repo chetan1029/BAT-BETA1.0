@@ -26,16 +26,32 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_SEND,
 )
 from bat.autoemail.filters import EmailQueueFilter
-from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
+from bat.autoemail.models import (
+    EmailCampaign,
+    EmailQueue,
+    EmailTemplate,
+    GlobalEmailTemplate,
+)
 from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_compare_percentage, pdf_file_from_html
 from bat.market.models import (
+    AmazonCompany,
     AmazonMarketplace,
     AmazonOrder,
     AmazonOrderItem,
-    AmazonCompany,
 )
+
+
+class GlobalEmailTemplateViewsets(viewsets.ReadOnlyModelViewSet):
+    queryset = GlobalEmailTemplate.objects.all()
+    serializer_class = serializers.GlobalEmailTemplateSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user
+        return context
 
 
 @method_decorator(

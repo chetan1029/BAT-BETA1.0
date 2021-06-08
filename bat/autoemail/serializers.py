@@ -14,7 +14,12 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
 )
-from bat.autoemail.models import EmailCampaign, EmailQueue, EmailTemplate
+from bat.autoemail.models import (
+    EmailCampaign,
+    EmailQueue,
+    EmailTemplate,
+    GlobalEmailTemplate,
+)
 from bat.globalutils.utils import get_status_object
 from bat.market.constants import AMAZON_ORDER_STATUS_CHOICE
 from bat.market.serializers import (
@@ -24,6 +29,23 @@ from bat.market.serializers import (
 from bat.serializersFields.serializers_fields import StatusField
 from bat.setting.models import Status
 from bat.setting.serializers import StatusSerializer
+
+
+class GlobalEmailTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GlobalEmailTemplate
+        fields = (
+            "id",
+            "name",
+            "subject",
+            "default_cc",
+            "language",
+            "template",
+            "slug",
+            "is_active",
+            "extra_data",
+        )
+        read_only_fields = ("id", "slug", "company", "is_active", "extra_data")
 
 
 class EmailTemplateSerializer(serializers.ModelSerializer):
