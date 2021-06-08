@@ -17,6 +17,7 @@ def import_global_keyword_csv(csv_file):
         # decoded_file.pop(0)
         csv_reader = csv.DictReader(decoded_file, delimiter=",")
         headers = csv_reader.fieldnames
+        headers[0] = headers[0].replace("\ufeff", "")
         print("\n\n\n\n", headers)
         data = []
         department = None
@@ -30,7 +31,7 @@ def import_global_keyword_csv(csv_file):
                     r[key] = value.replace(",", "")
             if r["Search Term"] != "" and r["Search Term"] is not None:
                 data.append(r)
-        
+
         csvfile = StringIO()
         dict_writer = csv.DictWriter(csvfile, headers, extrasaction="ignore")
         dict_writer.writeheader()
