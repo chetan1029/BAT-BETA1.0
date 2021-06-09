@@ -267,6 +267,18 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
         """
         test email for template!
         """
+
+        def _generate_pdf_file(data):
+            context = data.get("file_context")
+            name = data.get("name")
+            f = pdf_file_from_html(
+                context,
+                "autoemail/order_invoice.html",
+                name,
+                as_File_obj=False,
+            )
+            return f
+
         member = get_member(
             company_id=company_pk, user_id=self.request.user.id
         )
@@ -283,11 +295,24 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
             )
 
         email = serializer.data["email"]
+        campaign_id = serializer.data.get("campaign_id", None)
         template = self.get_object()
 
-        order = AmazonOrder.objects.filter(
-            amazonaccounts__company_id=company_pk
-        )
+        campaign = ""
+        if campaign_id:
+            campaign = EmailCampaign.objects.get(
+                pk=campaign_id, company=company
+            )
+
+        if campaign:
+            order = AmazonOrder.objects.filter(
+                amazonaccounts__marketplace_id=campaign.amazonmarketplace.id,
+                amazonaccounts__company_id=company_pk,
+            ).first()
+        else:
+            order = AmazonOrder.objects.filter(
+                amazonaccounts__company_id=company_pk
+            )
         if order.exists():
             order = order.first()
             products = order.orderitem_order.all()
@@ -315,11 +340,23 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
             delivery_date = order.reporting_date.strftime("%d %B %Y")
             order_items_count = order.quantity
             total_amount = order.amount
-
-            company_detail = AmazonCompany.objects.get(
-                amazonaccounts=order.amazonaccounts
+            taxes = order.tax
+            grand_total = order.amount + order.tax
+            vat_tax_included = (
+                order.amazonaccounts.marketplace.vat_tax_included
             )
+
+            if campaign:
+                company_detail = campaign.get_company()
+                vat_number = company_detail.vat_number
+            else:
+                company_detail = AmazonCompany.objects.get(
+                    amazonaccounts=order.amazonaccounts
+                )
+                vat_number = ""
+
             store_name = company_detail.store_name
+
         else:
             order_id = "1234567890"
             products_title_s = "Product XYZ"
@@ -332,7 +369,11 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
             delivery_date = datetime.now().strftime("%d %B %Y")
             order_items_count = 2
             total_amount = 200
+            taxes = 20
+            grand_total = total_amount + taxes
             store_name = "STORE XYZ"
+            vat_tax_included = True
+            vat_number = "SE123456789"
 
         context = {
             "order_id": order_id,
@@ -359,7 +400,32 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
             + order_id
             + '" target="_blank">Leave feedback</a>',
         }
-        send_email(template, email, context=context)
+
+        if campaign and campaign.include_invoice:
+            file_data = {
+                "name": "order_invoice_" + str(order_id),
+                "file_context": {
+                    "sales_channel": str(marketplace_domain),
+                    "order_id": str(order_id),
+                    "purchase_date": str(purchase_date),
+                    "total_amount": str(total_amount),
+                    "tax": str(taxes),
+                    "order_items": products,
+                    "company": campaign.get_company(),
+                    "vat_tax_included": vat_tax_included,
+                    "grand_total": str(grand_total),
+                    "vat_number": str(vat_number),
+                },
+            }
+            f = _generate_pdf_file(file_data)
+            send_email(
+                campaign.emailtemplate,
+                email,
+                context=context,
+                attachment_files=[f],
+            )
+        else:
+            send_email(template, email, context=context)
 
         return Response(
             {"detail": _("email sent successfully")}, status=status.HTTP_200_OK
