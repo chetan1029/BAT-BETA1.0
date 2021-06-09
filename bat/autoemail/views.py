@@ -291,13 +291,18 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
         if order.exists():
             order = order.first()
             products = order.orderitem_order.all()
-            products_title_s = ""
-            asins = ""
-            skus = ""
-            for product in products:
-                products_title_s += product.amazonproduct.title + ", "
-                asins += product.amazonproduct.asin + ","
-                skus += product.amazonproduct.sku + ","
+            products_title = list(
+                products.values_list("amazonproduct__title", flat=True)
+            )
+            products_asin = list(
+                products.values_list("amazonproduct__asin", flat=True)
+            )
+            products_sku = list(
+                products.values_list("amazonproduct__sku", flat=True)
+            )
+            products_title_s = ",".join(products_title)
+            asins = ",".join(products_asin)
+            skus = ",".join(products_sku)
 
             marketplace_domain = (
                 order.amazonaccounts.marketplace.sales_channel_name.lower()
