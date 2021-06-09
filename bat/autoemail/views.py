@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
+from djmoney.money import Money
 from drf_yasg2.openapi import Response as SwaggerResponse
 from drf_yasg2.utils import swagger_auto_schema
 from dry_rest_permissions.generics import DRYPermissions
@@ -340,8 +341,12 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
             delivery_date = order.reporting_date.strftime("%d %B %Y")
             order_items_count = order.quantity
             total_amount = order.amount
-            taxes = order.tax
-            grand_total = order.amount + order.tax
+            if order.tax:
+                taxes = order.tax
+                grand_total = order.amount + order.tax
+            else:
+                taxes = 0
+                grand_total = order.amount
             vat_tax_included = (
                 order.amazonaccounts.marketplace.vat_tax_included
             )
