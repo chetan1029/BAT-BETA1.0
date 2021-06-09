@@ -143,7 +143,9 @@
                 <p><b>{{company.name}}</b></p>
                 <p>{{company.get_formatted_address|safe}}</p>
                 <p>{{company.email}}</p>
+                {% if not vat_tax_included %}
                 <p>VAT #: {{company.vat_number}}</p>
+                {% endif %}
               </td>
 
               <td>
@@ -158,7 +160,7 @@
       </tr>
 
       <tr class="heading">
-        <td>ASIN</td>
+        <td>EAN</td>
         <td>Product</td>
         <td>Quantity</td>
         <td>Price</td>
@@ -167,7 +169,7 @@
       {% for order_item in order_items %}
       <tr class="item">
         <td>
-          <p>{{order_item.amazonproduct.asin}}</p>
+          <p>{{order_item.amazonproduct.ean}}</p>
         </td>
         <td>
           <p>{{order_item.amazonproduct.title}}</p>
