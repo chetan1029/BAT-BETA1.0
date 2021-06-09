@@ -235,7 +235,10 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
         today = datetime.date.today()
         return EmailQueue.objects.filter(
             emailcampaign_id=obj.id,
-            status__name=ORDER_EMAIL_STATUS_SEND,
+            status__name__in=[
+                ORDER_EMAIL_STATUS_SCHEDULED,
+                ORDER_EMAIL_STATUS_QUEUED,
+            ],
             schedule_date__year=today.year,
             schedule_date__month=today.month,
             schedule_date__day=today.day,
