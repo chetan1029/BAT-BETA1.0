@@ -35,11 +35,7 @@ from bat.autoemail.models import (
 from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_compare_percentage, pdf_file_from_html
-from bat.market.models import (
-    AmazonCompany,
-    AmazonMarketplace,
-    AmazonOrder,
-)
+from bat.market.models import AmazonCompany, AmazonMarketplace, AmazonOrder
 
 
 class GlobalEmailTemplateViewsets(viewsets.ReadOnlyModelViewSet):
@@ -436,7 +432,8 @@ class EmailChartDataAPIView(APIView):
             )
 
         email_par_day = list(
-            all_email_queue.values("send_date__date")
+            all_email_queue.filter(status__name=ORDER_EMAIL_STATUS_SEND)
+            .values("send_date__date")
             .annotate(total_email=Count("id"))
             .values_list("send_date__date", "total_email")
             .order_by("send_date__date")
