@@ -184,7 +184,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
                 ORDER_EMAIL_STATUS_SCHEDULED,
                 ORDER_EMAIL_STATUS_QUEUED,
             ],
-            schedule_date__gte=obj.activation_date,
+            amazonorder__purchase_date__gte=obj.activation_date,
         ).count()
 
     def get_last_email_send_in_queue(self, obj):
@@ -242,6 +242,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             schedule_date__year=today.year,
             schedule_date__month=today.month,
             schedule_date__day=today.day,
+            amazonorder__purchase_date__gte=obj.activation_date,
         ).count()
 
     def validate(self, data):
