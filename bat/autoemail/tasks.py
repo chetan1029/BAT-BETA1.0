@@ -133,6 +133,7 @@ def send_email(email_queue_id):
             email_queue.status = get_status(
                 ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SEND
             )
+            email_queue.send_date = datetime.utcnow()
             email_queue.save()
             feature.consumption = (
                 feature.consumption
@@ -255,7 +256,10 @@ def email_queue_create_for_initial_orders(
 @app.task
 def email_queue_create_for_new_campaign(email_campaign_id):
     email_campaign = EmailCampaign.objects.get(pk=email_campaign_id)
-    orders = AmazonOrder.objects.filter(purchase_date__gte=email_campaign.activation_date, status=email_campaign.order_status)
+    orders = AmazonOrder.objects.filter(
+        purchase_date__gte=email_campaign.activation_date,
+        status=email_campaign.order_status,
+    )
     if orders.exists():
         for order in orders:
             add_order_email_in_queue.delay(order.id, email_campaign.id)

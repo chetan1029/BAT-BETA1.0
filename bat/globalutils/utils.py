@@ -1,6 +1,6 @@
 import os
 import tempfile
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 
 from django.core.files import File
 from django.template.loader import render_to_string
@@ -95,6 +95,6 @@ def get_compare_percentage(value, value_compare):
         compare_percentage = round(
             ((value - value_compare) / value_compare) * 100
         )
-    except (TypeError, ZeroDivisionError):
+    except (TypeError, ZeroDivisionError, DecimalException):
         pass
     return compare_percentage

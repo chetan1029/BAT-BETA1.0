@@ -439,9 +439,11 @@ class EmailChartDataAPIView(APIView):
             .order_by("send_date__date")
         )
         data = {}
-        for date, total_email in email_par_day:
-            # data[date.strftime(dt_format)] = total_email
-            data[date] = total_email
+        try:
+            for date, total_email in email_par_day:
+                data[date.strftime(dt_format)] = total_email
+        except AttributeError:
+            print("Date might be null and stftime can't be apply on it.")
 
         # original stats
         total_email_sent = all_email_queue.filter(
