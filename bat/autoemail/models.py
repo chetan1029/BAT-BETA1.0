@@ -8,6 +8,8 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from multiselectfield import MultiSelectField
+from dirtyfields import DirtyFieldsMixin
+
 
 from bat.autoemail.constants import (
     BUYER_PURCHASE_CHOICES,
@@ -256,7 +258,7 @@ class EmailTemplate(models.Model):
             return super().save(*args, **kwargs)
 
 
-class EmailCampaign(models.Model):
+class EmailCampaign(DirtyFieldsMixin, models.Model):
     """Email Campaign for the auto email."""
 
     name = models.CharField(verbose_name=_("Name"), max_length=512)

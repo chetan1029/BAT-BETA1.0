@@ -39,7 +39,6 @@ from bat.market.models import (
     AmazonCompany,
     AmazonMarketplace,
     AmazonOrder,
-    AmazonOrderItem,
 )
 
 

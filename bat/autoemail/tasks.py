@@ -250,3 +250,12 @@ def email_queue_create_for_initial_orders(
         )
         for email_campaign_pk in email_campaigns_with_status:
             add_order_email_in_queue.delay(order_pk, email_campaign_pk)
+
+
+@app.task
+def email_queue_create_for_new_campaign(email_campaign_id):
+    email_campaign = EmailCampaign.objects.get(pk=email_campaign_id)
+    orders = AmazonOrder.objects.filter(purchase_date__gte=email_campaign.activation_date, status=email_campaign.order_status)
+    if orders.exists():
+        for order in orders:
+            add_order_email_in_queue.delay(order.id, email_campaign.id)
