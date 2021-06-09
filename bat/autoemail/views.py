@@ -437,10 +437,10 @@ class EmailChartDataAPIView(APIView):
             )
 
         email_par_day = list(
-            all_email_queue.values("schedule_date__date")
+            all_email_queue.values("send_date__date")
             .annotate(total_email=Count("id"))
-            .values_list("schedule_date__date", "total_email")
-            .order_by("schedule_date__date")
+            .values_list("send_date__date", "total_email")
+            .order_by("send_date__date")
         )
         data = {}
         for date, total_email in email_par_day:
