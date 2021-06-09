@@ -143,7 +143,7 @@
                 <p><b>{{company.name}}</b></p>
                 <p>{{company.get_formatted_address|safe}}</p>
                 <p>{{company.email}}</p>
-                {% if not vat_tax_included %}
+                {% if not company.vat_number %}
                 <p>VAT #: {{company.vat_number}}</p>
                 {% endif %}
               </td>
