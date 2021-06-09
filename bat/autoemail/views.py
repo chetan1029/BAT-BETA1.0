@@ -440,7 +440,8 @@ class EmailChartDataAPIView(APIView):
         )
         data = {}
         for date, total_email in email_par_day:
-            data[date.strftime(dt_format)] = total_email
+            # data[date.strftime(dt_format)] = total_email
+            data[date] = total_email
 
         # original stats
         total_email_sent = all_email_queue.filter(
