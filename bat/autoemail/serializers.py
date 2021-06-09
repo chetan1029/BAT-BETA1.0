@@ -317,3 +317,4 @@ class EmailQueueSerializer(serializers.ModelSerializer):
 
 class TestEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
+    campaign_id = serializers.CharField(required=False)

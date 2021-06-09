@@ -309,7 +309,7 @@ class EmailTemplateViewsets(viewsets.ModelViewSet):
             order = AmazonOrder.objects.filter(
                 amazonaccounts__marketplace_id=campaign.amazonmarketplace.id,
                 amazonaccounts__company_id=company_pk,
-            ).first()
+            )
         else:
             order = AmazonOrder.objects.filter(
                 amazonaccounts__company_id=company_pk
