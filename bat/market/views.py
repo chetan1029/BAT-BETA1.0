@@ -468,17 +468,17 @@ class AmazonCompanyViewSet(
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
 
-        amazonaccount = AmazonAccounts.objects.get(pk=50)
+        amazonaccount = AmazonAccounts.objects.get(pk=6)
         data = ""
 
         # Get is_amazon_review_request_allowed via Solicitations
-        catalogitems = get_catalogitems(amazonaccount)
-        products = AmazonProduct.objects.filter(amazonaccounts=amazonaccount)
-        for product in products:
-            main_image = get_asin_main_images(catalogitems, "B073V2LY6B")
-            if main_image:
-                product.thumbnail = main_image
-                product.save()
+        # catalogitems = get_catalogitems(amazonaccount)
+        # products = AmazonProduct.objects.filter(amazonaccounts=amazonaccount)
+        # for product in products:
+        #     main_image = get_asin_main_images(catalogitems, "B073V2LY6B")
+        #     if main_image:
+        #         product.thumbnail = main_image
+        #         product.save()
         # Get is_amazon_review_request_allowed via Solicitations
         # solicitations = get_solicitation(amazonaccount)
         # data = send_amazon_review_request(
@@ -486,8 +486,8 @@ class TestAmazonClientCatalog(View):
         # )
 
         # Get Messages action and opt out status for order
-        # messaging = get_messaging(amazonaccount)
-        # data = get_order_messaging_actions(messaging, "206-8430629-9049145")
+        messaging = get_messaging(amazonaccount)
+        data = get_order_messaging_actions(messaging, "111-7126725-6541013")
 
         # Temporary files
         # timestamp = datetime.timestamp(datetime.now())

@@ -138,6 +138,7 @@ def send_email(email_queue_id):
     message_action = get_order_messaging_actions(
         messaging, email_queue.amazonorder.order_id
     )
+    logger.info(message_action["output"])
     if message_action["is_optout"]:
         email_queue.amazonorder.opt_out = True
         email_queue.amazonorder.save()
