@@ -87,7 +87,7 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        transaction.on_commit(lambda: serializer.save(company=member.company))
+        serializer.save(company=member.company)
 
     @action(detail=True, methods=["post"])
     def test_email(self, request, company_pk=None, pk=None):
