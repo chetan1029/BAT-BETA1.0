@@ -7,7 +7,7 @@ from bat.autoemail.tasks import email_queue_create_for_new_campaign
 
 
 @receiver(post_save, sender=EmailCampaign)
-def archive_component_me_on_discontinued(sender, instance, created, **kwargs):
+def when_emailcampaign_created_or_updated(sender, instance, created, **kwargs):
     if created:
         if instance.status.name == EMAIL_CAMPAIGN_STATUS_ACTIVE:
             email_queue_create_for_new_campaign.delay(instance.id)

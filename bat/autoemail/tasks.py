@@ -161,6 +161,7 @@ def send_email_from_queue():
         schedule_date__lte=current_time,
         emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
         amazonorder__opt_out=False,
+        amazonorder__purchase_date__gte=F("emailcampaign__activation_date"),
     ).update(
         status=get_status(
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SCHEDULED
@@ -259,6 +260,8 @@ def email_queue_create_for_new_campaign(email_campaign_id):
     orders = AmazonOrder.objects.filter(
         purchase_date__gte=email_campaign.activation_date,
         status=email_campaign.order_status,
+        amazonaccounts__marketplace=email_campaign.amazonmarketplace,
+        amazonaccounts__company=email_campaign.company,
     )
     if orders.exists():
         for order in orders:
