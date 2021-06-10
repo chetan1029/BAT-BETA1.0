@@ -42,7 +42,6 @@ from bat.market.models import AmazonCompany, AmazonMarketplace, AmazonOrder
 from bat.autoemail.tasks import email_queue_create_for_new_campaign
 
 
-
 class GlobalEmailTemplateViewsets(viewsets.ReadOnlyModelViewSet):
     queryset = GlobalEmailTemplate.objects.all()
     serializer_class = serializers.GlobalEmailTemplateSerializer
@@ -92,13 +91,16 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
         )
         instance = serializer.save(company=member.company)
         if instance.status.name == EMAIL_CAMPAIGN_STATUS_ACTIVE:
-            transaction.on_commit(lambda:email_queue_create_for_new_campaign.delay(instance.id))
+            transaction.on_commit(
+                lambda: email_queue_create_for_new_campaign.delay(instance.id)
+            )
 
     @action(detail=True, methods=["post"])
     def test_email(self, request, company_pk=None, pk=None):
         """
         test email for campaign!
         """
+
         def _generate_pdf_file(data):
             context = data.get("file_context")
             name = data.get("name")
@@ -536,8 +538,10 @@ class EmailChartDataAPIView(APIView):
         ).count()
 
         opt_out_rate = 0
-        if total_opt_out_email:
-            opt_out_rate = round((total_email_sent / total_opt_out_email), 2)
+        if total_opt_out_email and total_email_sent:
+            opt_out_rate = round(
+                (total_opt_out_email / total_email_sent) * 100, 2
+            )
 
         total_email_in_queue = all_email_queue.filter(
             status__name__in=[
@@ -556,9 +560,10 @@ class EmailChartDataAPIView(APIView):
         ).count()
 
         opt_out_rate_compare = 0
-        if total_opt_out_email_compare:
+        if total_opt_out_email_compare and total_email_sent_compare:
             opt_out_rate_compare = round(
-                (total_email_sent_compare / total_opt_out_email_compare), 2
+                (total_opt_out_email_compare / total_email_sent_compare) * 100,
+                2,
             )
 
         total_email_in_queue_compare = all_email_queue_compare.filter(
