@@ -264,7 +264,6 @@ def get_messaging(amazonaccount):
 def get_order_messaging_actions(messaging, order_id):
     """Get order messging action in a list and save them with order."""
     message_data = messaging.get_messaging_actions_for_order(order_id)
-    print(message_data)
     actions = []
     links = message_data.kwargs["_links"]["actions"]
     for link in links:
