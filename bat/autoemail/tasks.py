@@ -1,6 +1,6 @@
 """Task that can run by celery will be placed here."""
 from datetime import datetime, timedelta
-
+import time
 import pytz
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -135,10 +135,10 @@ def send_email(email_queue_id):
 
     messaging = get_messaging(amazonaccount)
     logger.info("Amazon order ID " + str(email_queue.amazonorder.order_id))
+    time.sleep(1)
     message_action = get_order_messaging_actions(
         messaging, email_queue.amazonorder.order_id
     )
-    logger.info(message_action["output"])
     if message_action["is_optout"]:
         email_queue.amazonorder.opt_out = True
         email_queue.amazonorder.save()

@@ -276,7 +276,7 @@ def get_order_messaging_actions(messaging, order_id):
     ):
         is_optout = True
 
-    return {"actions": actions, "is_optout": is_optout, "output": message_data}
+    return {"actions": actions, "is_optout": is_optout}
 
 
 def get_solicitation(amazonaccount):
