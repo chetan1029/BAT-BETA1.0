@@ -81,14 +81,13 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
             queryset = queryset.filter(amazonmarketplace_id=marketplace)
         return queryset.filter(company__id=company_id).order_by("id")
 
-    @transaction.atomic
     def perform_create(self, serializer):
         """Set the data for who is the owner or creater."""
         member = get_member(
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        serializer.save(company=member.company)
+        transaction.on_commit(lambda: serializer.save(company=member.company))
 
     @action(detail=True, methods=["post"])
     def test_email(self, request, company_pk=None, pk=None):
