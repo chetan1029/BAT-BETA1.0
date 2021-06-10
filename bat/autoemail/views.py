@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytz
+from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -80,6 +81,7 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
             queryset = queryset.filter(amazonmarketplace_id=marketplace)
         return queryset.filter(company__id=company_id).order_by("id")
 
+    @transaction.atomic
     def perform_create(self, serializer):
         """Set the data for who is the owner or creater."""
         member = get_member(
