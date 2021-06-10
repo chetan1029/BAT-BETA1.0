@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytz
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, F
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
