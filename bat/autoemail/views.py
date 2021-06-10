@@ -26,6 +26,7 @@ from bat.autoemail.constants import (
     ORDER_EMAIL_STATUS_QUEUED,
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
+    EMAIL_CAMPAIGN_STATUS_ACTIVE,
 )
 from bat.autoemail.filters import EmailQueueFilter
 from bat.autoemail.models import (
@@ -38,6 +39,8 @@ from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_compare_percentage, pdf_file_from_html
 from bat.market.models import AmazonCompany, AmazonMarketplace, AmazonOrder
+from bat.autoemail.tasks import email_queue_create_for_new_campaign
+
 
 
 class GlobalEmailTemplateViewsets(viewsets.ReadOnlyModelViewSet):
@@ -87,7 +90,9 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
             company_id=self.kwargs.get("company_pk", None),
             user_id=self.request.user.id,
         )
-        serializer.save(company=member.company)
+        instance = serializer.save(company=member.company)
+        if instance.status.name == EMAIL_CAMPAIGN_STATUS_ACTIVE:
+            transaction.on_commit(lambda:email_queue_create_for_new_campaign.delay(instance.id))
 
     @action(detail=True, methods=["post"])
     def test_email(self, request, company_pk=None, pk=None):

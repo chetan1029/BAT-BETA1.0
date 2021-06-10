@@ -12,10 +12,7 @@ logger = get_task_logger(__name__)
 @receiver(post_save, sender=EmailCampaign)
 def when_emailcampaign_created_or_updated(sender, instance, created, **kwargs):
     logger.info("Email Campaign " + str(instance.id) + " --- " + str(created))
-    if created:
-        if instance.status.name == EMAIL_CAMPAIGN_STATUS_ACTIVE:
-            email_queue_create_for_new_campaign.delay(instance.id)
-    else:
+    if not created:
         old_status = instance.get_dirty_fields(check_relationship=True).get(
             "status", None
         )
