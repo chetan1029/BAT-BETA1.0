@@ -134,6 +134,7 @@ def send_email(email_queue_id):
     amazonaccount = email_queue.amazonorder.amazonaccounts
 
     messaging = get_messaging(amazonaccount)
+    logger.info("Amazon order ID " + str(email_queue.amazonorder.order_id))
     message_action = get_order_messaging_actions(
         messaging, email_queue.amazonorder.order_id
     )
