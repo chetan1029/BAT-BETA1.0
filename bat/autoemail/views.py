@@ -99,7 +99,6 @@ class EmailCampaignViewsets(viewsets.ModelViewSet):
         """
         test email for campaign!
         """
-
         def _generate_pdf_file(data):
             context = data.get("file_context")
             name = data.get("name")
