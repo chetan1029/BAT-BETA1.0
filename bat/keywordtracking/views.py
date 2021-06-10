@@ -123,7 +123,7 @@ class ProductKeywordRankViewSet(
                     reduce(
                         operator.and_,
                         (
-                            Q(productkeyword__keyword__name__contains=x)
+                            Q(productkeyword__keyword__name__icontains=x)
                             for x in search_keywords
                         ),
                     )
@@ -133,7 +133,7 @@ class ProductKeywordRankViewSet(
                     reduce(
                         operator.or_,
                         (
-                            Q(productkeyword__keyword__name__contains=x)
+                            Q(productkeyword__keyword__name__icontains=x)
                             for x in search_keywords
                         ),
                     )
@@ -143,7 +143,7 @@ class ProductKeywordRankViewSet(
                     reduce(
                         operator.and_,
                         (
-                            Q(productkeyword__keyword__name__contains=x)
+                            Q(productkeyword__keyword__name__icontains=x)
                             for x in search_keywords
                         ),
                     )
@@ -153,7 +153,7 @@ class ProductKeywordRankViewSet(
                     reduce(
                         operator.or_,
                         (
-                            Q(productkeyword__keyword__name__contains=x)
+                            Q(productkeyword__keyword__name__icontains=x)
                             for x in search_keywords
                         ),
                     )
@@ -230,18 +230,31 @@ class KeywordTrackingProductViewsets(
     queryset = AmazonProduct.objects.all()
     serializer_class = serializers.KeywordTrackingProductSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = [
-        "status__name",
-        "amazonaccounts__marketplace__sales_channel_name",
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ["status__name"]
+
+    search_fields = ["title", "=asin"]
+
+    ordering_fields = [
+        "title",
+        "keywords",
+        "visibility_score",
+        "sessions",
+        "pageviews",
     ]
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
+
         _member = get_member(
             company_id=company_id, user_id=self.request.user.id
         )
         queryset = super().filter_queryset(queryset)
+        marketplace_id = self.request.GET.get("marketplace", None)
+        if marketplace_id:
+            queryset = queryset.filter(
+                amazonaccounts__marketplace_id=marketplace_id
+            )
         return queryset.filter(amazonaccounts__company_id=company_id).order_by(
             "-create_date"
         )
