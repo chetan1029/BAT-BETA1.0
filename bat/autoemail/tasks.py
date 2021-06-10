@@ -26,7 +26,10 @@ from bat.market.utils import (
     send_amazon_review_request,
 )
 from bat.setting.utils import get_status
-from bat.subscription.constants import QUOTA_CODE_MARKETPLACES_FREE_EMAIL
+from bat.subscription.constants import (
+    QUOTA_CODE_AMAZON_AUTOMATIC_REVIEW_REQUEST,
+    QUOTA_CODE_MARKETPLACES_FREE_EMAIL,
+)
 from bat.subscription.utils import get_feature_by_quota_code
 from config.celery import app
 
@@ -122,6 +125,11 @@ def send_email(email_queue_id):
         email_queue.get_company(), codename=QUOTA_CODE_MARKETPLACES_FREE_EMAIL
     )
 
+    feature_opt_out = get_feature_by_quota_code(
+        email_queue.get_company(),
+        codename=QUOTA_CODE_AMAZON_AUTOMATIC_REVIEW_REQUEST,
+    )
+
     # check for opt out order
     amazonaccount = email_queue.amazonorder.amazonaccounts
 
@@ -135,6 +143,16 @@ def send_email(email_queue_id):
         email_queue.status = get_status(
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_OPTOUT
         )
+        if feature_opt_out.consumption > 0:
+            solicitations = get_solicitation(amazonaccount)
+            amazon_review_request_status = send_amazon_review_request(
+                solicitations,
+                amazonaccount.marketplace,
+                email_queue.amazonorder.order_id,
+            )
+            email_queue.amazonorder.amazon_review = (
+                amazon_review_request_status
+            )
         email_queue.save()
 
     else:
