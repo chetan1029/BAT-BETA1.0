@@ -143,7 +143,11 @@ def send_email(email_queue_id):
         email_queue.status = get_status(
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_OPTOUT
         )
-        if feature_opt_out.consumption > 0:
+        if (
+            not email_queue.amazonorder.amazon_review
+            and email_queue.emailcampaign.send_optout
+            and feature_opt_out.consumption > 0
+        ):
             solicitations = get_solicitation(amazonaccount)
             amazon_review_request_status = send_amazon_review_request(
                 solicitations,
@@ -177,7 +181,6 @@ def send_email_from_queue():
         status__name=ORDER_EMAIL_STATUS_QUEUED,
         schedule_date__lte=current_time,
         emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
-        amazonorder__opt_out=False,
         amazonorder__purchase_date__gte=F("emailcampaign__activation_date"),
     )
 
@@ -188,7 +191,6 @@ def send_email_from_queue():
         status__name=ORDER_EMAIL_STATUS_QUEUED,
         schedule_date__lte=current_time,
         emailcampaign__status__name=EMAIL_CAMPAIGN_STATUS_ACTIVE,
-        amazonorder__opt_out=False,
         amazonorder__purchase_date__gte=F("emailcampaign__activation_date"),
     ).update(
         status=get_status(
