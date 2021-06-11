@@ -79,10 +79,7 @@ class EmailNotificationSender(MessageParser):
         self._context = kwargs.get("context")
         self._subject = self._get_subject()
         self._message = self.get_message(self._template, self._context)
-        if sent_from:
-            self._from_email = sent_from
-        else:
-            self._from_email = self._get_from_email()
+        self._from_email = sent_from if sent_from else self._get_from_email()
         self._attachment_files = kwargs.pop("attachment_files")
 
     def _get_from_email(self):
@@ -111,6 +108,7 @@ class EmailNotificationSender(MessageParser):
         return tpl.render(Context(self._context))
 
     def send(self):
+        print(self._from_email, "\n\n\n\n\n\n\n\n")
         msg = send_mail(
             self._subject,
             self._message,
