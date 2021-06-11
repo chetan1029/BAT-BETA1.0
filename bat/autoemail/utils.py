@@ -7,6 +7,7 @@ from bat.mailsender.senders import EmailNotificationSender
 def send_email(
     template,
     recipients,
+    sent_from,
     cc=[],
     bcc=[],
     context={},
@@ -17,6 +18,7 @@ def send_email(
     sender = EmailNotificationSender(
         template,
         recipients,
+        sent_from,
         cc=cc,
         bcc=bcc,
         context=context,

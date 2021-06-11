@@ -361,7 +361,6 @@ class EmailQueue(models.Model):
 
     def send_mail(self):
         products = self.amazonorder.orderitem_order.all()
-        print("inside send_mail in EmailQueue")
         products_title_s = ""
         asins = ""
         skus = ""
@@ -406,18 +405,18 @@ class EmailQueue(models.Model):
             + '" target="_blank">Leave feedback</a>',
         }
         if self.emailcampaign.include_invoice:
-            print("inside send_mail with invoice 1")
             f = self.generate_pdf_file()
-            print("inside send_mail with invoice 2")
             send_email(
                 self.template,
                 self.sent_to,
+                self.sent_from,
                 context=context,
                 attachment_files=[f],
             )
         else:
-            print("inside send_mail without invoice")
-            send_email(self.template, self.sent_to, context=context)
+            send_email(
+                self.template, self.sent_to, self.sent_from, context=context
+            )
 
     def generate_pdf_file(self):
         """

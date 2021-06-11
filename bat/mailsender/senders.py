@@ -69,7 +69,7 @@ class EmailNotificationSender(MessageParser):
     handle sending email notifications.
     """
 
-    def __init__(self, template, recipients, *args, **kwargs):
+    def __init__(self, template, recipients, sent_from, *args, **kwargs):
         self._kwargs = kwargs
         self._template = template
         self._recipient_list = self._get_recipient_list(recipients)
@@ -79,7 +79,7 @@ class EmailNotificationSender(MessageParser):
         self._context = kwargs.get("context")
         self._subject = self._get_subject()
         self._message = self.get_message(self._template, self._context)
-        self._from_email = self._get_from_email()
+        self._from_email = sent_from
         self._attachment_files = kwargs.pop("attachment_files")
 
     def _get_from_email(self):
