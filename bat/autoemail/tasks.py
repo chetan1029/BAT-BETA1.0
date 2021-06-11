@@ -1,6 +1,7 @@
 """Task that can run by celery will be placed here."""
-from datetime import datetime, timedelta
 import time
+from datetime import datetime, timedelta
+
 import pytz
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -120,7 +121,10 @@ def add_initial_order_email_in_queue(amazon_order_id, email_campaign_id):
 @app.task
 def send_email(email_queue_id):
 
-    email_queue = EmailQueue.objects.get(pk=email_queue_id)
+    # email_queue = EmailQueue.objects.get(pk=email_queue_id)
+    email_queue = EmailQueue.objects.get(
+        amazonorder__order_id="114-8601112-6451448"
+    )
     feature = get_feature_by_quota_code(
         email_queue.get_company(), codename=QUOTA_CODE_MARKETPLACES_FREE_EMAIL
     )
@@ -164,6 +168,7 @@ def send_email(email_queue_id):
     else:
         if feature.consumption > 0:
             email_queue.send_mail()
+            logger.info("send email here")
             email_queue.status = get_status(
                 ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SEND
             )

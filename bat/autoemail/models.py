@@ -1,6 +1,7 @@
 import os
 import uuid
 
+from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import HStoreField
 from django.db import IntegrityError, models, router, transaction
@@ -8,8 +9,6 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from multiselectfield import MultiSelectField
-from dirtyfields import DirtyFieldsMixin
-
 
 from bat.autoemail.constants import (
     BUYER_PURCHASE_CHOICES,
@@ -362,6 +361,7 @@ class EmailQueue(models.Model):
 
     def send_mail(self):
         products = self.amazonorder.orderitem_order.all()
+        print("inside send_mail in EmailQueue")
         products_title_s = ""
         asins = ""
         skus = ""
@@ -406,7 +406,9 @@ class EmailQueue(models.Model):
             + '" target="_blank">Leave feedback</a>',
         }
         if self.emailcampaign.include_invoice:
+            print("inside send_mail with invoice 1")
             f = self.generate_pdf_file()
+            print("inside send_mail with invoice 2")
             send_email(
                 self.template,
                 self.sent_to,
@@ -414,6 +416,7 @@ class EmailQueue(models.Model):
                 attachment_files=[f],
             )
         else:
+            print("inside send_mail without invoice")
             send_email(self.template, self.sent_to, context=context)
 
     def generate_pdf_file(self):
