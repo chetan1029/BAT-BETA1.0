@@ -374,7 +374,8 @@ class EmailQueue(models.Model):
         context = {
             "order_id": self.amazonorder.order_id,
             "product_title": products_title_s,
-            "seller_name": self.emailcampaign.get_company().store_name,
+            # "seller_name": self.emailcampaign.get_company().store_name,
+            "seller_name": "tisha",
             "marketplace_domain": marketplace_domain,
             "purchase_date": str(
                 self.amazonorder.purchase_date.strftime("%d %B %Y")
@@ -409,13 +410,16 @@ class EmailQueue(models.Model):
             send_email(
                 self.template,
                 self.sent_to,
-                self.sent_from,
+                sent_from=self.sent_from,
                 context=context,
                 attachment_files=[f],
             )
         else:
             send_email(
-                self.template, self.sent_to, self.sent_from, context=context
+                self.template, 
+                self.sent_to, 
+                sent_from=self.sent_from, 
+                context=context
             )
 
     def generate_pdf_file(self):
