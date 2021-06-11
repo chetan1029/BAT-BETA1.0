@@ -61,6 +61,7 @@ class Keyword(models.Model):
         """Keywords Meta."""
 
         unique_together = ("amazonmarketplace", "name")
+        indexes = (BTreeIndex(fields=('name',)),)
 
     def __str__(self):
         """Return Value."""
