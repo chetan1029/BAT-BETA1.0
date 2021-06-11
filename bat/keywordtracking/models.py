@@ -4,6 +4,7 @@ from io import StringIO
 from django.contrib.postgres.fields import HStoreField
 from django.db import connection, models, transaction
 from django.utils import timezone
+from django.contrib.postgres.indexes import BTreeIndex
 from postgres_copy import CopyManager
 
 from bat.company.models import Company
@@ -37,6 +38,9 @@ class GlobalKeyword(models.Model):
     create_date = models.DateTimeField(default=timezone.now)
     # objects = GlobalKeywordManager()
     objects = CopyManager()
+
+    class Meta:
+         indexes = (BTreeIndex(fields=('department', 'name',)),)
 
     def __str__(self):
         """Return Value."""
