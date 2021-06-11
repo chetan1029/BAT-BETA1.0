@@ -109,7 +109,19 @@ class ProductKeywordRankViewSet(
         )
         queryset = super().filter_queryset(queryset)
 
-        queryset.filter(company_id=company_id)
+        queryset = queryset.filter(company_id=company_id)
+
+        search_limit = self.request.GET.get("limit", None)
+        if search_limit and search_limit != "10000":
+            queryset = queryset.exclude(
+                Q(frequency__isnull=True) | Q(frequency=0)
+            )
+
+        ordering = self.request.GET.get("ordering", None)
+        if ordering and ordering == "frequency":
+            queryset = queryset.exclude(
+                Q(frequency__isnull=True) | Q(frequency=0)
+            )
 
         search_keywords = self.request.GET.get("search_keywords", None)
         search_type = self.request.GET.get("searchtype", None)
