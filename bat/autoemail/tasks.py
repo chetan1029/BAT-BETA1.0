@@ -202,6 +202,12 @@ def send_email_from_queue():
         )
     )
 
+    EmailQueue.objects.filter(
+        status__name=ORDER_EMAIL_STATUS_SCHEDULED
+    ).update(
+        status=get_status(ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_QUEUED)
+    )
+
 
 @app.task
 def email_queue_create_for_orders(
