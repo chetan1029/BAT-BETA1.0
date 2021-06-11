@@ -455,9 +455,12 @@ class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(emailcampaign__company__id=company_id, amazonorder__purchase_date__gte=F("emailcampaign__activation_date")).order_by(
-            "-create_date"
-        )
+        return queryset.filter(
+            emailcampaign__company__id=company_id,
+            amazonorder__purchase_date__gte=F(
+                "emailcampaign__activation_date"
+            ),
+        ).order_by("-create_date")
 
 
 class EmailChartDataAPIView(APIView):
@@ -547,7 +550,10 @@ class EmailChartDataAPIView(APIView):
             status__name__in=[
                 ORDER_EMAIL_STATUS_SCHEDULED,
                 ORDER_EMAIL_STATUS_QUEUED,
-            ]
+            ],
+            amazonorder__purchase_date__gte=F(
+                "emailcampaign__activation_date"
+            ),
         ).count()
 
         # Compare email stats.
@@ -570,7 +576,10 @@ class EmailChartDataAPIView(APIView):
             status__name__in=[
                 ORDER_EMAIL_STATUS_SCHEDULED,
                 ORDER_EMAIL_STATUS_QUEUED,
-            ]
+            ],
+            amazonorder__purchase_date__gte=F(
+                "emailcampaign__activation_date"
+            ),
         ).count()
 
         # Comapre percentage
