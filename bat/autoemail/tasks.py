@@ -121,10 +121,7 @@ def add_initial_order_email_in_queue(amazon_order_id, email_campaign_id):
 @app.task
 def send_email(email_queue_id):
 
-    # email_queue = EmailQueue.objects.get(pk=email_queue_id)
-    email_queue = EmailQueue.objects.get(
-        amazonorder__order_id="114-8601112-6451448"
-    )
+    email_queue = EmailQueue.objects.get(pk=email_queue_id)
     feature = get_feature_by_quota_code(
         email_queue.get_company(), codename=QUOTA_CODE_MARKETPLACES_FREE_EMAIL
     )
