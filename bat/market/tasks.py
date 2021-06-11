@@ -181,6 +181,15 @@ def get_product_image(amazonaccount_id):
     catalogitems = get_catalogitems(amazonaccount)
     products = AmazonProduct.objects.filter(amazonaccounts=amazonaccount)
     for product in products:
+        logger.info(
+            str(product.id)
+            + " "
+            + str(product.asin)
+            + " "
+            + str(product.sku)
+            + " "
+            + str(product.ean)
+        )
         time.sleep(10)
         main_image = get_asin_main_images(catalogitems, product.asin)
         if main_image:

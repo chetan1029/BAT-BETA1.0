@@ -342,7 +342,7 @@ class AccountsReceiveAmazonCallback(View):
                         )
                         transaction.on_commit(
                             lambda: amazon_account_products_orders_sync.delay(
-                                amazonaccount.pk, last_no_of_days=90
+                                amazonaccount.pk, last_no_of_days=30
                             )
                         )
 

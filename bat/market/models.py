@@ -14,11 +14,7 @@ from taggit.managers import TaggableManager
 from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import (
-    Image,
-    IsDeletableMixin,
-    UniqueWithinCompanyMixin,
-)
+from bat.product.models import Image, IsDeletableMixin, UniqueWithinCompanyMixin
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -187,7 +183,7 @@ class AmazonProductManager(models.Manager):
         amazon_product_objects_update = []
 
         amazon_product_map_tuple = AmazonProduct.objects.filter(
-            amazonaccounts_id=amazonaccount.id
+            amazonaccounts__company_id=amazonaccount.company.id
         ).values_list("sku", "ean", "asin", "id")
         amazon_product_map = {
             k1 + k2 + k3: v for k1, k2, k3, v in amazon_product_map_tuple
