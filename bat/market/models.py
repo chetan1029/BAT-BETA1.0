@@ -6,7 +6,9 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import HStoreField
 from django.db import models, transaction
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
+
 from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
 from taggit.managers import TaggableManager
@@ -17,7 +19,6 @@ from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
 from bat.product.models import (
     Image,
     IsDeletableMixin,
-    UniqueWithinCompanyMixin,
 )
 from bat.setting.models import Status
 
@@ -214,7 +215,53 @@ class AmazonProductManager(models.Manager):
             )
 
 
-class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
+class UniqueWithinAmazonAccountMixin:
+    def save(self, **kwargs):
+        """
+        To call clean method before save an instance of model.
+        """
+        self.clean()
+        return super().save(**kwargs)
+
+    def clean(self):
+        """
+        Validate field value should be unique within amazonaccount environment in a model.
+        """
+        errors = []
+        for field_name in self.unique_within_amazonaccount:
+            f = self._meta.get_field(field_name)
+            lookup_value = getattr(self, f.attname)
+            if lookup_value:
+                kwargs = {"amazonaccounts_id": self.amazonaccounts_id, field_name: lookup_value}
+                if self.id:
+                    if (
+                        self.__class__.objects.filter(**kwargs)
+                        .exclude(pk=self.id)
+                        .exists()
+                    ):
+                        detail = {
+                            field_name: self.velidation_within_amazonaccount_messages.get(
+                                field_name, None
+                            )
+                        }
+                        errors.append(detail)
+                else:
+                    if self.__class__.objects.filter(**kwargs).exists():
+                        detail = {
+                            field_name: self.velidation_within_amazonaccount_messages.get(
+                                field_name, None
+                            )
+                        }
+                        errors.append(detail)
+        e = self.extra_clean()
+        if len(e) > 0:
+            errors.extend(e)
+        if errors:
+            raise ValidationError(errors)
+
+
+
+class AmazonProduct(UniqueWithinAmazonAccountMixin, IsDeletableMixin, models.Model):
     """
     Amazon Product Model.
 
@@ -264,9 +311,9 @@ class AmazonProduct(UniqueWithinCompanyMixin, IsDeletableMixin, models.Model):
 
     objects = AmazonProductManager()
 
-    # UniqueWithinCompanyMixin data
-    unique_within_company = ["sku", "ean", "asin"]
-    velidation_within_company_messages = {
+    # UniqueWithinAmazonAccountMixin data
+    unique_within_amazonaccount = ["sku", "ean", "asin"]
+    velidation_within_amazonaccount_messages = {
         "ean": _("Product with same EAN already exists."),
         "sku": _("Product with same SKU already exists."),
         "asin": _("Product with same ASIN already exists."),
