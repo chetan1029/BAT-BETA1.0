@@ -11,7 +11,7 @@ User = get_user_model()
 def send_mail(
     subject,
     message,
-    from_email,
+    from_email=None,
     recipient_list,
     fail_silently=False,
     auth_user=None,
