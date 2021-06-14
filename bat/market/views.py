@@ -556,7 +556,7 @@ class AmazonProductSessionsViewsets(viewsets.ModelViewSet):
             serializer.save(amazonproduct=amazonproduct)
         else:
             pass
-    
+
     @action(detail=False, methods=["post"])
     def bulk_create(self, request, *args, **kwargs):
         company_pk = self.kwargs.get("company_pk", None)
@@ -565,11 +565,12 @@ class AmazonProductSessionsViewsets(viewsets.ModelViewSet):
         )
         serializer = self.serializer_class(data=request.data, many=True)
         if serializer.is_valid(raise_exception=True):
-            create_status = AmazonProductSessions.objects.create_bulk(company_pk, list(serializer.validated_data))            
+            create_status = AmazonProductSessions.objects.create_bulk(
+                company_pk, list(serializer.validated_data)
+            )
         content = {}
         if create_status:
             content["detail"] = _("All Amazon Product Sessions are saved.")
             return Response(content, status=status.HTTP_201_CREATED)
         content["detail"] = _("Not able to save Amazon Product Sessions.")
         return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
