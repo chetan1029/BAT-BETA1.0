@@ -566,7 +566,7 @@ class AmazonProductSessionsViewsets(viewsets.ModelViewSet):
         serializer = self.serializer_class(data=request.data, many=True)
         if serializer.is_valid(raise_exception=True):
             create_status = AmazonProductSessions.objects.create_bulk(
-                company_pk, list(serializer.validated_data)
+                company_pk, serializer.validated_data
             )
         content = {}
         if create_status:
