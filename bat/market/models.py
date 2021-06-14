@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import HStoreField
 from django.db import models, transaction
+from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
@@ -182,38 +183,6 @@ class AmazonCompany(Address):
         return str(self.id) + " - " + self.name
 
 
-class AmazonProductManager(models.Manager):
-    def import_bulk(self, data, amazonaccount, columns):
-        amazon_product_objects = []
-        amazon_product_objects_update = []
-
-        amazon_product_map_tuple = AmazonProduct.objects.filter(
-            amazonaccounts_id=amazonaccount.id
-        ).values_list("sku", "ean", "asin", "id")
-        amazon_product_map = {
-            k1 + k2 + k3: v for k1, k2, k3, v in amazon_product_map_tuple
-        }
-
-        for row in data:
-            product_id = amazon_product_map.get(
-                row.get("sku") + row.get("ean") + row.get("asin"), None
-            )
-            if product_id:
-                amazon_product_objects_update.append(
-                    AmazonProduct(
-                        id=product_id, amazonaccounts=amazonaccount, **row
-                    )
-                )
-            else:
-                amazon_product_objects.append(
-                    AmazonProduct(**row, amazonaccounts=amazonaccount)
-                )
-        with transaction.atomic():
-            AmazonProduct.objects.bulk_create(amazon_product_objects)
-            AmazonProduct.objects.bulk_update(
-                amazon_product_objects_update, columns
-            )
-
 
 class UniqueWithinAmazonAccountMixin:
     def save(self, **kwargs):
@@ -259,7 +228,37 @@ class UniqueWithinAmazonAccountMixin:
         if errors:
             raise ValidationError(errors)
 
+class AmazonProductManager(models.Manager):
+    def import_bulk(self, data, amazonaccount, columns):
+        amazon_product_objects = []
+        amazon_product_objects_update = []
 
+        amazon_product_map_tuple = AmazonProduct.objects.filter(
+            amazonaccounts_id=amazonaccount.id
+        ).values_list("sku", "ean", "asin", "id")
+        amazon_product_map = {
+            k1 + k2 + k3: v for k1, k2, k3, v in amazon_product_map_tuple
+        }
+
+        for row in data:
+            product_id = amazon_product_map.get(
+                row.get("sku") + row.get("ean") + row.get("asin"), None
+            )
+            if product_id:
+                amazon_product_objects_update.append(
+                    AmazonProduct(
+                        id=product_id, amazonaccounts=amazonaccount, **row
+                    )
+                )
+            else:
+                amazon_product_objects.append(
+                    AmazonProduct(**row, amazonaccounts=amazonaccount)
+                )
+        with transaction.atomic():
+            AmazonProduct.objects.bulk_create(amazon_product_objects)
+            AmazonProduct.objects.bulk_update(
+                amazon_product_objects_update, columns
+            )
 
 class AmazonProduct(UniqueWithinAmazonAccountMixin, IsDeletableMixin, models.Model):
     """
@@ -783,6 +782,47 @@ class PPCProfile(models.Model):
         )
 
 
+class AmazonProductSessionsManager(models.Manager):
+    def create_bulk(self, company_pk, data):
+        amazon_products = AmazonProduct.objects.filter(
+            amazonaccounts__company_id=company_pk
+        ).values_list("sku", "id")
+        amazon_product_map = {k: v for k, v in amazon_products}
+        amazon_product_sessions = AmazonProductSessions.objects.filter(
+            amazonproduct__amazonaccounts__company_id=company_pk
+        ).values_list("amazonproduct_id", "date", "id")
+        amazon_product_sessions_map = {
+            str(k1) + str(k2): v
+            for k1, k2, v in amazon_product_sessions
+        }
+        amazon_product_session_objs = []
+        amazon_product_session_update_objs = []
+        dublicate_data_mape = {}
+        for row in data:
+            row_data = row.copy()
+            sku = row_data.pop("sku", None)
+            amazon_product_id = amazon_product_map.get(sku, None)
+            id_date = str(amazon_product_id)+str(row_data.get("date", None))            
+            if dublicate_data_mape.get(id_date, True):
+                dublicate_data_mape[id_date] = False
+                if amazon_product_id:
+                    amazon_product_sessions_id = amazon_product_sessions_map.get(id_date)
+                    if amazon_product_sessions_id:
+                        amazon_product_session_update_objs.append(AmazonProductSessions(id=amazon_product_sessions_id, amazonproduct_id=amazon_product_id,**row_data))
+                    else:
+                        amazon_product_session_objs.append(
+                            AmazonProductSessions(amazonproduct_id=amazon_product_id ,**row_data)
+                        )
+        try:
+            with transaction.atomic():
+                AmazonProductSessions.objects.bulk_create(amazon_product_session_objs)
+                AmazonProductSessions.objects.bulk_update(amazon_product_session_update_objs, ["amazonproduct_id", "date", "sessions", "page_views", "conversion_rate"])
+                return True
+        except IntegrityError as e:
+            return False
+
+
+
 class AmazonProductSessions(models.Model):
     """Amazon Product Sessions."""
 
@@ -795,6 +835,8 @@ class AmazonProductSessions(models.Model):
     page_views = models.PositiveIntegerField(default=0)
     conversion_rate = models.PositiveIntegerField(default=0)
     date = models.DateField(default=timezone.now)
+
+    objects = AmazonProductSessionsManager()
 
     class Meta:
         """Product Keyword Meta."""

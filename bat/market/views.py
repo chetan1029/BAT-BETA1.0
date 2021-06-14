@@ -16,6 +16,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -555,3 +556,20 @@ class AmazonProductSessionsViewsets(viewsets.ModelViewSet):
             serializer.save(amazonproduct=amazonproduct)
         else:
             pass
+    
+    @action(detail=False, methods=["post"])
+    def bulk_create(self, request, *args, **kwargs):
+        company_pk = self.kwargs.get("company_pk", None)
+        member = get_member(
+            company_id=company_pk, user_id=self.request.user.id
+        )
+        serializer = self.serializer_class(data=request.data, many=True)
+        if serializer.is_valid(raise_exception=True):
+            create_status = AmazonProductSessions.objects.create_bulk(company_pk, list(serializer.validated_data))            
+        content = {}
+        if create_status:
+            content["detail"] = _("All Amazon Product Sessions are saved.")
+            return Response(content, status=status.HTTP_201_CREATED)
+        content["detail"] = _("Not able to save Amazon Product Sessions.")
+        return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
