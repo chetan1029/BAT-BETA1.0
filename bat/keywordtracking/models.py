@@ -99,6 +99,54 @@ class ProductKeywordRankManager(models.Manager):
                 id__in=id_list
             ).delete()
         return ""
+    
+    def create_bulk(self, data, amazonproduct, company_pk=None):
+        if not company_pk:
+           company_pk=amazonproduct.get_company 
+        amazonmarket = amazonproduct.amazonaccounts.amazonmarket
+        keywords_map = dict(Keyword.objects.filter(amazonmarketplace=amazonmarket).values_list("name", id))
+        productkeywords_map = dict(ProductKeyword.objects.filter(amazonproduct=amazonproduct).values_list("keyword_id", "id"))
+        productkeywordranks = ProductKeywordRank.objects.filter(company_id=company_pk).values_list("productkeyword_id", "date", "id")
+        productkeywordranks_map = {str(k1)+str(k2):str(v) for k1, k2, v in productkeywordranks}
+
+        new_keyword_objects = []
+        new_productkeyword_objects = []
+        new_productkeywordranks_objects = []
+        update_productkeywordranks_objects = []
+        for row in data:
+            keyword_name = row.get("keyword_name")
+            keyword_id = keywords_map.get(keyword_name, None)
+            if keyword_id:
+                productkeywords_id = productkeywords_map.get(keyword_id, None)
+                if productkeywords_id:
+                    productkeywordranks_id = productkeywordranks_map.get(str(productkeywords_id)+str(row.get("date")))
+                    if productkeywordranks_id :
+                        update_productkeywordranks_objects.append(ProductKeywordRank(
+                            id=productkeywordranks_id, 
+                            productkeyword_id = productkeywords_id, 
+                            date=row.get("date"), 
+                            index=row.get("index"), 
+                            rank=row.get("rank"), 
+                            page=row.get("page"), 
+                            scrap_status=1
+                            ))
+                    else :
+                        new_productkeywordranks_objects.append(ProductKeywordRank(
+                            productkeyword_id = productkeywords_id, 
+                            date=row.get("date"), 
+                            index=row.get("index"), 
+                            rank=row.get("rank"), 
+                            page=row.get("page"), 
+                            scrap_status=1
+                        ))
+                else :
+                    new_productkeyword_objects.append(ProductKeyword(
+                        keyword_id=keyword_id, amazonproduct_id=amazonproduct.id
+                    ))
+                    pass
+            else :
+                pass
+        return ""
 
 
 class ProductKeywordRank(models.Model):

@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from pkg_resources import require
 from rest_framework import serializers
 
 from bat.globalutils.utils import get_status_object
@@ -42,7 +43,7 @@ class ProductKeywordSerializerField(serializers.Field):
             obj = ProductKeyword.objects.get(pk=data)
             return obj
         except ObjectDoesNotExist:
-            raise ValidationError(
+            raise serializers.ValidationError(
                 {
                     "productkeyword": _(
                         f"{data} is not a valid product keyword id."
@@ -146,7 +147,41 @@ class KeywordsBulkActionSerializer(serializers.Serializer):
         data = super().validate(attrs)
         ids = list(filter(None, data.get("ids")))
         if not ids:
-            raise ValidationError({"ids": "Id list should not empty."})
+            raise serializers.ValidationError({"ids": "Id list should not empty."})
         data = data.copy()
         data["ids"] = ids
         return data
+
+
+
+
+class ProductKeywordRankCreateSerializer(serializers.ModelSerializer):
+    productkeyword = ProductKeywordSerializerField(read_only=True)
+    keyword_name = serializers.CharField(required=True, write_only=True)
+
+    class Meta:
+        model = ProductKeywordRank
+        fields = (
+            "id",
+            "keyword_name",
+            "productkeyword",
+            "index",
+            "rank",
+            "page",
+            "frequency",
+            "visibility_score",
+            "date",
+            "scrap_status",
+            "extra_data",
+        )
+        read_only_fields = (
+            "id",
+            "productkeyword",
+            "frequency",
+            "visibility_score",
+            "extra_data",
+        )
+
+class ProductKeywordRankBulkCreateSerializer(serializers.Serializer):
+    product_id = serializers.CharField(required=True, write_only=True)
+    data = ProductKeywordRankCreateSerializer(many=True)
