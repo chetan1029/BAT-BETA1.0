@@ -185,27 +185,43 @@ class ProductKeywordRankViewSet(
         amazonproduct = AmazonProduct.objects.filter(
             amazonaccounts__company_id=company_pk, pk=product_id
         )
-        # if amazonproduct.exists():
-        #     amazonproduct = amazonproduct.first()
-        #     productkeyword = ProductKeyword.objects.filter(keyword__name=keyword_name, amazonproduct=amazonproduct)
-        #     if productkeyword.exists():
-        #         productkeyword = productkeyword.first()
-        #     else:
-        #         amazonmarket = amazonproduct.amazonaccounts.amazonmarket
-        #         keyword, created = Keyword.objects.get_or_create(amazonmarketplace=amazonmarket, name=keyword_name)
-        #         productkeyword, created = ProductKeyword.objects.get_or_create(keyword=keyword, amazonproduct=amazonproduct)
-        #
-        #     index = validatedData.get("index", False)
-        #     rank = validatedData.get("rank", 321)
-        #     page = validatedData.get("page", 21)
-        #     date = "2021-06-05"
-        #     print(rank)
-        #     print(date)
-        #     productkeywordrank, create = ProductKeywordRank.objects.update_or_create(company_id=company_pk, productkeyword=productkeyword, date=date, defaults={'index': index, 'rank': rank, 'page': index, 'scrap_status': 1})
-        #     pass
-        #     #serializer.save(productkeyword=productkeyword, company_id=company_pk)
-        # else:
-        #     pass
+        if amazonproduct.exists():
+            amazonproduct = amazonproduct.first()
+            productkeyword = ProductKeyword.objects.filter(
+                keyword__name=keyword_name, amazonproduct=amazonproduct
+            )
+            if productkeyword.exists():
+                productkeyword = productkeyword.first()
+            else:
+                amazonmarket = amazonproduct.amazonaccounts.amazonmarket
+                keyword, created = Keyword.objects.get_or_create(
+                    amazonmarketplace=amazonmarket, name=keyword_name
+                )
+                productkeyword, created = ProductKeyword.objects.get_or_create(
+                    keyword=keyword, amazonproduct=amazonproduct
+                )
+
+            index = validatedData.get("index", False)
+            rank = validatedData.get("rank", 321)
+            page = validatedData.get("page", 21)
+            date = validatedData.get("date")
+            productkeywordrank, create = ProductKeywordRank.objects.update_or_create(
+                company_id=company_pk,
+                productkeyword=productkeyword,
+                date=date,
+                defaults={
+                    "index": index,
+                    "rank": rank,
+                    "page": page,
+                    "scrap_status": 1,
+                },
+            )
+            pass
+            # serializer.save(
+            #     productkeyword=productkeyword, company_id=company_pk
+            # )
+        else:
+            pass
 
     @action(detail=False, methods=["post"])
     def bulk_action(self, request, *args, **kwargs):

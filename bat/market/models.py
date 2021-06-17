@@ -17,10 +17,7 @@ from taggit.managers import TaggableManager
 from bat.company.models import Address, Company
 from bat.globalprop.validator import validator
 from bat.market.constants import AMAZON_REGIONS_CHOICES, EUROPE
-from bat.product.models import (
-    Image,
-    IsDeletableMixin,
-)
+from bat.product.models import Image, IsDeletableMixin
 from bat.setting.models import Status
 
 User = get_user_model()
@@ -183,7 +180,6 @@ class AmazonCompany(Address):
         return str(self.id) + " - " + self.name
 
 
-
 class UniqueWithinAmazonAccountMixin:
     def save(self, **kwargs):
         """
@@ -201,7 +197,10 @@ class UniqueWithinAmazonAccountMixin:
             f = self._meta.get_field(field_name)
             lookup_value = getattr(self, f.attname)
             if lookup_value:
-                kwargs = {"amazonaccounts_id": self.amazonaccounts_id, field_name: lookup_value}
+                kwargs = {
+                    "amazonaccounts_id": self.amazonaccounts_id,
+                    field_name: lookup_value,
+                }
                 if self.id:
                     if (
                         self.__class__.objects.filter(**kwargs)
@@ -227,6 +226,7 @@ class UniqueWithinAmazonAccountMixin:
             errors.extend(e)
         if errors:
             raise ValidationError(errors)
+
 
 class AmazonProductManager(models.Manager):
     def import_bulk(self, data, amazonaccount, columns):
@@ -260,7 +260,10 @@ class AmazonProductManager(models.Manager):
                 amazon_product_objects_update, columns
             )
 
-class AmazonProduct(UniqueWithinAmazonAccountMixin, IsDeletableMixin, models.Model):
+
+class AmazonProduct(
+    UniqueWithinAmazonAccountMixin, IsDeletableMixin, models.Model
+):
     """
     Amazon Product Model.
 
@@ -792,8 +795,7 @@ class AmazonProductSessionsManager(models.Manager):
             amazonproduct__amazonaccounts__company_id=company_pk
         ).values_list("amazonproduct_id", "date", "id")
         amazon_product_sessions_map = {
-            str(k1) + str(k2): v
-            for k1, k2, v in amazon_product_sessions
+            str(k1) + str(k2): v for k1, k2, v in amazon_product_sessions
         }
         amazon_product_session_objs = []
         amazon_product_session_update_objs = []
@@ -802,25 +804,45 @@ class AmazonProductSessionsManager(models.Manager):
             row_data = row.copy()
             sku = row_data.pop("sku", None)
             amazon_product_id = amazon_product_map.get(sku, None)
-            id_date = str(amazon_product_id)+str(row_data.get("date", None))            
+            id_date = str(amazon_product_id) + str(row_data.get("date", None))
             if dublicate_data_mape.get(id_date, True):
                 dublicate_data_mape[id_date] = False
                 if amazon_product_id:
-                    amazon_product_sessions_id = amazon_product_sessions_map.get(id_date)
+                    amazon_product_sessions_id = amazon_product_sessions_map.get(
+                        id_date
+                    )
                     if amazon_product_sessions_id:
-                        amazon_product_session_update_objs.append(AmazonProductSessions(id=amazon_product_sessions_id, amazonproduct_id=amazon_product_id,**row_data))
+                        amazon_product_session_update_objs.append(
+                            AmazonProductSessions(
+                                id=amazon_product_sessions_id,
+                                amazonproduct_id=amazon_product_id,
+                                **row_data
+                            )
+                        )
                     else:
                         amazon_product_session_objs.append(
-                            AmazonProductSessions(amazonproduct_id=amazon_product_id ,**row_data)
+                            AmazonProductSessions(
+                                amazonproduct_id=amazon_product_id, **row_data
+                            )
                         )
         try:
             with transaction.atomic():
-                AmazonProductSessions.objects.bulk_create(amazon_product_session_objs)
-                AmazonProductSessions.objects.bulk_update(amazon_product_session_update_objs, ["amazonproduct_id", "date", "sessions", "page_views", "conversion_rate"])
+                AmazonProductSessions.objects.bulk_create(
+                    amazon_product_session_objs
+                )
+                AmazonProductSessions.objects.bulk_update(
+                    amazon_product_session_update_objs,
+                    [
+                        "amazonproduct_id",
+                        "date",
+                        "sessions",
+                        "page_views",
+                        "conversion_rate",
+                    ],
+                )
                 return True
         except IntegrityError as e:
             return False
-
 
 
 class AmazonProductSessions(models.Model):

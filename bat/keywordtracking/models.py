@@ -2,9 +2,9 @@ import csv
 from io import StringIO
 
 from django.contrib.postgres.fields import HStoreField
+from django.contrib.postgres.indexes import BTreeIndex
 from django.db import connection, models, transaction
 from django.utils import timezone
-from django.contrib.postgres.indexes import BTreeIndex
 from postgres_copy import CopyManager
 
 from bat.company.models import Company
@@ -40,7 +40,7 @@ class GlobalKeyword(models.Model):
     objects = CopyManager()
 
     class Meta:
-         indexes = (BTreeIndex(fields=('department', 'name',)),)
+        indexes = (BTreeIndex(fields=("department", "name")),)
 
     def __str__(self):
         """Return Value."""
@@ -61,7 +61,7 @@ class Keyword(models.Model):
         """Keywords Meta."""
 
         unique_together = ("amazonmarketplace", "name")
-        indexes = (BTreeIndex(fields=('name',)),)
+        indexes = (BTreeIndex(fields=("name",)),)
 
     def __str__(self):
         """Return Value."""
