@@ -224,18 +224,24 @@ class ProductKeywordRankViewSet(
             # )
         else:
             pass
-    
+
     @action(detail=False, methods=["post"])
     def bulk_create(self, request, *args, **kwargs):
         company_pk = self.kwargs.get("company_pk", None)
-        serializer = serializers.ProductKeywordRankBulkCreateSerializer(request.data)
+        serializer = serializers.ProductKeywordRankBulkCreateSerializer(
+            request.data
+        )
         if serializer.is_valid(raise_exception=True):
             validated_data = serializer.validated_data
             amazonproduct = AmazonProduct.objects.filter(
-            amazonaccounts__company_id=company_pk, pk=validated_data.get("product_id"))
+                amazonaccounts__company_id=company_pk,
+                pk=validated_data.get("product_id"),
+            )
             if amazonproduct.exists():
                 amazonproduct = amazonproduct.first()
-                ProductKeywordRank.objects.create_bulk(validated_data.get("data") ,amazonproduct, company_pk)
+                ProductKeywordRank.objects.create_bulk(
+                    validated_data.get("data"), amazonproduct, company_pk
+                )
 
         pass
 

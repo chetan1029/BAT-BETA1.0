@@ -147,12 +147,12 @@ class KeywordsBulkActionSerializer(serializers.Serializer):
         data = super().validate(attrs)
         ids = list(filter(None, data.get("ids")))
         if not ids:
-            raise serializers.ValidationError({"ids": "Id list should not empty."})
+            raise serializers.ValidationError(
+                {"ids": "Id list should not empty."}
+            )
         data = data.copy()
         data["ids"] = ids
         return data
-
-
 
 
 class ProductKeywordRankCreateSerializer(serializers.ModelSerializer):
@@ -181,6 +181,7 @@ class ProductKeywordRankCreateSerializer(serializers.ModelSerializer):
             "visibility_score",
             "extra_data",
         )
+
 
 class ProductKeywordRankBulkCreateSerializer(serializers.Serializer):
     product_id = serializers.CharField(required=True, write_only=True)
