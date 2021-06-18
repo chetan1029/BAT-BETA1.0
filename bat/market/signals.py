@@ -21,6 +21,6 @@ def when_amazonproductsessions_created_or_updated(
     conversion_rate = 0
     if orders and instance.sessions:
         conversion_rate = round((orders / instance.sessions) * 100)
-    instance.conversion_rate = conversion_rate
-    logger.info("Product Sessions " + str(conversion_rate))
-    instance.save()
+    AmazonProductSessions.objects.filter(pk=instance.pk).update(
+        conversion_rate=conversion_rate
+    )

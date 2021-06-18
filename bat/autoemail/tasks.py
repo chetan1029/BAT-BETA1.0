@@ -189,7 +189,6 @@ def send_email_from_queue():
     )[:50]
 
     queued_emails_ids = queued_emails.values_list("pk", flat=True)
-    print(queued_emails_ids)
 
     for email in queued_emails:
         send_email.delay(email.id)

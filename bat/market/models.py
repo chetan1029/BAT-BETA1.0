@@ -4,12 +4,12 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import HStoreField
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.db.models.signals import post_save
 from django.db.utils import IntegrityError
 from django.utils import timezone
-from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
-
 from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
 from taggit.managers import TaggableManager
@@ -830,6 +830,13 @@ class AmazonProductSessionsManager(models.Manager):
                 AmazonProductSessions.objects.bulk_create(
                     amazon_product_session_objs
                 )
+                for amazon_product in amazon_product_session_objs:
+                    post_save.send(
+                        AmazonProductSessions,
+                        instance=amazon_product,
+                        created=True,
+                    )
+
                 AmazonProductSessions.objects.bulk_update(
                     amazon_product_session_update_objs,
                     [
@@ -840,6 +847,13 @@ class AmazonProductSessionsManager(models.Manager):
                         "conversion_rate",
                     ],
                 )
+
+                for amazon_product in amazon_product_session_update_objs:
+                    post_save.send(
+                        AmazonProductSessions,
+                        instance=amazon_product,
+                        created=False,
+                    )
                 return True
         except IntegrityError as e:
             return False
