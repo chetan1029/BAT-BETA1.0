@@ -188,10 +188,13 @@ def send_email_from_queue():
         amazonorder__purchase_date__gte=F("emailcampaign__activation_date"),
     )[:50]
 
+    queued_emails_ids = queued_emails.values_list("pk", flat=True)
+    print(queued_emails_ids)
+
     for email in queued_emails:
         send_email.delay(email.id)
 
-    queued_emails.update(
+    EmailQueue.objects.filter(pk__in=list(queued_emails_ids)).update(
         status=get_status(
             ORDER_EMAIL_PARENT_STATUS, ORDER_EMAIL_STATUS_SCHEDULED
         )
