@@ -11,6 +11,7 @@ from bat.keywordtracking.views import (
     ProductKeywordViewSet,
     SalesChartDataAPIView,
     SaveProductKeyword,
+    SessionChartDataAPIView,
     SuggestKeywordAPIView,
 )
 
@@ -74,5 +75,10 @@ urlpatterns = [
         "companies/<company_pk>/sales-chart-data/",
         SalesChartDataAPIView.as_view(),
         name="sales-chart-data",
+    ),
+    path(
+        "companies/<company_pk>/session-chart-data/",
+        SessionChartDataAPIView.as_view(),
+        name="session-chart-data",
     ),
 ]
