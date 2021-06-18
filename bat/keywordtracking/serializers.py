@@ -82,6 +82,7 @@ class ProductKeywordRankSerializer(serializers.ModelSerializer):
         )
 
 
+
 class KeywordTrackingProductSerializer(AmazonProductSerializer):
     keywords = serializers.SerializerMethodField()
     visibility_score = serializers.SerializerMethodField()
