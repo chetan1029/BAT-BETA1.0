@@ -1,12 +1,11 @@
-from bat.product.models import Product
 import json
 import operator
 from datetime import datetime, timedelta
 from functools import reduce
-from django.core.validators import validate_email
 
 import pytz
 from django.conf import settings
+from django.core.validators import validate_email
 from django.db import transaction
 from django.db.models import F, Q, Sum
 from django.db.models.aggregates import Avg
@@ -46,6 +45,7 @@ from bat.market.models import (
     PPCProfile,
 )
 from bat.mixins.mixins import ExportMixin
+from bat.product.models import Product
 from bat.setting.utils import get_status
 
 # Create your views here.
@@ -893,6 +893,124 @@ class SalesChartDataAPIView(APIView):
                 "total_orders": total_orders,
                 "total_sales_percentage": total_sales_percentage,
                 "total_orders_percentage": total_orders_percentage,
+            },
+        }
+
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+class SessionChartDataAPIView(APIView):
+    def get(self, request, company_pk=None, **kwargs):
+
+        dt_format = "%m/%d/%Y"
+
+        all_amazon_session = AmazonProductSessions.objects.filter(
+            amazonproduct__amazonaccounts__company_id=company_pk
+        )
+
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+
+        start_date = (
+            pytz.utc.localize(datetime.strptime(start_date, dt_format))
+            if start_date
+            else None
+        )
+        end_date = (
+            pytz.utc.localize(datetime.strptime(end_date, dt_format))
+            if end_date
+            else None
+        )
+
+        marketplace = request.GET.get("marketplace", None)
+        if marketplace and marketplace != "all":
+            marketplace = get_object_or_404(AmazonMarketplace, pk=marketplace)
+            all_amazon_session = all_amazon_session.filter(
+                amazonproduct__amazonaccounts__marketplace_id=marketplace.id
+            )
+
+        difference_days = 0
+        if start_date and end_date:
+            days = end_date - start_date
+            difference_days = days.days
+        start_date_compare = start_date - timedelta(days=difference_days)
+        end_date_compare = end_date - timedelta(days=difference_days)
+
+        all_amazon_session_compare = all_amazon_session
+
+        if start_date:
+            all_amazon_session = all_amazon_session.filter(
+                date__gte=start_date
+            )
+
+            # Campare data for same date difference
+            all_amazon_session_compare = all_amazon_session_compare.filter(
+                date__gte=start_date_compare
+            )
+
+        if end_date:
+            all_amazon_session = all_amazon_session.filter(date__lte=end_date)
+
+            # Campare data for same date difference
+            all_amazon_session_compare = all_amazon_session_compare.filter(
+                date__lte=end_date_compare
+            )
+
+        total_sessions = all_amazon_session.aggregate(Sum("sessions")).get(
+            "sessions__sum"
+        )
+
+        total_page_views = all_amazon_session.aggregate(Sum("page_views")).get(
+            "page_views__sum"
+        )
+
+        total_sessions_compare = all_amazon_session_compare.aggregate(
+            Sum("sessions")
+        ).get("sessions__sum")
+
+        total_page_views_compare = all_amazon_session_compare.aggregate(
+            Sum("page_views")
+        ).get("page_views__sum")
+
+        total_sessions_percentage = get_compare_percentage(
+            total_sessions, total_sessions_compare
+        )
+        total_page_views_percentage = get_compare_percentage(
+            total_page_views, total_page_views_compare
+        )
+
+        sessions_par_day = list(
+            all_amazon_session.values("date")
+            .annotate(total_sessions=Sum("sessions"))
+            .values_list("date", "total_sessions")
+            .order_by("date")
+        )
+
+        page_views_par_day = list(
+            all_amazon_session.values("date")
+            .annotate(total_page_views=Sum("page_views"))
+            .values_list("date", "total_page_views")
+            .order_by("date")
+        )
+
+        sessions_data = {}
+        for date, total_sessions in sessions_par_day:
+            sessions_data[date.strftime(dt_format)] = total_sessions
+
+        page_views_data = {}
+        for date, total_page_views in page_views_par_day:
+            page_views_data[date.strftime(dt_format)] = total_page_views
+
+        stats = {
+            "chartData": [
+                {"name": "Sessions", "data": sessions_data},
+                {"name": "Page Views", "data": page_views_data},
+            ],
+            "stats": {
+                "total_sessions": total_sessions,
+                "total_page_views": total_page_views,
+                "total_sessions_percentage": total_sessions_percentage,
+                "total_page_views_percentage": total_page_views_percentage,
             },
         }
 
