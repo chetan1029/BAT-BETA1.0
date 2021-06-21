@@ -228,9 +228,13 @@ class ProductKeywordRankViewSet(
     @action(detail=False, methods=["post"])
     def bulk_create(self, request, *args, **kwargs):
         company_pk = self.kwargs.get("company_pk", None)
-        serializer = serializers.ProductKeywordRankSerializer(data=request.data, many=True)
+        serializer = serializers.ProductKeywordRankSerializer(
+            data=request.data, many=True
+        )
         if serializer.is_valid(raise_exception=True):
-            ProductKeywordRank.objects.create_bulk(serializer.validated_data, company_pk)
+            ProductKeywordRank.objects.create_bulk(
+                serializer.validated_data, company_pk
+            )
 
         data = {"detail": "Product keyword rank created"}
         return Response(data, status=status.HTTP_201_CREATED)
@@ -867,7 +871,9 @@ class SalesChartDataAPIView(APIView):
 
         conversion_data = {}
         for date, avg_conversion_rate in conversion_per_day:
-            conversion_data[date.strftime(dt_format)] = avg_conversion_rate
+            conversion_data[date.strftime(dt_format)] = round(
+                avg_conversion_rate, 2
+            )
 
         amount_data = {}
         for date, total_amount in amount_par_day:
