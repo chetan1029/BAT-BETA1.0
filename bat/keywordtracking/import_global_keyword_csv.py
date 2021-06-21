@@ -14,10 +14,13 @@ class CsvImportForm(forms.Form):
 def import_global_keyword_csv(csv_file):
     def _clean(csv_file):
         decoded_file = csv_file.read().decode("utf-8").splitlines()
-        # decoded_file.pop(0)
+        decoded_file.pop(0)
         csv_reader = csv.DictReader(decoded_file, delimiter=",")
         headers = csv_reader.fieldnames
         headers[0] = headers[0].replace("\ufeff", "")
+        print("\n\n\n\n", headers)
+        for key, value in enumerate(headers):
+            headers[key] = value.replace("# ", "#")
         print("\n\n\n\n", headers)
         data = []
         department = None
