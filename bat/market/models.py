@@ -786,10 +786,16 @@ class PPCProfile(models.Model):
 
 
 class AmazonProductSessionsManager(models.Manager):
-    def create_bulk(self, company_pk, data):
-        amazon_products = AmazonProduct.objects.filter(
-            amazonaccounts__company_id=company_pk
-        ).values_list("sku", "id")
+    def create_bulk(self, company_pk, marketplace, data):
+        if marketplace:
+            amazon_products = AmazonProduct.objects.filter(
+                amazonaccounts__company_id=company_pk,
+                amazonaccounts__marketplace__sales_channel_name=marketplace,
+            ).values_list("sku", "id")
+        else:
+            amazon_products = AmazonProduct.objects.filter(
+                amazonaccounts__company_id=company_pk
+            ).values_list("sku", "id")
         amazon_product_map = {k: v for k, v in amazon_products}
         amazon_product_sessions = AmazonProductSessions.objects.filter(
             amazonproduct__amazonaccounts__company_id=company_pk
