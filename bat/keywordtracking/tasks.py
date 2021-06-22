@@ -31,7 +31,7 @@ def add_product_keyword_to_rank_for_today():
         )
         for values in productkeywords
     ]
-
+    i = 0
     while True:
         batch = list(islice(new_objects, batch_size))
         if not batch:
@@ -39,4 +39,7 @@ def add_product_keyword_to_rank_for_today():
         ProductKeywordRank.objects.bulk_create(
             batch, batch_size, ignore_conflicts=True
         )
+        i = i + 1
+        print(i)
+        print(len(batch))
         logger.info("product keyword rank creation")
