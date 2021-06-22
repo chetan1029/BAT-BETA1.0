@@ -31,16 +31,9 @@ def add_product_keyword_to_rank_for_today():
         for values in productkeywords
     ]
 
-    created = 0
-    batch_size = 100
+    batch_size = 1000
 
-    while True:
-        batch = islice(product_keywords, batch_size)
-        objects = ProductKeywordRank.objects.bulk_create(
-            batch, batch_size, ignore_conflicts=True
-        )
-        created += len(objects)
-        if not batch:
-            break
-        logger.info("product keyword rank creation" + str(created))
-    return created
+    ProductKeywordRank.objects.bulk_create(
+        product_keywords, batch_size, ignore_conflicts=True
+    )
+    logger.info("Product Keywords Rank Added")
