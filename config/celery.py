@@ -13,7 +13,13 @@ app = Celery(
     "bat",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["bat.users.tasks", "bat.setting.tasks", "bat.market.tasks", "bat.autoemail.tasks"],
+    include=[
+        "bat.users.tasks",
+        "bat.setting.tasks",
+        "bat.market.tasks",
+        "bat.autoemail.tasks",
+        "bat.keywordtracking.tasks",
+    ],
 )
 
 app.conf.update(
@@ -33,7 +39,7 @@ app.conf.update(
 
 @app.task(bind=True)
 def debug_task(self):
-    print('Request: {0!r}'.format(self.request))
+    print("Request: {0!r}".format(self.request))
 
 
 if __name__ == "__main__":
