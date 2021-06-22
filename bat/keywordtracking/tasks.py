@@ -33,6 +33,7 @@ def add_product_keyword_to_rank_for_today():
         )
         for values in productkeywords
     ]
+    print("objects")
     print(len(list(new_objects)))
     i = 0
     # while True:
