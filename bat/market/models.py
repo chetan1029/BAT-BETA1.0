@@ -323,7 +323,13 @@ class AmazonProduct(
 
     def __str__(self):
         """Return Value."""
-        return self.title
+        return (
+            str(self.sku)
+            + " - "
+            + str(self.asin)
+            + " - "
+            + str(self.amazonaccounts.marketplace.sales_channel_name)
+        )
 
     @property
     def status_name(self):
