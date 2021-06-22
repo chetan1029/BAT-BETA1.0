@@ -54,6 +54,7 @@ class AmazonMarketplaceAdvancedSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     email_verified = serializers.SerializerMethodField()
     amazoncompany_id = serializers.SerializerMethodField()
+    first_login = serializers.SerializerMethodField()
 
     class Meta:
         model = AmazonMarketplace
@@ -67,6 +68,7 @@ class AmazonMarketplaceAdvancedSerializer(serializers.ModelSerializer):
             "sales_channel_name",
             "email",
             "email_verified",
+            "first_login",
             "amazoncompany_id",
         )
         read_only_fields = (
@@ -92,6 +94,20 @@ class AmazonMarketplaceAdvancedSerializer(serializers.ModelSerializer):
         if accounts.exists():
             return constants.MARKETPLACE_STATUS_ACTIVE
         return constants.MARKETPLACE_STATUS_INACTIVE
+
+    def get_first_login(self, obj):
+        company_id = self.context.get("company_id")
+        user = self.context.get("request").user
+        accounts = AmazonAccounts.objects.filter(
+            marketplace_id=obj.id,
+            user_id=user.id,
+            company_id=company_id,
+            is_active=True,
+            first_login=True,
+        )
+        if accounts.exists():
+            return True
+        return False
 
     def get_email(self, obj):
         company_id = self.context.get("company_id")

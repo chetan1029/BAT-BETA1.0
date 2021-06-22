@@ -119,6 +119,7 @@ class AmazonAccounts(models.Model):
     credentails = models.ForeignKey(
         AmazonAccountCredentails, on_delete=models.CASCADE, null=True
     )
+    first_login = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

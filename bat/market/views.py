@@ -564,6 +564,11 @@ class AmazonProductSessionsViewsets(viewsets.ModelViewSet):
             company_id=company_pk, user_id=self.request.user.id
         )
         marketplace = self.request.GET.get("marketplace", None)
+        if marketplace:
+            AmazonAccounts.objects.filter(
+                marketplace__sales_channel_name=marketplace,
+                company_id=company_pk,
+            ).update(first_login=False)
         serializer = self.serializer_class(data=request.data, many=True)
         if serializer.is_valid(raise_exception=True):
             create_status = AmazonProductSessions.objects.create_bulk(
