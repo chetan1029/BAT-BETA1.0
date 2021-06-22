@@ -22,6 +22,8 @@ def add_product_keyword_to_rank_for_today():
         "id", "keyword__frequency", "amazonproduct__amazonaccounts__company_id"
     )
 
+    print(productkeywords.count())
+
     batch_size = 1000
     new_objects = [
         ProductKeywordRank(
@@ -31,15 +33,16 @@ def add_product_keyword_to_rank_for_today():
         )
         for values in productkeywords
     ]
+    print(len(list(new_objects)))
     i = 0
-    while True:
-        batch = list(islice(new_objects, batch_size))
-        if not batch:
-            break
-        ProductKeywordRank.objects.bulk_create(
-            batch, batch_size, ignore_conflicts=True
-        )
-        i = i + 1
-        print(i)
-        print(len(batch))
-        logger.info("product keyword rank creation")
+    # while True:
+    #     batch = list(islice(new_objects, batch_size))
+    #     if not batch:
+    #         break
+    #     ProductKeywordRank.objects.bulk_create(
+    #         batch, batch_size, ignore_conflicts=True
+    #     )
+    #     i = i + 1
+    #     print(i)
+    #     print(len(batch))
+    #     logger.info("product keyword rank creation")
