@@ -254,9 +254,7 @@ class ProductKeywordRankViewSet(
             )
             if bulk_action == "delete":
                 try:
-                    ids_cant_delete = ProductKeywordRank.objects.bulk_delete(
-                        ids
-                    )
+                    ids_cant_delete = ProductKeyword.objects.bulk_delete(ids)
                     content = {
                         "detail": _("All selected Keywords are deleted.")
                     }
