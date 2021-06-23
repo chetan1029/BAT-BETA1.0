@@ -17,10 +17,11 @@ def add_product_keyword_to_rank_for_today():
         KEYWORD_PARENT_STATUS, KEYWORD_STATUS_ACTIVE
     )
     productkeywords = ProductKeyword.objects.filter(
-        status=product_keywords_status
+        status=product_keywords_status, amazonproduc_id=920
     ).values(
         "id", "keyword__frequency", "amazonproduct__amazonaccounts__company_id"
     )
+    print(productkeywords)
 
     product_keywords = [
         ProductKeywordRank(
