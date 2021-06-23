@@ -3,7 +3,10 @@ from itertools import islice
 
 from celery.utils.log import get_task_logger
 
-from bat.keywordtracking.constants import KEYWORD_PARENT_STATUS, KEYWORD_STATUS_ACTIVE
+from bat.keywordtracking.constants import (
+    KEYWORD_PARENT_STATUS,
+    KEYWORD_STATUS_ACTIVE,
+)
 from bat.keywordtracking.models import ProductKeyword, ProductKeywordRank
 from bat.setting.utils import get_status
 from config.celery import app
@@ -17,7 +20,7 @@ def add_product_keyword_to_rank_for_today():
         KEYWORD_PARENT_STATUS, KEYWORD_STATUS_ACTIVE
     )
     productkeywords = ProductKeyword.objects.filter(
-        status=product_keywords_status, amazonproduc_id=920
+        status=product_keywords_status, amazonproduct_id=920
     ).values(
         "id", "keyword__frequency", "amazonproduct__amazonaccounts__company_id"
     )
