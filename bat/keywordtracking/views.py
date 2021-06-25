@@ -173,7 +173,9 @@ class ProductKeywordRankViewSet(
                     )
                 )
 
-        return queryset
+        return queryset.prefetch_related(
+            "productkeyword", "productkeyword__keyword"
+        )
 
     def perform_create(self, serializer):
         """Set the data for who is the owner or creater."""
