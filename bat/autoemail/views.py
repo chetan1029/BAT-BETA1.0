@@ -22,11 +22,11 @@ from rest_framework.views import APIView
 
 from bat.autoemail import serializers
 from bat.autoemail.constants import (
+    EMAIL_CAMPAIGN_STATUS_ACTIVE,
     ORDER_EMAIL_STATUS_OPTOUT,
     ORDER_EMAIL_STATUS_QUEUED,
     ORDER_EMAIL_STATUS_SCHEDULED,
     ORDER_EMAIL_STATUS_SEND,
-    EMAIL_CAMPAIGN_STATUS_ACTIVE,
 )
 from bat.autoemail.filters import EmailQueueFilter
 from bat.autoemail.models import (
@@ -35,11 +35,11 @@ from bat.autoemail.models import (
     EmailTemplate,
     GlobalEmailTemplate,
 )
+from bat.autoemail.tasks import email_queue_create_for_new_campaign
 from bat.autoemail.utils import send_email
 from bat.company.utils import get_member
 from bat.globalutils.utils import get_compare_percentage, pdf_file_from_html
 from bat.market.models import AmazonCompany, AmazonMarketplace, AmazonOrder
-from bat.autoemail.tasks import email_queue_create_for_new_campaign
 
 
 class GlobalEmailTemplateViewsets(viewsets.ReadOnlyModelViewSet):
@@ -540,6 +540,10 @@ class EmailChartDataAPIView(APIView):
             status__name=ORDER_EMAIL_STATUS_OPTOUT
         ).count()
 
+        total_reattempted_reviews = all_email_queue.filter(
+            emailcampaign__send_optout=True, amazonorder__amazon_review=True
+        ).count()
+
         opt_out_rate = 0
         if total_opt_out_email and total_email_sent:
             opt_out_rate = round(
@@ -563,6 +567,10 @@ class EmailChartDataAPIView(APIView):
 
         total_opt_out_email_compare = all_email_queue_compare.filter(
             status__name=ORDER_EMAIL_STATUS_OPTOUT
+        ).count()
+
+        total_reattempted_reviews_compare = all_email_queue_compare.filter(
+            emailcampaign__send_optout=True, amazonorder__amazon_review=True
         ).count()
 
         opt_out_rate_compare = 0
@@ -592,6 +600,9 @@ class EmailChartDataAPIView(APIView):
         opt_out_rate_percentage = get_compare_percentage(
             opt_out_rate, opt_out_rate_compare
         )
+        reattempted_reviews_percentage = get_compare_percentage(
+            total_reattempted_reviews, total_reattempted_reviews_compare
+        )
         total_email_in_queue_percentage = get_compare_percentage(
             total_email_in_queue, total_email_in_queue_compare
         )
@@ -603,10 +614,12 @@ class EmailChartDataAPIView(APIView):
                 "total_email_in_queue": total_email_in_queue,
                 "total_opt_out_email": total_opt_out_email,
                 "opt_out_rate": opt_out_rate,
+                "reattempted_reviews": total_reattempted_reviews,
                 "email_sent_percentage": total_email_sent_percentage,
                 "opt_out_email_percentage": total_opt_out_email_percentage,
                 "opt_out_rate_percentage": opt_out_rate_percentage,
                 "email_in_queue_percentage": total_email_in_queue_percentage,
+                "reattempted_reviews_percentage": reattempted_reviews_percentage,
             },
         }
 

@@ -121,9 +121,10 @@ class ProductKeywordRankViewSet(
 
         ordering = self.request.GET.get("ordering", None)
         if ordering and ordering == "frequency":
-            queryset = queryset.exclude(
-                Q(frequency__isnull=True) | Q(frequency=0)
-            )
+            if search_limit and search_limit != "10000":
+                queryset = queryset.exclude(
+                    Q(frequency__isnull=True) | Q(frequency=0)
+                )
 
         search_keywords = self.request.GET.get("search_keywords", None)
         search_type = self.request.GET.get("searchtype", None)
@@ -279,13 +280,7 @@ class KeywordTrackingProductViewsets(
 
     search_fields = ["title", "=asin"]
 
-    ordering_fields = [
-        "title",
-        "keywords",
-        "visibility_score",
-        "sessions",
-        "pageviews",
-    ]
+    ordering_fields = ["title"]
 
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
@@ -299,9 +294,10 @@ class KeywordTrackingProductViewsets(
             queryset = queryset.filter(
                 amazonaccounts__marketplace_id=marketplace_id
             )
-        return queryset.filter(amazonaccounts__company_id=company_id).order_by(
-            "-create_date"
-        )
+
+        return queryset.filter(
+            amazonaccounts__company_id=company_id
+        ).prefetch_related("amazonaccounts")
 
 
 @method_decorator(

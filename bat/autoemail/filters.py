@@ -12,10 +12,16 @@ class EmailQueueFilter(filterset.FilterSet):
     status = filters.CharFilter(field_name="status", method="filter_by_status")
 
     def filter_by_status(self, qs, name, value):
-        return qs.filter(
-            status__name__iexact=value,
-            status__parent__name=ORDER_EMAIL_PARENT_STATUS,
-        ).distinct()
+        if value == "reattempted-reviews":
+            return qs.filter(
+                emailcampaign__send_optout=True,
+                amazonorder__amazon_review=True,
+            ).distinct()
+        else:
+            return qs.filter(
+                status__name__iexact=value,
+                status__parent__name=ORDER_EMAIL_PARENT_STATUS,
+            ).distinct()
 
     class Meta:
         model = EmailQueue

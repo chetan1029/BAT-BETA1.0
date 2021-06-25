@@ -123,6 +123,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
     email_opt_out = serializers.SerializerMethodField()
     email_in_queue = serializers.SerializerMethodField()
     last_email_send_in_queue = serializers.SerializerMethodField()
+    reattempted_reviews = serializers.SerializerMethodField()
     email_sent_today = serializers.SerializerMethodField()
     email_queue_today = serializers.SerializerMethodField()
     email_opt_out_today = serializers.SerializerMethodField()
@@ -147,6 +148,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
             "extra_data",
             "email_sent",
             "email_opt_out",
+            "reattempted_reviews",
             "last_email_send_in_queue",
             "include_invoice",
             "send_optout",
@@ -167,6 +169,13 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
     def get_email_opt_out(self, obj):
         return EmailQueue.objects.filter(
             emailcampaign_id=obj.id, status__name=ORDER_EMAIL_STATUS_OPTOUT
+        ).count()
+
+    def get_reattempted_reviews(self, obj):
+        return EmailQueue.objects.filter(
+            emailcampaign_id=obj.id,
+            emailcampaign__send_optout=True,
+            amazonorder__amazon_review=True,
         ).count()
 
     def get_opt_out_rate(self, obj):
