@@ -114,14 +114,34 @@ class ProductKeywordRankViewSet(
         queryset = queryset.filter(company_id=company_id)
 
         search_limit = self.request.GET.get("limit", None)
-        if search_limit and search_limit != "10000":
+        if search_limit and (
+            search_limit == "10000"
+            or search_limit == "10001"
+            or search_limit == "10002"
+        ):
+
+            # Using 10001 limit for to show all the keywords that have frequency rank
+            if search_limit and search_limit == "10001":
+                queryset = queryset.exclude(
+                    Q(frequency__isnull=True) | Q(frequency=0)
+                )
+
+            # Using 10002 limit for to show all the keywords that don't have frequency rank
+            if search_limit and search_limit == "10002":
+                queryset = queryset.filter(frequency=0)
+
+        else:
             queryset = queryset.exclude(
                 Q(frequency__isnull=True) | Q(frequency=0)
             )
 
         ordering = self.request.GET.get("ordering", None)
         if ordering and ordering == "frequency":
-            if search_limit and search_limit != "10000":
+            if search_limit and (
+                search_limit != "10000"
+                and search_limit != "10001"
+                and search_limit != "10002"
+            ):
                 queryset = queryset.exclude(
                     Q(frequency__isnull=True) | Q(frequency=0)
                 )
