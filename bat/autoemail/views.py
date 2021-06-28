@@ -455,12 +455,16 @@ class EmailQueueViewsets(viewsets.ReadOnlyModelViewSet):
     def filter_queryset(self, queryset):
         company_id = self.kwargs.get("company_pk", None)
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(
-            emailcampaign__company__id=company_id,
-            amazonorder__purchase_date__gte=F(
-                "emailcampaign__activation_date"
-            ),
-        ).order_by("-create_date")
+        return (
+            queryset.filter(
+                emailcampaign__company__id=company_id,
+                amazonorder__purchase_date__gte=F(
+                    "emailcampaign__activation_date"
+                ),
+            )
+            .prefetch_related("emailcampaign", "amazonorder", "status")
+            .order_by("-create_date")
+        )
 
 
 class EmailChartDataAPIView(APIView):

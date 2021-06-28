@@ -280,6 +280,7 @@ class AmazonOrderSerializer(serializers.ModelSerializer):
             "amazon_comission_amount",
             "manufacturing_amount",
             "amazonaccounts",
+            "amazon_review",
             "extra_data",
         )
 
