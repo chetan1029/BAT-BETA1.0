@@ -173,9 +173,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
 
     def get_reattempted_reviews(self, obj):
         return EmailQueue.objects.filter(
-            emailcampaign_id=obj.id,
-            emailcampaign__send_optout=True,
-            amazonorder__amazon_review=True,
+            emailcampaign_id=obj.id, emailcampaign__send_optout=True
         ).count()
 
     def get_opt_out_rate(self, obj):
