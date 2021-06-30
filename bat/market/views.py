@@ -471,7 +471,7 @@ class AmazonCompanyViewSet(
 class TestAmazonClientCatalog(View):
     def get(self, request, **kwargs):
 
-        amazonaccount = AmazonAccounts.objects.get(pk=6)
+        amazonaccount = AmazonAccounts.objects.get(pk=59)
         data = ""
 
         # Get is_amazon_review_request_allowed via Solicitations
@@ -489,8 +489,8 @@ class TestAmazonClientCatalog(View):
         # )
 
         # Get Messages action and opt out status for order
-        messaging = get_messaging(amazonaccount)
-        data = get_order_messaging_actions(messaging, "111-7126725-6541013")
+        # messaging = get_messaging(amazonaccount)
+        # data = get_order_messaging_actions(messaging, "111-7126725-6541013")
 
         # Temporary files
         # timestamp = datetime.timestamp(datetime.now())
@@ -512,10 +512,10 @@ class TestAmazonClientCatalog(View):
         #     start_time,
         #     end_time,
         # )
-
-        # read report data from files
+        #
+        # # read report data from files
         # report_csv = open(tmp_csv_file_path, "r")
-
+        #
         # print(report_csv.read())
 
         return HttpResponse(str(data))
